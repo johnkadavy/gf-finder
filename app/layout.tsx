@@ -42,7 +42,7 @@ export default function RootLayout({
           style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.08 0 0)" }}
         >
           <div className="flex justify-between items-center px-8 h-16 max-w-screen-xl mx-auto">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-1.5">
               <div className="relative group">
                 <Image
                   src="/guanaco_logo.svg"

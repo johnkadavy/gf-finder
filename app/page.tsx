@@ -54,23 +54,23 @@ function buildSignals(dossier: Dossier): Signal[] {
 }
 
 const signalConfig = {
-  positive: { dot: "#4ADE80", text: "oklch(0.55 0 0)" },
-  warning:  { dot: "#FACC15", text: "oklch(0.55 0 0)" },
-  error:    { dot: "#FF7444", text: "oklch(0.55 0 0)" },
+  positive: { dot: "#4ADE80" },
+  warning:  { dot: "#FACC15" },
+  error:    { dot: "#FF7444" },
 };
 
 function SignalChip({ signal }: { signal: Signal }) {
   const cfg = signalConfig[signal.variant];
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 border"
-      style={{ borderColor: "oklch(0.22 0 0)" }}
+      className="flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-r"
+      style={{ borderColor: "oklch(0.16 0 0)" }}
     >
       <span
         className="w-1.5 h-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: cfg.dot }}
       />
-      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.65_0_0)] leading-tight">
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[oklch(0.65_0_0)] leading-normal">
         {signal.label}
       </span>
     </div>
@@ -96,12 +96,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className="pt-16">
       {/* Hero */}
-      <section className="grid-bg min-h-[400px] flex flex-col items-center justify-center px-6 relative">
+      <section className="grid-bg min-h-[400px] flex flex-col items-center justify-center px-6 pt-12 relative pb-24">
+        {/* Bottom fade — softens grid into results section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
         <div className="max-w-3xl w-full text-center space-y-8">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-4">
-              Gluten-Free Restaurant Intelligence
-            </p>
             <h1
               className="font-[family-name:var(--font-display)] leading-none"
               style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
@@ -110,6 +109,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <br />
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
+            <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)] mt-5">
+              We evaluate risk so you don&apos;t have to
+            </p>
           </div>
 
           <SearchForm initialQuery={query} />
@@ -118,7 +120,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       {/* Results */}
-      <section className="max-w-5xl mx-auto px-6 pb-32 mt-12">
+      <section className="max-w-4xl mx-auto px-8 pb-32 mt-8">
         {!query ? null : restaurants.length === 0 ? (
           <div className="py-16 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)]">
@@ -129,14 +131,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <div className="space-y-0">
             {/* Result count header */}
             <div
-              className="flex items-center justify-between px-6 py-4 border-b mb-0"
+              className="flex items-center justify-between px-0 py-4 border-b"
               style={{ borderColor: "oklch(0.22 0 0)" }}
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.4_0_0)]">
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
                 {restaurants.length} Result{restaurants.length !== 1 ? "s" : ""} — &ldquo;{query}&rdquo;
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.35_0_0)]">
-                Safety Scores
               </span>
             </div>
 
@@ -154,97 +153,99 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   style={{
                     borderColor: "oklch(0.22 0 0)",
                     animation: `fadeUp 0.4s ease-out ${index * 0.07}s both`,
+                    borderLeft: `2px solid ${accentColor}`,
                   }}
                 >
-                  <div
-                    className="p-6 md:p-8 transition-colors duration-200"
-                    style={{
-                      borderLeft: `2px solid ${accentColor}`,
-                    }}
-                  >
-                    {/* Index label */}
-                    <div className="flex items-center gap-3 mb-5">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.35_0_0)]">
+                  {/* Main content: 2-column grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-0">
+
+                    {/* Left column */}
+                    <div className="px-8 pt-9 pb-6">
+
+                      {/* Sick report warning */}
+                      {sickCount > 0 && (
+                        <div
+                          className="flex items-center gap-3 mb-6 px-4 py-2.5 border"
+                          style={{ borderColor: "#FF744430", backgroundColor: "#FF744806" }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+                          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+                            {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Location */}
+                      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-4">
                         {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
-                      </span>
+                      </p>
+
+                      {/* Restaurant name */}
+                      <h2
+                        className="font-[family-name:var(--font-display)] leading-none mb-5"
+                        style={{
+                          fontSize: "clamp(1.9rem, 3.5vw, 2.75rem)",
+                          letterSpacing: "0.02em",
+                          color: "oklch(0.95 0 0)",
+                        }}
+                      >
+                        {restaurant.name}
+                      </h2>
+
+                      {/* Links */}
+                      {(restaurant.website_url || restaurant.google_maps_url) && (
+                        <div className="flex items-center gap-6 mb-6">
+                          {restaurant.website_url && (
+                            <a
+                              href={restaurant.website_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            >
+                              Website ↗
+                            </a>
+                          )}
+                          {restaurant.google_maps_url && (
+                            <a
+                              href={restaurant.google_maps_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            >
+                              Google Maps ↗
+                            </a>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Summary */}
+                      {summary && (
+                        <p className="font-mono text-[12.5px] leading-[1.75] text-[oklch(0.68_0_0)] max-w-[520px]">
+                          {summary}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Sick report warning */}
-                    {sickCount > 0 && (
-                      <div
-                        className="flex items-center gap-3 mb-6 px-4 py-2.5 border"
-                        style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
-                        <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
-                          {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
-                      {/* Left content */}
-                      <div className="flex-1 space-y-4">
-                        <h2
-                          className="font-[family-name:var(--font-display)] leading-none"
-                          style={{
-                            fontSize: "clamp(2.5rem, 5vw, 3.5rem)",
-                            letterSpacing: "0.02em",
-                            color: "oklch(0.95 0 0)",
-                          }}
-                        >
-                          {restaurant.name}
-                        </h2>
-                        {(restaurant.website_url || restaurant.google_maps_url) && (
-                          <div className="flex items-center gap-4">
-                            {restaurant.website_url && (
-                              <a
-                                href={restaurant.website_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.38_0_0)] hover:text-[#FF7444] transition-colors"
-                              >
-                                Website ↗
-                              </a>
-                            )}
-                            {restaurant.google_maps_url && (
-                              <a
-                                href={restaurant.google_maps_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.38_0_0)] hover:text-[#FF7444] transition-colors"
-                              >
-                                Google Maps ↗
-                              </a>
-                            )}
-                          </div>
-                        )}
-                        {summary && (
-                          <p className="font-mono text-[12px] leading-relaxed text-[oklch(0.55_0_0)] max-w-lg">
-                            {summary}
-                          </p>
-                        )}
-
-                        {/* Expanding underline hover element — editorial detail */}
-                        <div
-                          className="h-px w-12 transition-all duration-500"
-                          style={{ backgroundColor: `${accentColor}60` }}
-                        />
-                      </div>
-
-                      {/* Safety Gauge */}
+                    {/* Right column — mobile: centered focal section | desktop: side column */}
+                    <div
+                      className="flex items-center justify-center pt-10 pb-10 border-t md:border-t-0 md:items-start md:justify-end md:pr-8 md:pt-5 md:pb-0"
+                      style={{ borderColor: "oklch(0.22 0 0)" }}
+                    >
                       <SafetyGauge score={score} />
                     </div>
-
-                    {/* Signal chips */}
-                    {signals.length > 0 && (
-                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0">
-                        {signals.map((signal, i) => (
-                          <SignalChip key={i} signal={signal} />
-                        ))}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Signal row — full width beneath both columns */}
+                  {signals.length > 0 && (
+                    <div
+                      className="grid grid-cols-1 md:grid-cols-3 border-t"
+                      style={{ borderColor: "oklch(0.16 0 0)" }}
+                    >
+                      {signals.map((signal, i) => (
+                        <SignalChip key={i} signal={signal} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}

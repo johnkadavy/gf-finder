@@ -153,16 +153,16 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-            placeholder="Search for a restaurant — e.g. Rosemary's NYC"
+            placeholder="Type a restaurant to check gluten-free safety"
             autoComplete="off"
             className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.38_0_0)] text-white"
           />
           <button
             type="submit"
             disabled={isPending}
-            className="font-mono text-[11px] uppercase tracking-[0.2em] px-6 py-2.5 border border-[#FF7444] text-[#FF7444] hover:bg-[#FF7444] hover:text-black transition-all duration-200 whitespace-nowrap disabled:opacity-40 ml-4"
+            className={`font-mono text-[11px] uppercase tracking-[0.2em] px-6 py-2.5 border border-[#FF7444] text-[#FF7444] hover:bg-[#FF7444] hover:text-black transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
           >
-            {isPending ? "···" : "Search"}
+            Check a Restaurant
           </button>
         </div>
       </form>

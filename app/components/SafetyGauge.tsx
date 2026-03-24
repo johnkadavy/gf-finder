@@ -33,37 +33,34 @@ export function SafetyGauge({ score }: { score: number | null }) {
   }, [score, targetPct]);
 
   return (
-    <div
-      className="flex flex-col items-center justify-center p-6 border min-w-[180px]"
-      style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
-    >
+    <div className="flex flex-col items-center gap-2.5">
       {/* Gauge ring */}
       <div
-        className="relative w-36 h-36 flex items-center justify-center"
-        style={{ filter: score ? `drop-shadow(0 0 12px ${gaugeColor}50)` : "none" }}
+        className="relative w-40 h-40 flex items-center justify-center"
+        style={{ filter: score ? `drop-shadow(0 0 6px ${gaugeColor}20)` : "none" }}
       >
         <div
           className="absolute inset-0 rounded-full"
           style={{
             background: score
-              ? `conic-gradient(from 180deg at 50% 50%, ${gaugeColor} 0%, ${gaugeColor} ${currentPct}%, oklch(0.22 0 0) ${currentPct}%)`
-              : "oklch(0.22 0 0)",
+              ? `conic-gradient(from 180deg at 50% 50%, ${gaugeColor} 0%, ${gaugeColor} ${currentPct}%, oklch(0.2 0 0) ${currentPct}%)`
+              : "oklch(0.2 0 0)",
           }}
         />
         <div
-          className="absolute inset-[5px] rounded-full flex flex-col items-center justify-center"
-          style={{ backgroundColor: "oklch(0.1 0 0)" }}
+          className="absolute inset-[6px] rounded-full flex flex-col items-center justify-center"
+          style={{ backgroundColor: "oklch(0.08 0 0)" }}
         >
           {score !== null ? (
             <>
               <span
-                className="text-5xl leading-none tabular-nums font-[family-name:var(--font-display)] tracking-wide"
+                className="text-5xl leading-none tabular-nums font-[family-name:var(--font-display)]"
                 style={{ color: gaugeColor }}
               >
                 {displayNumber}
               </span>
-              <span className="font-mono text-[8px] uppercase tracking-[0.25em] mt-1 text-[oklch(0.4_0_0)]">
-                Score
+              <span className="font-mono text-[7px] uppercase tracking-[0.2em] mt-1.5 text-[oklch(0.55_0_0)]">
+                GF Score
               </span>
             </>
           ) : (
@@ -72,15 +69,19 @@ export function SafetyGauge({ score }: { score: number | null }) {
         </div>
       </div>
 
-      {/* Label */}
-      <div className="mt-4 border px-3 py-1" style={{ borderColor: `${gaugeColor}40` }}>
+      {/* Descriptor */}
+      <div
+        className="px-3 py-1 border"
+        style={{ borderColor: `${gaugeColor}28` }}
+      >
         <span
-          className="font-mono text-[9px] uppercase tracking-[0.25em]"
-          style={{ color: gaugeColor }}
+          className="font-mono text-[8px] uppercase tracking-[0.2em]"
+          style={{ color: `${gaugeColor}B0` }}
         >
           {label}
         </span>
       </div>
+
     </div>
   );
 }
