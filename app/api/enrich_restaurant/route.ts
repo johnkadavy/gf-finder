@@ -1,3 +1,13 @@
+/**
+ * NOTE: This route is not part of the active enrichment workflow.
+ * Enrichment is currently handled in Airtable (AI fields) and synced
+ * to Supabase via scripts/sync-airtable.ts.
+ *
+ * This route is kept as a standalone fallback: given a google_place_id,
+ * it uses Claude + web search to research GF info and structure a dossier,
+ * then saves it directly to Supabase. Useful if you ever want to re-enrich
+ * a restaurant without going through Airtable.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
@@ -106,7 +116,14 @@ Summarize everything you find in detail.`,
       system: `You are a gluten-free dining expert. Convert raw restaurant research into a structured dossier.
 Be conservative: if information is missing or unclear, use "unknown" rather than guessing.
 Never fabricate sick reports — only include them if clearly evidenced in the research.
-Today's date is ${new Date().toISOString().split("T")[0]}.`,
+Today's date is ${new Date().toISOString().split("T")[0]}.
+
+CRITICAL SUMMARY GUIDELINES:
+- Do NOT state universal truths that apply to every restaurant (e.g., "cross-contamination is always possible in a shared kitchen" — this is true everywhere and adds no value).
+- Only mention cross-contamination when there is SPECIFIC evidence: either it is a documented concern at this restaurant, OR they have specific mitigation (dedicated fryer, separate prep area, strict protocols).
+- Focus the summary on what is DISTINCTIVE about this restaurant's GF experience — what makes it better or worse than average.
+- If the restaurant has solid GF options, lead with that. Highlight specific dishes, menu labels, or staff practices that stand out.
+- Keep the summary under 3 sentences. Make every sentence count.`,
       messages: [
         {
           role: "user",

@@ -173,7 +173,7 @@ async function main() {
   const top = sorted.slice(0, count);
   console.log(`Upserting ${top.length} restaurants...\n`);
 
-  // Upsert into restaurants
+  // Build rows
   const rows = top.map((place) => ({
     google_place_id: place.id,
     name: place.displayName?.text ?? "Unknown",
@@ -184,7 +184,7 @@ async function main() {
     phone: place.nationalPhoneNumber ?? null,
     city,
     neighborhood,
-    slug: [place.displayName?.text ?? "", city, neighborhood]
+    slug: [place.displayName?.text ?? "", city, neighborhood, place.id.slice(-6)]
       .join("-")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -192,16 +192,54 @@ async function main() {
     ingested_at: new Date().toISOString(),
   }));
 
+  // Fetch all existing rows for this city+neighborhood to detect conflicts
+  const { data: existing } = await supabase
+    .from("restaurants")
+    .select("name, google_place_id")
+    .eq("city", city)
+    .eq("neighborhood", neighborhood);
+
+  const existingByPlaceId = new Set((existing ?? []).map((r) => r.google_place_id).filter(Boolean));
+  // All existing names — any new row whose name matches but has a different place_id would conflict
+  const existingNameToPlaceId = new Map(
+    (existing ?? [])
+      .filter((r) => r.google_place_id)
+      .map((r) => [r.name.toLowerCase(), r.google_place_id])
+  );
+
+  // Also deduplicate new rows by name (keep first = highest review count)
+  const seenNames = new Set<string>();
+  const safeRows = rows.filter((r) => {
+    const nameLower = r.name.toLowerCase();
+
+    // Already in DB with same place_id → safe update
+    if (existingByPlaceId.has(r.google_place_id)) return true;
+
+    // Name exists in DB with a different place_id → skip to avoid constraint violation
+    if (existingNameToPlaceId.has(nameLower) && existingNameToPlaceId.get(nameLower) !== r.google_place_id) {
+      console.log(`  Skipping "${r.name}" — name already exists with different place_id`);
+      return false;
+    }
+
+    // Duplicate name within new rows (e.g. two Starbucks) → keep only first
+    if (seenNames.has(nameLower)) {
+      console.log(`  Skipping duplicate "${r.name}"`);
+      return false;
+    }
+    seenNames.add(nameLower);
+    return true;
+  });
+
   const { error: upsertError } = await supabase
     .from("restaurants")
-    .upsert(rows, { onConflict: "google_place_id" });
+    .upsert(safeRows, { onConflict: "google_place_id" });
 
   if (upsertError) {
     console.error("Upsert failed:", upsertError.message);
     process.exit(1);
   }
 
-  console.log(`✓ Upserted ${rows.length} restaurants\n`);
+  console.log(`✓ Upserted ${safeRows.length} restaurants\n`);
 
   // Street yield summary
   console.log("Street yield summary:");
