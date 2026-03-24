@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { supabaseServer } from "@/lib/supabase-server";
 import { DossierSchema } from "@/lib/dossier-schema";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const client = new Anthropic();
 
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Look up restaurant in Supabase
+    console.log("[enrich] Looking up restaurant:", google_place_id);
     const { data: restaurant, error: fetchError } = await supabaseServer
       .from("restaurants")
       .select("*")
@@ -28,13 +29,16 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (fetchError || !restaurant) {
+      console.error("[enrich] Restaurant not found:", fetchError);
       return NextResponse.json(
         { error: "Restaurant not found" },
         { status: 404 }
       );
     }
+    console.log("[enrich] Found restaurant:", restaurant.name);
 
-    // 2. Research step: use Claude with web search + fetch to gather GF info
+    // 2. Research step
+    console.log("[enrich] Starting research step...");
     const messages: Anthropic.MessageParam[] = [
       {
         role: "user",
@@ -57,14 +61,17 @@ Summarize everything you find in detail.`,
 
     while (true) {
       const response = await client.messages.create({
-        model: "claude-opus-4-6",
-        max_tokens: 16000,
+        model: "claude-sonnet-4-6",
+        max_tokens: 8000,
         tools: [
           { type: "web_search_20260209", name: "web_search" },
           { type: "web_fetch_20260209", name: "web_fetch" },
         ],
         messages,
       });
+
+      console.log("[enrich] Research response stop_reason:", response.stop_reason);
+      console.log("[enrich] Research content blocks:", response.content.map(b => b.type));
 
       for (const block of response.content) {
         if (block.type === "text") {
@@ -75,17 +82,27 @@ Summarize everything you find in detail.`,
       if (response.stop_reason === "end_turn") {
         break;
       } else if (response.stop_reason === "pause_turn") {
-        // Server-side tool loop hit its limit — append and continue
         messages.push({ role: "assistant", content: response.content });
       } else {
         break;
       }
     }
 
-    // 3. Structure step: convert research into the dossier schema
+    console.log("[enrich] Research complete. Text length:", researchText.length);
+    console.log("[enrich] Research preview:", researchText.slice(0, 200));
+
+    if (!researchText) {
+      return NextResponse.json(
+        { error: "Research step returned no text" },
+        { status: 500 }
+      );
+    }
+
+    // 3. Structure step
+    console.log("[enrich] Starting structure step...");
     const structuredResponse = await client.messages.parse({
-      model: "claude-opus-4-6",
-      max_tokens: 8000,
+      model: "claude-sonnet-4-6",
+      max_tokens: 4000,
       system: `You are a gluten-free dining expert. Convert raw restaurant research into a structured dossier.
 Be conservative: if information is missing or unclear, use "unknown" rather than guessing.
 Never fabricate sick reports — only include them if clearly evidenced in the research.
@@ -99,9 +116,11 @@ ${researchText}`,
         },
       ],
       output_config: {
-        format: zodOutputFormat(DossierSchema, "dossier"),
+        format: zodOutputFormat(DossierSchema),
       },
     });
+
+    console.log("[enrich] Structure step complete. parsed_output:", !!structuredResponse.parsed_output);
 
     const dossier = structuredResponse.parsed_output;
 
@@ -112,26 +131,30 @@ ${researchText}`,
       );
     }
 
-    // 4. Save dossier to Supabase
-    const { error: updateError } = await supabaseServer
+    // 4. Save to Supabase
+    console.log("[enrich] Saving dossier to Supabase...");
+    const { error: updateError, count } = await supabaseServer
       .from("restaurants")
       .update({ dossier, enriched_at: new Date().toISOString() })
-      .eq("google_place_id", google_place_id);
+      .eq("google_place_id", google_place_id)
+      .select();
 
     if (updateError) {
-      console.error(updateError);
+      console.error("[enrich] Supabase update error:", updateError);
       return NextResponse.json(
         { error: "Failed to save dossier" },
         { status: 500 }
       );
     }
 
+    console.log("[enrich] Saved successfully. Rows affected:", count);
     return NextResponse.json({ dossier });
+
   } catch (error: unknown) {
     if (error instanceof Anthropic.APIError) {
-      console.error("Anthropic API error:", error.status, error.message, JSON.stringify(error.error));
+      console.error("[enrich] Anthropic API error:", error.status, error.message);
     } else {
-      console.error(error);
+      console.error("[enrich] Unexpected error:", error);
     }
     return NextResponse.json(
       { error: "Failed to enrich restaurant" },

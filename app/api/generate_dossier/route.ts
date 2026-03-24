@@ -39,7 +39,7 @@ Today's date is ${new Date().toISOString().split("T")[0]}.`,
         },
       ],
       output_config: {
-        format: zodOutputFormat(DossierSchema, "dossier"),
+        format: zodOutputFormat(DossierSchema),
       },
     });
 
