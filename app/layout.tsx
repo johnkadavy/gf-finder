@@ -1,53 +1,106 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import Image from "next/image";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ibmPlexSans = IBM_Plex_Sans({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
+  variable: "--font-sans",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500"],
   subsets: ["latin"],
+  variable: "--font-mono",
+});
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
   title: "Gluten-Free Finder",
-  description: "Search gluten-free restaurant assessments",
+  description: "Find gluten-free friendly restaurants with confidence",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-white text-black antialiased`}
+        className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} ${bebasNeue.variable} font-sans antialiased`}
       >
-        <div className="min-h-screen">
-          <header className="border-b">
-            <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-              <Link href="/" className="text-lg font-semibold tracking-tight">
-                Gluten-Free Finder
+        {/* Subtle noise texture */}
+        <div className="noise-overlay" aria-hidden="true" />
+
+        {/* Nav */}
+        <header
+          className="fixed top-0 w-full z-50 border-b"
+          style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.08 0 0)" }}
+        >
+          <div className="flex justify-between items-center px-8 h-16 max-w-screen-xl mx-auto">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="relative group">
+                <Image
+                  src="/guanaco_logo.svg"
+                  alt="Guanaco logo"
+                  width={32}
+                  height={32}
+                />
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+                  style={{ backgroundColor: "oklch(0.18 0 0)", border: "1px solid oklch(0.28 0 0)" }}>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)]">
+                    Guanacos eat gluten-free
+                  </span>
+                </div>
+              </div>
+              <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">
+                GF FINDER
+              </span>
+            </Link>
+            <nav className="hidden md:flex items-center gap-10">
+              <Link
+                href="/"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
+              >
+                Search
               </Link>
+              <Link
+                href="/about"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
+              >
+                About
+              </Link>
+            </nav>
+          </div>
+        </header>
 
-              <nav className="flex items-center gap-6 text-sm text-gray-600">
-                <Link href="/" className="hover:text-black">
-                  Home
-                </Link>
-                <Link href="/about" className="hover:text-black">
-                  About
-                </Link>
-              </nav>
+        <div className="min-h-screen">{children}</div>
+
+        {/* Footer */}
+        <footer
+          className="border-t py-10 px-8"
+          style={{ borderColor: "oklch(0.22 0 0)" }}
+        >
+          <div className="flex flex-col md:flex-row justify-between items-center max-w-screen-xl mx-auto gap-6">
+            <div className="flex items-center gap-6">
+              <span className="font-[family-name:var(--font-display)] text-xl tracking-wider text-white">
+                GF FINDER
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.4_0_0)]">
+                v.01 / Experimental
+              </span>
             </div>
-          </header>
-
-          {children}
-        </div>
+            <div className="flex gap-8 font-mono text-[10px] uppercase tracking-[0.2em]">
+              <a href="#" className="text-[oklch(0.45_0_0)] hover:text-white transition-colors duration-200">Privacy</a>
+              <a href="#" className="text-[oklch(0.45_0_0)] hover:text-white transition-colors duration-200">Terms</a>
+              <a href="#" className="text-[oklch(0.45_0_0)] hover:text-white transition-colors duration-200">Contact</a>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );
