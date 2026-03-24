@@ -24,7 +24,7 @@ const supabase = createClient(
 
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY!;
 const DETAILS_FIELD_MASK =
-  "id,displayName,formattedAddress,location,websiteUri,nationalPhoneNumber";
+  "id,displayName,formattedAddress,location,websiteUri,googleMapsUri,nationalPhoneNumber";
 
 const force = process.argv.includes("--force");
 
@@ -34,6 +34,7 @@ interface PlaceDetails {
   formattedAddress?: string;
   location?: { latitude: number; longitude: number };
   websiteUri?: string;
+  googleMapsUri?: string;
   nationalPhoneNumber?: string;
 }
 
@@ -158,6 +159,7 @@ async function main() {
       updates.lng = details.location.longitude;
     }
     if (details.websiteUri) updates.website_url = details.websiteUri;
+    if (details.googleMapsUri) updates.google_maps_url = details.googleMapsUri;
     if (details.nationalPhoneNumber) updates.phone = details.nationalPhoneNumber;
 
     const { error: updateError } = await supabase

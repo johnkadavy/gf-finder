@@ -42,6 +42,7 @@ interface RawPlace {
   formattedAddress?: string;
   location?: { latitude: number; longitude: number };
   websiteUri?: string;
+  googleMapsUri?: string;
   nationalPhoneNumber?: string;
   businessStatus?: string;
   rating?: number;
@@ -71,6 +72,7 @@ async function searchStreet(query: string): Promise<RawPlace[]> {
           "places.formattedAddress",
           "places.location",
           "places.websiteUri",
+          "places.googleMapsUri",
           "places.nationalPhoneNumber",
           "places.businessStatus",
           "places.rating",
@@ -181,6 +183,7 @@ async function main() {
     lat: place.location?.latitude ?? null,
     lng: place.location?.longitude ?? null,
     website_url: place.websiteUri ?? null,
+    google_maps_url: place.googleMapsUri ?? null,
     phone: place.nationalPhoneNumber ?? null,
     city,
     neighborhood,

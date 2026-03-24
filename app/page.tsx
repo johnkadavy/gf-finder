@@ -18,6 +18,8 @@ type Restaurant = {
   name: string;
   city: string;
   neighborhood: string | null;
+  website_url: string | null;
+  google_maps_url: string | null;
   dossier: Dossier | null;
 };
 
@@ -37,21 +39,15 @@ function buildSignals(dossier: Dossier): Signal[] {
 
   if (dossier.operations?.staff_knowledge === "high")
     signals.push({ label: "Staff knowledgeable about celiac", variant: "positive" });
-  else if (dossier.operations?.staff_knowledge === "medium")
-    signals.push({ label: "Staff has basic GF awareness", variant: "warning" });
   else if (dossier.operations?.staff_knowledge === "low")
     signals.push({ label: "Staff GF knowledge limited", variant: "error" });
 
   if (dossier.operations?.cross_contamination_risk === "low")
     signals.push({ label: "Low cross-contamination risk", variant: "positive" });
-  else if (dossier.operations?.cross_contamination_risk === "medium")
-    signals.push({ label: "Cross-contamination risk exists", variant: "warning" });
   else if (dossier.operations?.cross_contamination_risk === "high")
     signals.push({ label: "High cross-contamination risk", variant: "error" });
 
-  if (dossier.operations?.dedicated_equipment?.fryer === false)
-    signals.push({ label: "Shared fryer — no dedicated GF fryer", variant: "warning" });
-  else if (dossier.operations?.dedicated_equipment?.fryer === true)
+  if (dossier.operations?.dedicated_equipment?.fryer === true)
     signals.push({ label: "Dedicated gluten-free fryer", variant: "positive" });
 
   return signals.slice(0, 4);
@@ -90,7 +86,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (query) {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, dossier")
+      .select("id, name, city, neighborhood, website_url, google_maps_url, dossier")
       .ilike("name", `%${query}%`)
       .order("name");
 
@@ -110,9 +106,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               className="font-[family-name:var(--font-display)] leading-none"
               style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
             >
-              Find restaurants
+              Search less.
               <br />
-              <span style={{ color: "#FF7444" }}>with confidence</span>
+              <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
           </div>
 
@@ -168,10 +164,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   >
                     {/* Index label */}
                     <div className="flex items-center gap-3 mb-5">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.35_0_0)]">
-                        No. {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="font-mono text-[10px] text-[oklch(0.28_0_0)]">——</span>
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.35_0_0)]">
                         {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                       </span>
@@ -203,6 +195,30 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         >
                           {restaurant.name}
                         </h2>
+                        {(restaurant.website_url || restaurant.google_maps_url) && (
+                          <div className="flex items-center gap-4">
+                            {restaurant.website_url && (
+                              <a
+                                href={restaurant.website_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.38_0_0)] hover:text-[#FF7444] transition-colors"
+                              >
+                                Website ↗
+                              </a>
+                            )}
+                            {restaurant.google_maps_url && (
+                              <a
+                                href={restaurant.google_maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.38_0_0)] hover:text-[#FF7444] transition-colors"
+                              >
+                                Google Maps ↗
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {summary && (
                           <p className="font-mono text-[12px] leading-relaxed text-[oklch(0.55_0_0)] max-w-lg">
                             {summary}
@@ -222,7 +238,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                     {/* Signal chips */}
                     {signals.length > 0 && (
-                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border-t" style={{ borderColor: "oklch(0.18 0 0)" }}>
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0">
                         {signals.map((signal, i) => (
                           <SignalChip key={i} signal={signal} />
                         ))}
