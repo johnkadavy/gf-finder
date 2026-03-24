@@ -58,7 +58,7 @@ export default function RootLayout({
                 </div>
               </div>
               <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">
-                GF FINDER
+                CleanPlate
               </span>
             </Link>
             <nav className="hidden md:flex items-center gap-10">
@@ -88,7 +88,7 @@ export default function RootLayout({
           <div className="flex flex-col md:flex-row justify-between items-center max-w-screen-xl mx-auto gap-6">
             <div className="flex items-center gap-6">
               <span className="font-[family-name:var(--font-display)] text-xl tracking-wider text-white">
-                GF FINDER
+                CleanPlate
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.4_0_0)]">
                 v.01 / Experimental

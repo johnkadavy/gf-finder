@@ -8,15 +8,15 @@ export default function AboutPage() {
       >
         <div className="max-w-3xl mx-auto">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
-            A Note from the Creator
+            About CleanPlate
           </p>
           <h1
             className="font-[family-name:var(--font-display)] leading-none"
             style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
           >
-            Why this
+            Less guesswork.
             <br />
-            <span style={{ color: "#FF7444" }}>app exists</span>
+            <span style={{ color: "#FF7444" }}>More confidence.</span>
           </h1>
         </div>
       </section>
@@ -24,42 +24,35 @@ export default function AboutPage() {
       {/* Body */}
       <article className="max-w-3xl mx-auto px-8 py-16 md:py-24">
         <div className="space-y-8 font-mono text-[13px] leading-[1.9] text-[oklch(0.6_0_0)]">
-          <p>Hello there,</p>
           <p>
-            I started Gluten-Free Finder because I know exactly what it feels
-            like to sit down at a restaurant and feel a wave of anxiety instead
-            of excitement. As someone who lives with{" "}
-            <strong className="text-[oklch(0.85_0_0)] font-medium">celiac disease</strong>, I&apos;ve
-            spent years navigating the hidden risks of cross-contamination and
-            the exhaustion of double-checking every single ingredient.
+            Eating gluten-free should feel simple and predictable.
           </p>
           <p>
-            This app wasn&apos;t born out of a business plan, but out of
-            necessity. My goal is simple: to provide a streamlined, reliable way
-            for our community to gather and assess safety information. We
-            aggregate data from menus, certifications, and facility standards to
-            help you see the bigger picture of a restaurant&apos;s safety
-            protocols before you ever step through their door.
+            CleanPlate exists to make that possible. We bring together the signals that matter —
+            from menus and certifications to kitchen practices and recent diner experiences —
+            so you can quickly understand how a restaurant approaches gluten-free dining.
           </p>
           <p>
-            However, I want to be very clear about how to use this tool.{" "}
-            <strong className="text-[oklch(0.85_0_0)] font-medium">
-              Gluten-Free Finder is designed for information gathering only.
-            </strong>{" "}
-            While we strive for the highest accuracy, kitchen environments can
-            change in an instant. This tool should never be the sole factor in
-            your final dining decision.
+            The goal is clarity. Less guesswork, more confidence.
           </p>
           <p>
-            Ultimately, you are responsible for your own safety. Always
-            communicate your needs clearly to restaurant staff and use your own
-            judgment. We are here to give you better tools for your toolkit, not
-            to replace your own vigilance.
+            This is not just about finding the best gluten-free restaurants. It is about raising
+            the standard across all of them. By making safety signals more visible, we aim to
+            encourage better practices and more transparency throughout the industry.
+          </p>
+          <p className="text-[oklch(0.5_0_0)]">
+            <strong className="text-[oklch(0.7_0_0)] font-medium">CleanPlate is a guide, not a guarantee.</strong> Kitchen environments can change, and no
+            dataset can capture everything in real time. Always confirm details with the
+            restaurant and use your own judgment when making decisions.
+          </p>
+          <p className="text-[oklch(0.5_0_0)]">
+            We are here to give you better visibility so you can spend less time researching
+            and more time enjoying your meal.
           </p>
           <p className="pt-6">
-            Stay safe and eat well,
+            Eat well,
             <br />
-            <span style={{ color: "#FF7444" }}>— The Radiant Guardian Team</span>
+            <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">CleanPlate</span>
           </p>
         </div>
 
