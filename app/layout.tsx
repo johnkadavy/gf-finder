@@ -69,6 +69,12 @@ export default function RootLayout({
                 Search
               </Link>
               <Link
+                href="/rankings"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
+              >
+                Rankings
+              </Link>
+              <Link
                 href="/about"
                 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
               >
