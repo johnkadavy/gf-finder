@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference / prototype code
+v0 example code for GF finder/
+components/ui/
