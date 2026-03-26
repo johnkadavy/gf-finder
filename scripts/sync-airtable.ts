@@ -93,9 +93,11 @@ async function sync() {
       continue;
     }
 
+    const cuisine = (dossier as any)?.restaurant?.cuisine ?? null;
+
     const { error } = await supabase
       .from("restaurants")
-      .update({ dossier, enriched_at: new Date().toISOString() })
+      .update({ dossier, enriched_at: new Date().toISOString(), ...(cuisine ? { cuisine } : {}) })
       .eq("google_place_id", googlePlaceId);
 
     if (error) {

@@ -29,7 +29,7 @@ type Restaurant = {
   google_maps_url: string | null;
   google_rating: number | null;
   price_level: number | null;
-  cuisine_types: string[] | null;
+  cuisine: string | null;
   opening_hours: OpeningHours | null;
   dossier: Dossier | null;
   verified_data: VerifiedData | null;
@@ -37,30 +37,11 @@ type Restaurant = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function formatCuisine(raw: string): string {
-  return raw
-    .replace(/_restaurant$/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 function priceSymbol(level: number | null): string {
   if (level === null) return "";
   return ["Free", "$", "$$", "$$$", "$$$$"][level] ?? "";
 }
 
-const CUISINE_EXCLUDE = new Set([
-  "food", "meal_takeaway", "meal_delivery", "bar", "night_club",
-  "lodging", "tourist_attraction", "shopping_mall",
-]);
-
-function cleanCuisineTypes(types: string[] | null): string[] {
-  if (!types) return [];
-  return types
-    .filter((t) => !CUISINE_EXCLUDE.has(t))
-    .map(formatCuisine)
-    .slice(0, 4);
-}
 
 // ── Signal row ─────────────────────────────────────────────────────────────
 
@@ -124,7 +105,7 @@ export default async function RestaurantPage({
   const { data, error } = await supabase
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine_types, opening_hours, dossier, verified_data"
+      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data"
     )
     .eq("id", id)
     .single();
@@ -136,7 +117,7 @@ export default async function RestaurantPage({
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);
   const d = r.dossier;
-  const cuisines = cleanCuisineTypes(r.cuisine_types);
+  const cuisine = r.cuisine;
   const sickCount = d?.reviews?.sick_reports_recent ?? 0;
   const price = priceSymbol(r.price_level);
 
@@ -248,18 +229,15 @@ export default async function RestaurantPage({
                 {r.name}
               </h1>
 
-              {/* Cuisine tags */}
-              {cuisines.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-5">
-                  {cuisines.map((c) => (
-                    <span
-                      key={c}
-                      className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border"
-                      style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.5 0 0)" }}
-                    >
-                      {c}
-                    </span>
-                  ))}
+              {/* Cuisine tag */}
+              {cuisine && (
+                <div className="mb-5">
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border"
+                    style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.5 0 0)" }}
+                  >
+                    {cuisine}
+                  </span>
                 </div>
               )}
 
