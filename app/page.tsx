@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SearchForm } from "./components/SearchForm";
@@ -181,8 +182,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       </p>
 
                       {/* Restaurant name */}
-                      <h2
-                        className="font-[family-name:var(--font-display)] leading-none mb-5"
+                      <Link
+                        href={`/restaurant/${restaurant.id}`}
+                        className="font-[family-name:var(--font-display)] leading-none mb-5 block hover:text-[#FF7444] transition-colors duration-150"
                         style={{
                           fontSize: "clamp(1.9rem, 3.5vw, 2.75rem)",
                           letterSpacing: "0.02em",
@@ -190,7 +192,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         }}
                       >
                         {restaurant.name}
-                      </h2>
+                      </Link>
 
                       {/* Links */}
                       {(restaurant.website_url || restaurant.google_maps_url) && (

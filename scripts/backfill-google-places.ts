@@ -24,7 +24,7 @@ const supabase = createClient(
 
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY!;
 const DETAILS_FIELD_MASK =
-  "id,displayName,formattedAddress,location,websiteUri,googleMapsUri,nationalPhoneNumber";
+  "id,displayName,formattedAddress,location,websiteUri,googleMapsUri,nationalPhoneNumber,rating,priceLevel,types,regularOpeningHours";
 
 const force = process.argv.includes("--force");
 
@@ -36,6 +36,14 @@ interface PlaceDetails {
   websiteUri?: string;
   googleMapsUri?: string;
   nationalPhoneNumber?: string;
+  rating?: number;
+  priceLevel?: string;
+  types?: string[];
+  regularOpeningHours?: {
+    weekdayDescriptions?: string[];
+    periods?: unknown[];
+    openNow?: boolean;
+  };
 }
 
 // Search for a place by name and city, return the best match place ID
@@ -161,6 +169,25 @@ async function main() {
     if (details.websiteUri) updates.website_url = details.websiteUri;
     if (details.googleMapsUri) updates.google_maps_url = details.googleMapsUri;
     if (details.nationalPhoneNumber) updates.phone = details.nationalPhoneNumber;
+    if (details.rating != null) updates.google_rating = details.rating;
+    if (details.priceLevel) {
+      const priceLevelMap: Record<string, number> = {
+        PRICE_LEVEL_FREE: 0,
+        PRICE_LEVEL_INEXPENSIVE: 1,
+        PRICE_LEVEL_MODERATE: 2,
+        PRICE_LEVEL_EXPENSIVE: 3,
+        PRICE_LEVEL_VERY_EXPENSIVE: 4,
+      };
+      updates.price_level = priceLevelMap[details.priceLevel] ?? null;
+    }
+    if (details.types?.length) {
+      // Filter out generic types, keep cuisine/place-specific ones
+      const exclude = new Set(["establishment", "point_of_interest", "food", "restaurant", "store"]);
+      updates.cuisine_types = details.types.filter((t) => !exclude.has(t));
+    }
+    if (details.regularOpeningHours) {
+      updates.opening_hours = details.regularOpeningHours;
+    }
 
     const { error: updateError } = await supabase
       .from("restaurants")
@@ -172,6 +199,7 @@ async function main() {
       failed++;
     } else {
       console.log(`  ✓ ${details.formattedAddress ?? "no address"}`);
+      if (details.rating) console.log(`    ★ ${details.rating}  ${details.priceLevel ?? ""}`);
       if (details.websiteUri) console.log(`    ${details.websiteUri}`);
       succeeded++;
     }

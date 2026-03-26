@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
+import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 
@@ -17,10 +17,9 @@ type Restaurant = {
   neighborhood: string | null;
   website_url: string | null;
   google_maps_url: string | null;
+  score: number;
   dossier: Dossier | null;
 };
-
-type ScoredRestaurant = Restaurant & { score: number };
 
 type RankingsPageProps = {
   searchParams: Promise<{
@@ -45,45 +44,49 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     page:         Math.max(1, parseInt(params.page ?? "1", 10) || 1),
   };
 
-  const { data, error } = await supabase
+  const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
+  const pageStart = (filters.page - 1) * PAGE_SIZE;
+
+  // Build query for cities/neighborhoods (fetch all scored restaurants for filter options)
+  const { data: allForFilters } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, website_url, google_maps_url, dossier")
-    .not("dossier", "is", null);
+    .select("city, neighborhood")
+    .not("score", "is", null);
 
-  const restaurants = (data ?? []) as Restaurant[];
-
-  const scored: ScoredRestaurant[] = restaurants
-    .map((r) => ({ ...r, score: calculateScore(r.dossier!) }))
-    .filter((r): r is ScoredRestaurant => r.score !== null)
-    .sort((a, b) => b.score - a.score);
-
-  const cities = Array.from(new Set(scored.map((r) => r.city))).sort();
-
+  const allRows = (allForFilters ?? []) as { city: string; neighborhood: string | null }[];
+  const cities = Array.from(new Set(allRows.map((r) => r.city))).sort();
   const neighborhoods =
     filters.city === "all"
       ? []
       : Array.from(
           new Set(
-            scored
+            allRows
               .filter((r) => r.city === filters.city && r.neighborhood)
               .map((r) => r.neighborhood as string)
           )
         ).sort();
 
-  const filtered = scored
-    .filter((r) => filters.city === "all" || r.city === filters.city)
-    .filter((r) => filters.neighborhood === "all" || r.neighborhood === filters.neighborhood)
-    .filter((r) => !filters.fryer   || r.dossier?.operations?.dedicated_equipment?.fryer === true)
-    .filter((r) => !filters.labeled || r.dossier?.menu?.gf_labeling === "clear")
-    .filter((r) => {
-      const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
-      return minScore === 0 || r.score >= minScore;
-    });
+  // Build paginated query with all filters applied DB-side
+  let query = supabase
+    .from("restaurants")
+    .select("id, name, city, neighborhood, website_url, google_maps_url, score, dossier", { count: "exact" })
+    .not("score", "is", null)
+    .order("score", { ascending: false });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (filters.city !== "all")         query = query.eq("city", filters.city);
+  if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
+  if (minScore > 0)                   query = query.gte("score", minScore);
+  if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
+  if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");
+
+  query = query.range(pageStart, pageStart + PAGE_SIZE - 1);
+
+  const { data, error, count } = await query;
+
+  const restaurants = (data ?? []) as Restaurant[];
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(filters.page, totalPages);
-  const pageStart = (safePage - 1) * PAGE_SIZE;
-  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <main className="pt-16">
@@ -125,7 +128,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
             Error loading rankings
           </p>
-        ) : filtered.length === 0 ? (
+        ) : totalCount === 0 ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
             No restaurants match these filters
           </p>
@@ -137,7 +140,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               style={{ borderColor: "oklch(0.22 0 0)" }}
             >
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
-                {filtered.length} Restaurant{filtered.length !== 1 ? "s" : ""}
+                {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
                 {filters.city !== "all"
                   ? ` — ${filters.neighborhood !== "all" ? filters.neighborhood : filters.city}`
                   : ""}
@@ -147,7 +150,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               </span>
             </div>
 
-            {paginated.map((restaurant, index) => {
+            {restaurants.map((restaurant, index) => {
               const color = getGaugeColor(restaurant.score);
               const { label } = getScoreLabel(restaurant.score);
               const rank = pageStart + index + 1;
@@ -155,7 +158,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               return (
                 <div
                   key={restaurant.id}
-                  className="grid grid-cols-[3.5rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
+                  className="grid grid-cols-[3.5rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)] cursor-pointer"
                   style={{
                     borderColor: "oklch(0.18 0 0)",
                     borderLeft: `2px solid ${color}`,
@@ -175,8 +178,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
                   {/* Name + location */}
                   <div className="min-w-0">
-                    <p
-                      className="font-[family-name:var(--font-display)] leading-none truncate"
+                    <Link
+                      href={`/restaurant/${restaurant.id}`}
+                      className="font-[family-name:var(--font-display)] leading-none truncate block hover:text-[#FF7444] transition-colors duration-150"
                       style={{
                         fontSize: "clamp(1.4rem, 2.5vw, 2.1rem)",
                         letterSpacing: "0.02em",
@@ -184,7 +188,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                       }}
                     >
                       {restaurant.name}
-                    </p>
+                    </Link>
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                     </p>
@@ -225,7 +229,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                       className="font-[family-name:var(--font-display)] leading-none tabular-nums"
                       style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)", color }}
                     >
-                      {restaurant.score}
+                      {Math.round(restaurant.score)}
                     </span>
                     <span
                       className="font-mono text-[8px] uppercase tracking-[0.15em] mt-1 text-right"
