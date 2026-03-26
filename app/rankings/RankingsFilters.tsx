@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EXPERIENCE_OPTIONS, rankingsUrl, type Filters } from "./utils";
 
-export function RankingsFilters({
+// ── Location filters (rendered in hero) ────────────────────────────────────
+
+export function RankingsLocationFilters({
   cities,
   neighborhoods,
   filters,
@@ -13,23 +16,9 @@ export function RankingsFilters({
   neighborhoods: string[];
   filters: Filters;
 }) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const activePills = [
-    filters.fryer   && { label: "Safe fryer",               clear: rankingsUrl(filters, { fryer: false,   page: 1 }) },
-    filters.labeled && { label: "Menu clearly marked",       clear: rankingsUrl(filters, { labeled: false, page: 1 }) },
-    filters.experience !== "all" && {
-      label: filters.experience === "great" ? "Great or better" : "Good or better",
-      clear: rankingsUrl(filters, { experience: "all", page: 1 }),
-    },
-  ].filter(Boolean) as { label: string; clear: string }[];
-
-  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, experience: "all", page: 1 });
-  const activeCount = activePills.length;
-
   return (
     <div>
-      {/* ── Level 1: City tabs ── */}
+      {/* City tabs */}
       <div className="flex flex-wrap gap-0">
         <LocationTab
           label="All Cities"
@@ -46,7 +35,7 @@ export function RankingsFilters({
         ))}
       </div>
 
-      {/* ── Level 1: Neighborhood tabs ── */}
+      {/* Neighborhood tabs */}
       {filters.city !== "all" && neighborhoods.length > 0 && (
         <div className="flex flex-wrap gap-0 mt-2">
           <LocationTab
@@ -66,56 +55,123 @@ export function RankingsFilters({
           ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* ── Level 2: Filter bar (desktop) ── */}
-      <div
-        className="hidden md:flex items-stretch mt-5 border"
-        style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
-      >
-        {/* Safety group */}
-        <div className="flex flex-col justify-between px-5 py-3 border-r gap-3" style={{ borderColor: "oklch(0.18 0 0)" }}>
-          <span className="font-mono text-[7px] uppercase tracking-[0.3em] text-[oklch(0.35_0_0)]">
-            Safety
-          </span>
-          <div className="flex flex-wrap gap-2">
-            <SafetyToggle
-              label="Safe fryer (no shared oil)"
-              active={filters.fryer}
-              href={rankingsUrl(filters, { fryer: !filters.fryer, page: 1 })}
-            />
-            <SafetyToggle
-              label="Menu clearly marks gluten-free"
-              active={filters.labeled}
-              href={rankingsUrl(filters, { labeled: !filters.labeled, page: 1 })}
-            />
-          </div>
+// ── Secondary filters (rendered above results) ──────────────────────────────
+
+export function RankingsSecondaryFilters({ filters }: { filters: Filters }) {
+  const router = useRouter();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [expOpen, setExpOpen] = useState(false);
+
+  const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
+
+  const activePills = [
+    filters.fryer   && { label: "GF Fryer",      clear: rankingsUrl(filters, { fryer: false,   page: 1 }) },
+    filters.labeled && { label: "GF Menu Labels", clear: rankingsUrl(filters, { labeled: false, page: 1 }) },
+    filters.experience !== "all" && {
+      label: currentExp.label,
+      clear: rankingsUrl(filters, { experience: "all", page: 1 }),
+    },
+  ].filter(Boolean) as { label: string; clear: string }[];
+
+  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, experience: "all", page: 1 });
+  const activeCount = activePills.length;
+
+  return (
+    <div>
+      {/* Desktop filter bar */}
+      <div className="hidden md:flex items-center gap-1">
+        <FilterToggle
+          label="GF Fryer"
+          active={filters.fryer}
+          href={rankingsUrl(filters, { fryer: !filters.fryer, page: 1 })}
+        />
+
+        <FilterToggle
+          label="GF Menu Labels"
+          active={filters.labeled}
+          href={rankingsUrl(filters, { labeled: !filters.labeled, page: 1 })}
+        />
+
+        {/* Custom Experience dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setExpOpen((o) => !o)}
+            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            style={{
+              color: filters.experience !== "all" ? "#FF7444" : "oklch(0.6 0 0)",
+              backgroundColor: filters.experience !== "all" ? "#FF744415" : "transparent",
+            }}
+          >
+            <span className="text-[9px] text-[oklch(0.4_0_0)] tracking-[0.2em]">Experience:</span>
+            {currentExp.label}
+            <span className="text-[8px] opacity-40">{expOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {expOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setExpOpen(false)} />
+              <div
+                className="absolute left-0 top-full z-20 min-w-[180px] border"
+                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+              >
+                {EXPERIENCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      router.push(rankingsUrl(filters, { experience: opt.value, page: 1 }));
+                      setExpOpen(false);
+                    }}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                    style={{
+                      borderColor: "oklch(0.18 0 0)",
+                      color: filters.experience === opt.value ? "#FF7444" : "oklch(0.55 0 0)",
+                      backgroundColor: filters.experience === opt.value ? "#FF744410" : "transparent",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Experience group */}
-        <div className="flex flex-col justify-between px-5 py-3 gap-3">
-          <span className="font-mono text-[7px] uppercase tracking-[0.3em] text-[oklch(0.35_0_0)]">
-            Experience
-          </span>
-          <div className="flex gap-0">
-            {EXPERIENCE_OPTIONS.map((opt) => (
-              <ExperienceTab
-                key={opt.value}
-                label={opt.label}
-                active={filters.experience === opt.value}
-                href={rankingsUrl(filters, { experience: opt.value, page: 1 })}
-              />
+        {/* Active pills inline */}
+        {activePills.length > 0 && (
+          <div className="flex items-center gap-2 ml-auto px-4">
+            {activePills.map((pill) => (
+              <Link
+                key={pill.label}
+                href={pill.clear}
+                className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
+                style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
+              >
+                {pill.label}
+                <span className="text-[8px] opacity-60">✕</span>
+              </Link>
             ))}
+            <Link
+              href={clearAll}
+              className="font-mono text-[9px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white ml-1"
+              style={{ color: "oklch(0.38 0 0)" }}
+            >
+              Clear all
+            </Link>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Level 2: Filter button (mobile) ── */}
+      {/* Mobile filter button */}
       <button
         onClick={() => setSheetOpen(true)}
-        className="md:hidden flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2.5 border mt-5 transition-colors duration-150"
+        className="md:hidden flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] px-0 py-2.5 border-b transition-colors duration-150 w-full"
         style={{
-          borderColor: activeCount > 0 ? "#FF744460" : "oklch(0.22 0 0)",
-          backgroundColor: activeCount > 0 ? "#FF744410" : "oklch(0.1 0 0)",
+          borderColor: "oklch(0.2 0 0)",
+          backgroundColor: "transparent",
           color: activeCount > 0 ? "#FF7444" : "oklch(0.55 0 0)",
         }}
       >
@@ -128,37 +184,10 @@ export function RankingsFilters({
             {activeCount}
           </span>
         )}
-        <span className="text-[8px]">▼</span>
+        <span className="text-[8px] ml-auto">▼</span>
       </button>
 
-      {/* ── Active filter pills ── */}
-      {activePills.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          <span className="font-mono text-[8px] uppercase tracking-[0.25em] text-[oklch(0.35_0_0)]">
-            Active:
-          </span>
-          {activePills.map((pill) => (
-            <Link
-              key={pill.label}
-              href={pill.clear}
-              className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
-              style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
-            >
-              {pill.label}
-              <span className="text-[8px] opacity-60">✕</span>
-            </Link>
-          ))}
-          <Link
-            href={clearAll}
-            className="font-mono text-[9px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white"
-            style={{ color: "oklch(0.38 0 0)" }}
-          >
-            Clear all
-          </Link>
-        </div>
-      )}
-
-      {/* ── Mobile bottom sheet ── */}
+      {/* Mobile bottom sheet */}
       {sheetOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
@@ -172,18 +201,15 @@ export function RankingsFilters({
           >
             <div className="w-8 h-px mx-auto mb-7" style={{ backgroundColor: "oklch(0.3 0 0)" }} />
 
-            <p className="font-mono text-[8px] uppercase tracking-[0.3em] text-[oklch(0.35_0_0)] mb-3">
-              Safety
-            </p>
             <div className="flex flex-col gap-2 mb-7">
               <SheetToggle
-                label="Safe fryer (no shared oil)"
+                label="GF Fryer"
                 active={filters.fryer}
                 href={rankingsUrl(filters, { fryer: !filters.fryer, page: 1 })}
                 onNavigate={() => setSheetOpen(false)}
               />
               <SheetToggle
-                label="Menu clearly marks gluten-free"
+                label="GF Menu Labels"
                 active={filters.labeled}
                 href={rankingsUrl(filters, { labeled: !filters.labeled, page: 1 })}
                 onNavigate={() => setSheetOpen(false)}
@@ -193,15 +219,21 @@ export function RankingsFilters({
             <p className="font-mono text-[8px] uppercase tracking-[0.3em] text-[oklch(0.35_0_0)] mb-3">
               Experience
             </p>
-            <div className="flex gap-0 mb-8">
+            <div className="flex flex-col gap-2 mb-8">
               {EXPERIENCE_OPTIONS.map((opt) => (
-                <SheetExperienceTab
+                <Link
                   key={opt.value}
-                  label={opt.label}
-                  active={filters.experience === opt.value}
                   href={rankingsUrl(filters, { experience: opt.value, page: 1 })}
-                  onNavigate={() => setSheetOpen(false)}
-                />
+                  onClick={() => setSheetOpen(false)}
+                  className="font-mono text-[10px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  style={{
+                    borderColor: filters.experience === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
+                    backgroundColor: filters.experience === opt.value ? "#FF744420" : "transparent",
+                    color: filters.experience === opt.value ? "#FF7444" : "oklch(0.55 0 0)",
+                  }}
+                >
+                  {opt.label}
+                </Link>
               ))}
             </div>
 
@@ -218,6 +250,8 @@ export function RankingsFilters({
     </div>
   );
 }
+
+// ── Shared sub-components ───────────────────────────────────────────────────
 
 function LocationTab({ label, href, active, secondary = false }: {
   label: string; href: string; active: boolean; secondary?: boolean;
@@ -240,44 +274,25 @@ function LocationTab({ label, href, active, secondary = false }: {
   );
 }
 
-function SafetyToggle({ label, active, href }: { label: string; active: boolean; href: string }) {
+function FilterToggle({ label, active, href }: { label: string; active: boolean; href: string }) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.15em] px-3 py-2 border transition-colors duration-150"
+      className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
       style={{
-        borderColor: active ? "#FF744460" : "oklch(0.26 0 0)",
-        backgroundColor: active ? "#FF744420" : "transparent",
-        color: active ? "#FF7444" : "oklch(0.5 0 0)",
+        backgroundColor: active ? "#FF744415" : "transparent",
+        color: active ? "#FF7444" : "oklch(0.6 0 0)",
       }}
     >
       <span
-        className="w-3 h-3 border flex items-center justify-center shrink-0 transition-colors duration-150"
+        className="w-3.5 h-3.5 border flex items-center justify-center shrink-0 transition-colors duration-150"
         style={{
-          borderColor: active ? "#FF7444" : "oklch(0.32 0 0)",
+          borderColor: active ? "#FF7444" : "oklch(0.35 0 0)",
           backgroundColor: active ? "#FF7444" : "transparent",
         }}
       >
-        {active && <span className="text-[7px] leading-none" style={{ color: "oklch(0.08 0 0)", fontWeight: 700 }}>✓</span>}
+        {active && <span className="text-[8px] leading-none" style={{ color: "oklch(0.08 0 0)", fontWeight: 700 }}>✓</span>}
       </span>
-      {label}
-    </Link>
-  );
-}
-
-function ExperienceTab({ label, active, href }: { label: string; active: boolean; href: string }) {
-  return (
-    <Link
-      href={href}
-      className="font-mono text-[9px] uppercase tracking-[0.15em] px-4 py-2 border-t border-b border-r transition-colors duration-150"
-      style={{
-        borderColor: "oklch(0.22 0 0)",
-        borderLeft: "1px solid oklch(0.22 0 0)",
-        marginLeft: "-1px",
-        backgroundColor: active ? "oklch(0.18 0 0)" : "transparent",
-        color: active ? "oklch(0.92 0 0)" : "oklch(0.4 0 0)",
-      }}
-    >
       {label}
     </Link>
   );
@@ -306,27 +321,6 @@ function SheetToggle({ label, active, href, onNavigate }: {
       >
         {active && <span className="text-[8px] leading-none font-bold" style={{ color: "oklch(0.08 0 0)" }}>✓</span>}
       </span>
-      {label}
-    </Link>
-  );
-}
-
-function SheetExperienceTab({ label, active, href, onNavigate }: {
-  label: string; active: boolean; href: string; onNavigate: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className="flex-1 text-center font-mono text-[9px] uppercase tracking-[0.15em] py-2.5 border-t border-b border-r transition-colors duration-150"
-      style={{
-        borderColor: "oklch(0.26 0 0)",
-        borderLeft: "1px solid oklch(0.26 0 0)",
-        marginLeft: "-1px",
-        backgroundColor: active ? "oklch(0.18 0 0)" : "transparent",
-        color: active ? "oklch(0.92 0 0)" : "oklch(0.45 0 0)",
-      }}
-    >
       {label}
     </Link>
   );

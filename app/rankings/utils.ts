@@ -1,4 +1,4 @@
-export type Experience = "all" | "good" | "great";
+export type Experience = "all" | "good" | "great" | "excellent";
 
 export type Filters = {
   city: string;
@@ -10,9 +10,10 @@ export type Filters = {
 };
 
 export const EXPERIENCE_OPTIONS: { label: string; value: Experience; minScore: number }[] = [
-  { label: "All restaurants",  value: "all",   minScore: 0  },
-  { label: "Good or better",   value: "good",  minScore: 55 },
-  { label: "Great or better",  value: "great", minScore: 75 },
+  { label: "All",       value: "all",       minScore: 0  },
+  { label: "Good+",     value: "good",      minScore: 55 },
+  { label: "Great+",    value: "great",     minScore: 75 },
+  { label: "Excellent", value: "excellent", minScore: 85 },
 ];
 
 export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {

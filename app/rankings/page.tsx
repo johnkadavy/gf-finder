@@ -2,7 +2,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "./utils";
-import { RankingsFilters } from "./RankingsFilters";
+import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 
 const PAGE_SIZE = 25;
 
@@ -41,7 +41,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     neighborhood: params.neighborhood ?? "all",
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
-    experience:   (["good", "great"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
+    experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
     page:         Math.max(1, parseInt(params.page ?? "1", 10) || 1),
   };
 
@@ -96,7 +96,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
         />
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
             CleanPlate Rankings
           </p>
@@ -109,7 +109,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             <span style={{ color: "#FF7444" }}>Restaurants</span>
           </h1>
 
-          <RankingsFilters
+          <RankingsLocationFilters
             cities={cities}
             neighborhoods={neighborhoods}
             filters={filters}
@@ -118,7 +118,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       </section>
 
       {/* Rankings list */}
-      <section className="max-w-4xl mx-auto px-8 pb-32 mt-8">
+      <section className="px-8 pb-32 mt-8">
+      <div className="max-w-6xl mx-auto">
+        <RankingsSecondaryFilters filters={filters} />
         {error ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
             Error loading rankings
@@ -153,7 +155,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               return (
                 <div
                   key={restaurant.id}
-                  className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-center border-b gap-4 md:gap-8 py-5 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
+                  className="grid grid-cols-[3.5rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
                   style={{
                     borderColor: "oklch(0.18 0 0)",
                     borderLeft: `2px solid ${color}`,
@@ -164,7 +166,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                   <span
                     className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right"
                     style={{
-                      fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
+                      fontSize: "clamp(1.25rem, 2vw, 1.75rem)",
                       color: rank <= 3 ? color : "oklch(0.3 0 0)",
                     }}
                   >
@@ -176,18 +178,18 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     <p
                       className="font-[family-name:var(--font-display)] leading-none truncate"
                       style={{
-                        fontSize: "clamp(1.2rem, 2.5vw, 1.75rem)",
+                        fontSize: "clamp(1.4rem, 2.5vw, 2.1rem)",
                         letterSpacing: "0.02em",
                         color: "oklch(0.92 0 0)",
                       }}
                     >
                       {restaurant.name}
                     </p>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mt-1.5 truncate">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                     </p>
                     {restaurant.dossier?.summary?.short_summary && (
-                      <p className="font-mono text-[11px] leading-[1.7] text-[oklch(0.58_0_0)] mt-2 max-w-lg">
+                      <p className="font-mono text-[12px] leading-[1.7] text-[oklch(0.58_0_0)] mt-2 max-w-xl">
                         {restaurant.dossier.summary.short_summary}
                       </p>
                     )}
@@ -198,7 +200,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                             href={restaurant.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
                           >
                             Website ↗
                           </a>
@@ -208,7 +210,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                             href={restaurant.google_maps_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
                           >
                             Google Maps ↗
                           </a>
@@ -221,7 +223,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                   <div className="flex flex-col items-end shrink-0">
                     <span
                       className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                      style={{ fontSize: "clamp(1.6rem, 3vw, 2.25rem)", color }}
+                      style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)", color }}
                     >
                       {restaurant.score}
                     </span>
@@ -291,6 +293,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             )}
           </div>
         )}
+      </div>
       </section>
     </main>
   );
