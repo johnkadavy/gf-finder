@@ -1,0 +1,29 @@
+export type Experience = "all" | "good" | "great";
+
+export type Filters = {
+  city: string;
+  neighborhood: string;
+  fryer: boolean;
+  labeled: boolean;
+  experience: Experience;
+  page: number;
+};
+
+export const EXPERIENCE_OPTIONS: { label: string; value: Experience; minScore: number }[] = [
+  { label: "All restaurants",  value: "all",   minScore: 0  },
+  { label: "Good or better",   value: "good",  minScore: 55 },
+  { label: "Great or better",  value: "great", minScore: 75 },
+];
+
+export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
+  const merged = { ...f, ...overrides };
+  const params = new URLSearchParams();
+  if (merged.city !== "all")         params.set("city", merged.city);
+  if (merged.neighborhood !== "all") params.set("neighborhood", merged.neighborhood);
+  if (merged.fryer)                  params.set("fryer", "1");
+  if (merged.labeled)                params.set("labeled", "1");
+  if (merged.experience !== "all")   params.set("experience", merged.experience);
+  if (merged.page > 1)               params.set("page", String(merged.page));
+  const qs = params.toString();
+  return `/rankings${qs ? `?${qs}` : ""}`;
+}

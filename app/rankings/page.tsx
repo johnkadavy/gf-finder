@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
+import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "./utils";
+import { RankingsFilters } from "./RankingsFilters";
 
 const PAGE_SIZE = 25;
 
@@ -21,24 +23,27 @@ type Restaurant = {
 type ScoredRestaurant = Restaurant & { score: number };
 
 type RankingsPageProps = {
-  searchParams: Promise<{ city?: string; neighborhood?: string; page?: string }>;
+  searchParams: Promise<{
+    city?: string;
+    neighborhood?: string;
+    fryer?: string;
+    labeled?: string;
+    experience?: string;
+    page?: string;
+  }>;
 };
-
-/** Build a rankings URL preserving active filters, optionally overriding page. */
-function rankingsUrl(city: string, neighborhood: string, page: number) {
-  const params = new URLSearchParams();
-  if (city !== "all") params.set("city", city);
-  if (neighborhood !== "all") params.set("neighborhood", neighborhood);
-  if (page > 1) params.set("page", String(page));
-  const qs = params.toString();
-  return `/rankings${qs ? `?${qs}` : ""}`;
-}
 
 export default async function RankingsPage({ searchParams }: RankingsPageProps) {
   const params = await searchParams;
-  const selectedCity = params.city ?? "all";
-  const selectedNeighborhood = params.neighborhood ?? "all";
-  const currentPage = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+
+  const filters: Filters = {
+    city:         params.city         ?? "all",
+    neighborhood: params.neighborhood ?? "all",
+    fryer:        params.fryer   === "1",
+    labeled:      params.labeled === "1",
+    experience:   (["good", "great"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
+    page:         Math.max(1, parseInt(params.page ?? "1", 10) || 1),
+  };
 
   const { data, error } = await supabase
     .from("restaurants")
@@ -47,33 +52,36 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   const restaurants = (data ?? []) as Restaurant[];
 
-  // Score, filter nulls, sort descending
   const scored: ScoredRestaurant[] = restaurants
     .map((r) => ({ ...r, score: calculateScore(r.dossier!) }))
     .filter((r): r is ScoredRestaurant => r.score !== null)
     .sort((a, b) => b.score - a.score);
 
-  // Derive cities from results
   const cities = Array.from(new Set(scored.map((r) => r.city))).sort();
 
-  // Derive neighborhoods for the selected city
   const neighborhoods =
-    selectedCity === "all"
+    filters.city === "all"
       ? []
       : Array.from(
           new Set(
             scored
-              .filter((r) => r.city === selectedCity && r.neighborhood)
+              .filter((r) => r.city === filters.city && r.neighborhood)
               .map((r) => r.neighborhood as string)
           )
         ).sort();
 
   const filtered = scored
-    .filter((r) => selectedCity === "all" || r.city === selectedCity)
-    .filter((r) => selectedNeighborhood === "all" || r.neighborhood === selectedNeighborhood);
+    .filter((r) => filters.city === "all" || r.city === filters.city)
+    .filter((r) => filters.neighborhood === "all" || r.neighborhood === filters.neighborhood)
+    .filter((r) => !filters.fryer   || r.dossier?.operations?.dedicated_equipment?.fryer === true)
+    .filter((r) => !filters.labeled || r.dossier?.menu?.gf_labeling === "clear")
+    .filter((r) => {
+      const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
+      return minScore === 0 || r.score >= minScore;
+    });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages);
+  const safePage = Math.min(filters.page, totalPages);
   const pageStart = (safePage - 1) * PAGE_SIZE;
   const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
@@ -84,8 +92,10 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
         className="grid-bg border-b px-8 py-16 md:py-24 relative"
         style={{ borderColor: "oklch(0.22 0 0)" }}
       >
-        <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+        />
         <div className="max-w-4xl mx-auto">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
             CleanPlate Rankings
@@ -99,39 +109,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             <span style={{ color: "#FF7444" }}>Restaurants</span>
           </h1>
 
-          {/* City filter */}
-          <div className="flex flex-wrap gap-0">
-            <FilterTab label="All Cities" href="/rankings" active={selectedCity === "all"} />
-            {cities.map((city) => (
-              <FilterTab
-                key={city}
-                label={city}
-                href={`/rankings?city=${encodeURIComponent(city)}`}
-                active={selectedCity === city}
-              />
-            ))}
-          </div>
-
-          {/* Neighborhood filter — only when a city is selected */}
-          {selectedCity !== "all" && neighborhoods.length > 0 && (
-            <div className="flex flex-wrap gap-0 mt-3">
-              <FilterTab
-                label="All Neighborhoods"
-                href={`/rankings?city=${encodeURIComponent(selectedCity)}`}
-                active={selectedNeighborhood === "all"}
-                secondary
-              />
-              {neighborhoods.map((n) => (
-                <FilterTab
-                  key={n}
-                  label={n}
-                  href={`/rankings?city=${encodeURIComponent(selectedCity)}&neighborhood=${encodeURIComponent(n)}`}
-                  active={selectedNeighborhood === n}
-                  secondary
-                />
-              ))}
-            </div>
-          )}
+          <RankingsFilters
+            cities={cities}
+            neighborhoods={neighborhoods}
+            filters={filters}
+          />
         </div>
       </section>
 
@@ -143,7 +125,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           </p>
         ) : filtered.length === 0 ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
-            No scored restaurants found
+            No restaurants match these filters
           </p>
         ) : (
           <div className="space-y-0">
@@ -154,7 +136,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             >
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
                 {filtered.length} Restaurant{filtered.length !== 1 ? "s" : ""}
-                {selectedCity !== "all" ? ` — ${selectedNeighborhood !== "all" ? selectedNeighborhood : selectedCity}` : ""}
+                {filters.city !== "all"
+                  ? ` — ${filters.neighborhood !== "all" ? filters.neighborhood : filters.city}`
+                  : ""}
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.35_0_0)]">
                 Page {safePage} of {totalPages}
@@ -237,10 +221,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                   <div className="flex flex-col items-end shrink-0">
                     <span
                       className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                      style={{
-                        fontSize: "clamp(1.6rem, 3vw, 2.25rem)",
-                        color,
-                      }}
+                      style={{ fontSize: "clamp(1.6rem, 3vw, 2.25rem)", color }}
                     >
                       {restaurant.score}
                     </span>
@@ -257,22 +238,17 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div
-                className="flex items-center justify-between pt-8 pb-2"
-              >
+              <div className="flex items-center justify-between pt-8 pb-2">
                 {safePage > 1 ? (
                   <Link
-                    href={rankingsUrl(selectedCity, selectedNeighborhood, safePage - 1)}
+                    href={rankingsUrl(filters, { page: safePage - 1 })}
                     className="font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.55_0_0)] hover:text-white hover:border-[oklch(0.4_0_0)]"
                     style={{ borderColor: "oklch(0.22 0 0)" }}
                   >
                     ← Prev
                   </Link>
-                ) : (
-                  <span />
-                )}
+                ) : <span />}
 
-                {/* Page numbers */}
                 <div className="flex items-center gap-0">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
@@ -283,16 +259,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     }, [])
                     .map((p, i) =>
                       p === "…" ? (
-                        <span
-                          key={`ellipsis-${i}`}
-                          className="font-mono text-[10px] px-2 text-[oklch(0.3_0_0)]"
-                        >
-                          …
-                        </span>
+                        <span key={`ellipsis-${i}`} className="font-mono text-[10px] px-2 text-[oklch(0.3_0_0)]">…</span>
                       ) : (
                         <Link
                           key={p}
-                          href={rankingsUrl(selectedCity, selectedNeighborhood, p)}
+                          href={rankingsUrl(filters, { page: p })}
                           className="font-mono text-[10px] uppercase tracking-[0.15em] w-9 h-9 flex items-center justify-center border-t border-b border-r transition-colors duration-150"
                           style={{
                             borderColor: "oklch(0.22 0 0)",
@@ -309,51 +280,18 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
                 {safePage < totalPages ? (
                   <Link
-                    href={rankingsUrl(selectedCity, selectedNeighborhood, safePage + 1)}
+                    href={rankingsUrl(filters, { page: safePage + 1 })}
                     className="font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.55_0_0)] hover:text-white hover:border-[oklch(0.4_0_0)]"
                     style={{ borderColor: "oklch(0.22 0 0)" }}
                   >
                     Next →
                   </Link>
-                ) : (
-                  <span />
-                )}
+                ) : <span />}
               </div>
             )}
           </div>
         )}
       </section>
     </main>
-  );
-}
-
-function FilterTab({
-  label,
-  href,
-  active,
-  secondary = false,
-}: {
-  label: string;
-  href: string;
-  active: boolean;
-  secondary?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className="font-mono uppercase tracking-[0.2em] border-r border-t border-b transition-colors duration-150"
-      style={{
-        fontSize: secondary ? "9px" : "10px",
-        padding: secondary ? "0.4rem 0.75rem" : "0.625rem 1rem",
-        borderColor: secondary ? "oklch(0.18 0 0)" : "oklch(0.22 0 0)",
-        backgroundColor: active
-          ? secondary ? "oklch(0.13 0 0)" : "oklch(0.15 0 0)"
-          : "transparent",
-        color: active ? "oklch(0.9 0 0)" : secondary ? "oklch(0.38 0 0)" : "oklch(0.45 0 0)",
-        borderLeft: active ? "2px solid #FF7444" : "2px solid transparent",
-      }}
-    >
-      {label}
-    </Link>
   );
 }
