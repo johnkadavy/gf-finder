@@ -8,7 +8,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { calculateScore } from "../lib/score";
+import { calculateScore, type VerifiedData } from "../lib/score";
 
 dotenv.config({ path: ".env.local" });
 
@@ -29,7 +29,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, dossier")
+      .select("id, dossier, verified_data")
       .not("dossier", "is", null)
       .range(offset, offset + BATCH_SIZE - 1);
 
@@ -45,7 +45,7 @@ async function main() {
     const updates: { id: number; score: number }[] = [];
 
     for (const row of data) {
-      const score = calculateScore(row.dossier);
+      const score = calculateScore(row.dossier, row.verified_data as VerifiedData | undefined);
       if (score !== null) {
         updates.push({ id: row.id, score });
       } else {

@@ -1,3 +1,10 @@
+// Verified signals from scraping — takes precedence over AI-inferred dossier fields
+export type VerifiedData = {
+  menu?: {
+    gf_labeling?: "clear" | "partial" | "none" | "unknown";
+  };
+};
+
 // Scoring dossier — intentionally loose types (JSONB from Supabase may be partial)
 export type ScoringDossier = {
   reviews?: {
@@ -5,11 +12,11 @@ export type ScoringDossier = {
     positive_count?: number;
     negative_count?: number;
     sick_reports_recent?: number;
-    recency_coverage?: "good" | "limited" | "poor" | "unknown";
+    recency_coverage?: "good" | "fair" | "limited" | "poor" | "unknown";
   };
   menu?: {
     gf_labeling?: "clear" | "partial" | "none" | "unknown";
-    gf_options_level?: "many" | "ample" | "few" | "none" | "unknown";
+    gf_options_level?: "many" | "ample" | "moderate" | "few" | "limited" | "none" | "unknown";
     gf_substitutes?: { available?: boolean };
   };
   operations?: {
@@ -17,7 +24,7 @@ export type ScoringDossier = {
     cross_contamination_risk?: "low" | "medium" | "high" | "unknown";
     dedicated_equipment?: {
       fryer?: boolean;
-      prep_area?: "yes" | "no" | "unknown";
+      prep_area?: "yes" | "no" | "dedicated" | "shared" | "unknown";
     };
   };
   data_quality?: {
@@ -40,9 +47,9 @@ function clamp(v: number, min: number, max: number) {
  * Soft floor:  if solid signals across all categories, score ≥ 72
  * Confidence:  medium → ×0.95 + 50×0.05 | low → ×0.88 + 50×0.12
  */
-export function calculateScore(dossier: ScoringDossier): number | null {
+export function calculateScore(dossier: ScoringDossier, verifiedData?: VerifiedData): number | null {
   const r = dossier.reviews;
-  const m = dossier.menu;
+  const m = verifiedData?.menu ? { ...dossier.menu, ...verifiedData.menu } : dossier.menu;
   const o = dossier.operations;
   const dq = dossier.data_quality;
 
@@ -77,7 +84,8 @@ export function calculateScore(dossier: ScoringDossier): number | null {
   let recencyMult: number;
   switch (r?.recency_coverage) {
     case "good":    recencyMult = 1.0;  break;
-    case "limited": recencyMult = 0.85; break;
+    case "fair":
+    case "limited": recencyMult = 0.85; break;  // "fair" from Airtable, "limited" from scoring schema
     case "poor":    recencyMult = 0.55; break;
     default:        recencyMult = 0.85; // unknown: assume roughly recent
   }
@@ -101,11 +109,13 @@ export function calculateScore(dossier: ScoringDossier): number | null {
 
   let optionsScore: number;
   switch (m?.gf_options_level) {
-    case "many":  optionsScore = 100; break;
-    case "ample": optionsScore = 75;  break;
-    case "few":   optionsScore = 35;  break;
-    case "none":  optionsScore = 0;   break;
-    default:      optionsScore = 50;  // unknown: neutral
+    case "many":
+    case "ample":    optionsScore = 100; break;  // "ample" from scoring schema, "many" legacy
+    case "moderate": optionsScore = 75;  break;  // Airtable value
+    case "few":
+    case "limited":  optionsScore = 35;  break;  // "limited" from Airtable, "few" from scoring schema
+    case "none":     optionsScore = 0;   break;
+    default:         optionsScore = 50;  // unknown: neutral
   }
 
   let menuScore = labelingScore * 0.6 + optionsScore * 0.4;
@@ -134,7 +144,7 @@ export function calculateScore(dossier: ScoringDossier): number | null {
   let opsScore = staffScore * 0.7 + contamScore * 0.3;
   if (o?.dedicated_equipment?.fryer === true)        opsScore += 8;
   else if (o?.dedicated_equipment?.fryer === false)  opsScore -= 5;
-  if (o?.dedicated_equipment?.prep_area === "yes")   opsScore += 7;
+  if (o?.dedicated_equipment?.prep_area === "yes" || o?.dedicated_equipment?.prep_area === "dedicated")  opsScore += 7;  // "dedicated" from Airtable, "yes" from scoring schema
   opsScore = clamp(opsScore, 0, 100);
 
   // ── Combine ────────────────────────────────────────────────

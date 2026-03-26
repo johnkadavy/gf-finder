@@ -6,6 +6,7 @@ import {
   getGaugeColor,
   getScoreLabel,
   type ScoringDossier,
+  type VerifiedData,
 } from "@/lib/score";
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 
@@ -31,6 +32,7 @@ type Restaurant = {
   cuisine_types: string[] | null;
   opening_hours: OpeningHours | null;
   dossier: Dossier | null;
+  verified_data: VerifiedData | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -122,7 +124,7 @@ export default async function RestaurantPage({
   const { data, error } = await supabase
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine_types, opening_hours, dossier"
+      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine_types, opening_hours, dossier, verified_data"
     )
     .eq("id", id)
     .single();
@@ -130,7 +132,7 @@ export default async function RestaurantPage({
   if (error || !data) notFound();
 
   const r = data as Restaurant;
-  const score = r.dossier ? calculateScore(r.dossier) : null;
+  const score = r.dossier ? calculateScore(r.dossier, r.verified_data ?? undefined) : null;
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);
   const d = r.dossier;

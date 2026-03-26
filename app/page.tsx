@@ -2,7 +2,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SearchForm } from "./components/SearchForm";
-import { calculateScore, getGaugeColor, type ScoringDossier } from "@/lib/score";
+import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 
 type Signal = {
   label: string;
@@ -22,6 +22,7 @@ type Restaurant = {
   website_url: string | null;
   google_maps_url: string | null;
   dossier: Dossier | null;
+  verified_data: VerifiedData | null;
 };
 
 type HomePageProps = {
@@ -87,7 +88,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (query) {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, website_url, google_maps_url, dossier")
+      .select("id, name, city, neighborhood, website_url, google_maps_url, dossier, verified_data")
       .ilike("name", `%${query}%`)
       .order("name");
 
@@ -142,7 +143,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
             {restaurants.map((restaurant, index) => {
               const summary = restaurant.dossier?.summary?.short_summary;
-              const score = restaurant.dossier ? calculateScore(restaurant.dossier) : null;
+              const score = restaurant.dossier ? calculateScore(restaurant.dossier, restaurant.verified_data ?? undefined) : null;
               const signals = restaurant.dossier ? buildSignals(restaurant.dossier) : [];
               const sickCount = restaurant.dossier?.reviews?.sick_reports_recent ?? 0;
               const accentColor = getGaugeColor(score);
