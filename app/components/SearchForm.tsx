@@ -160,62 +160,100 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
   );
 
   return (
-    <div ref={containerRef} className="max-w-2xl mx-auto relative">
-      <form onSubmit={handleSubmit}>
-        <div
-          className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-[#FF7444]"
-          style={{ backgroundColor: "oklch(0.12 0 0)", borderColor: isOpen ? "oklch(0.35 0 0)" : "oklch(0.28 0 0)" }}
-        >
-          <input
-            type="text"
-            value={value}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-            placeholder="Type a restaurant to check gluten-free safety"
-            autoComplete="off"
-            className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.38_0_0)] text-white"
-          />
-          <button
-            type="submit"
-            disabled={isPending}
-            className={`font-mono text-[11px] uppercase tracking-[0.2em] px-6 py-2.5 border border-[#FF7444] text-[#FF7444] hover:bg-[#FF7444] hover:text-black transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
-          >
-            Check a Restaurant
-          </button>
-        </div>
-      </form>
+    <div ref={containerRef} className="max-w-2xl mx-auto">
+      <div className="flex items-stretch gap-2">
 
-      {/* City filter */}
-      {cities.length > 0 && (
-        <div className="flex items-center gap-2 mt-3 justify-start">
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)]">City:</span>
-          <div className="relative">
+        {/* Search input + suggestions */}
+        <div className="flex-1 relative">
+          <form onSubmit={handleSubmit}>
+            <div
+              className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-[#FF7444]"
+              style={{ backgroundColor: "oklch(0.12 0 0)", borderColor: isOpen ? "oklch(0.35 0 0)" : "oklch(0.28 0 0)" }}
+            >
+              <input
+                type="text"
+                value={value}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+                placeholder="Search restaurants or neighborhoods…"
+                autoComplete="off"
+                className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.38_0_0)] text-white"
+              />
+              <button
+                type="submit"
+                disabled={isPending}
+                className={`font-mono text-[11px] uppercase tracking-[0.2em] px-6 py-2.5 border border-[#FF7444] text-[#FF7444] hover:bg-[#FF7444] hover:text-black transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
+              >
+                Search
+              </button>
+            </div>
+          </form>
+
+          {/* Suggestions dropdown */}
+          {(isOpen || (isLoading && showPreloader)) && (
+            <div
+              className="absolute top-full left-0 right-0 z-50 border border-t-0 overflow-hidden"
+              style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
+            >
+          {showPreloader && isLoading ? (
+            <Preloader />
+          ) : (
+            suggestions.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                onMouseDown={() => selectSuggestion(s.name)}
+                onMouseEnter={() => setActiveIndex(i)}
+                className="w-full text-left px-5 py-3 flex items-baseline justify-between gap-4 border-b transition-colors duration-100"
+                style={{
+                  borderColor: "oklch(0.18 0 0)",
+                  backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                }}
+              >
+                <span className="font-mono text-sm text-white truncate">
+                  {/* Highlight matching portion */}
+                  {highlightMatch(s.name, value)}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.4_0_0)] shrink-0">
+                  {[s.neighborhood, s.city].filter(Boolean).join(" · ")}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+          )}
+        </div>
+
+        {/* City filter */}
+        {cities.length > 0 && (
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => { setCityOpen((o) => !o); if (!cityOpen) setCitySearch(""); }}
-              className="font-mono text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150"
+              className="h-full flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 border transition-colors duration-150 whitespace-nowrap"
               style={{
                 borderColor: selectedCity !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-                backgroundColor: selectedCity !== "all" ? "#FF744410" : "transparent",
+                backgroundColor: selectedCity !== "all" ? "#FF744410" : "oklch(0.12 0 0)",
                 color: selectedCity !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
               }}
             >
-              {selectedCity === "all" ? "All" : selectedCity}
-              {selectedCity !== "all" && (
+              {selectedCity === "all" ? "All Cities" : selectedCity}
+              {selectedCity !== "all" ? (
                 <span
-                  className="ml-2 cursor-pointer hover:opacity-100 opacity-60"
+                  className="opacity-50 hover:opacity-100"
                   onMouseDown={(e) => { e.stopPropagation(); startTransition(() => router.push(buildUrl(value.trim(), "all"))); }}
                 >✕</span>
+              ) : (
+                <span className="text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>
               )}
-              {selectedCity === "all" && <span className="ml-1.5 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>}
             </button>
 
             {cityOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setCityOpen(false)} />
                 <div
-                  className="absolute left-0 top-full z-20 min-w-[180px] border mt-px"
+                  className="absolute right-0 top-full z-20 min-w-[180px] border mt-px"
                   style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
                 >
                   {cities.length > 5 && (
@@ -258,42 +296,9 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
               </>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Dropdown */}
-      {(isOpen || (isLoading && showPreloader)) && (
-        <div
-          className="absolute top-full left-0 right-0 z-50 border border-t-0 overflow-hidden"
-          style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
-        >
-          {showPreloader && isLoading ? (
-            <Preloader />
-          ) : (
-            suggestions.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                onMouseDown={() => selectSuggestion(s.name)}
-                onMouseEnter={() => setActiveIndex(i)}
-                className="w-full text-left px-5 py-3 flex items-baseline justify-between gap-4 border-b transition-colors duration-100"
-                style={{
-                  borderColor: "oklch(0.18 0 0)",
-                  backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
-                }}
-              >
-                <span className="font-mono text-sm text-white truncate">
-                  {/* Highlight matching portion */}
-                  {highlightMatch(s.name, value)}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.4_0_0)] shrink-0">
-                  {[s.neighborhood, s.city].filter(Boolean).join(" · ")}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
