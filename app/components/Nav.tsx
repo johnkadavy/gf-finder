@@ -28,6 +28,14 @@ export function Nav() {
       >
         About
       </Link>
+      <a
+        href="https://airtable.com/appHZS7jRGolLejjZ/pagAO6Dy9uBO6pKfZ/form"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
+      >
+        Feedback
+      </a>
     </nav>
   );
 }
