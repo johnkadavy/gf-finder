@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { Nav } from "./components/Nav";
 import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
@@ -61,26 +62,7 @@ export default function RootLayout({
                 CleanPlate
               </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-10">
-              <Link
-                href="/"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
-              >
-                Search
-              </Link>
-              <Link
-                href="/rankings"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
-              >
-                Rankings
-              </Link>
-              <Link
-                href="/about"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200"
-              >
-                About
-              </Link>
-            </nav>
+            <Nav />
           </div>
         </header>
 

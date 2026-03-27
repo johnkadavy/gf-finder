@@ -49,15 +49,13 @@ export function RankingsLocationFilters({
             {filters.city === "all" ? "All Cities" : filters.city}
             <span className="ml-2 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>
           </button>
-          {filters.city !== "all" && (
-            <button
-              onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }))}
-              className="pr-3 pl-1 py-2.5 transition-colors hover:opacity-100"
-              style={{ color: "oklch(0.55 0 0)" }}
-            >
-              ✕
-            </button>
-          )}
+          <button
+            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }))}
+            className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.city === "all" ? "invisible" : ""}`}
+            style={{ color: "oklch(0.55 0 0)" }}
+          >
+            ✕
+          </button>
         </div>
 
         {cityOpen && (
@@ -130,15 +128,13 @@ export function RankingsLocationFilters({
               {filters.neighborhood === "all" ? "All Neighborhoods" : filters.neighborhood}
               <span className="ml-2 text-[9px] opacity-40">{neighborhoodOpen ? "▲" : "▼"}</span>
             </button>
-            {filters.neighborhood !== "all" && (
-              <button
-                onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 }))}
-                className="pr-3 pl-1 py-2.5 transition-colors hover:opacity-100"
-                style={{ color: "oklch(0.55 0 0)" }}
-              >
-                ✕
-              </button>
-            )}
+          <button
+            onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 }))}
+            className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.neighborhood === "all" ? "invisible" : ""}`}
+            style={{ color: "oklch(0.55 0 0)" }}
+          >
+            ✕
+          </button>
           </div>
 
           {neighborhoodOpen && (
