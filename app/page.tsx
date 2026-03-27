@@ -185,7 +185,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       {/* Restaurant name */}
                       <Link
                         href={`/restaurant/${restaurant.id}`}
-                        className="font-[family-name:var(--font-display)] leading-none mb-5 block hover:text-[#FF7444] transition-colors duration-150"
+                        className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-5 hover:text-[#FF7444] transition-colors duration-150"
                         style={{
                           fontSize: "clamp(1.9rem, 3.5vw, 2.75rem)",
                           letterSpacing: "0.02em",
@@ -193,6 +193,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         }}
                       >
                         {restaurant.name}
+                        <span
+                          className="absolute bottom-0 left-0 h-px w-0 group-hover/name:w-full transition-all duration-300"
+                          style={{ backgroundColor: accentColor }}
+                        />
                       </Link>
 
                       {/* Links */}

@@ -193,14 +193,20 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                   <div className="min-w-0">
                     <Link
                       href={`/restaurant/${restaurant.id}`}
-                      className="font-[family-name:var(--font-display)] leading-none truncate block hover:text-[#FF7444] transition-colors duration-150"
+                      className="group/name font-[family-name:var(--font-display)] leading-none truncate block hover:text-[#FF7444] transition-colors duration-150"
                       style={{
                         fontSize: "clamp(1.4rem, 2.5vw, 2.1rem)",
                         letterSpacing: "0.02em",
-                        color: "oklch(0.92 0 0)",
+                        color: "oklch(0.95 0 0)",
                       }}
                     >
-                      {restaurant.name}
+                      <span className="relative inline-block">
+                        {restaurant.name}
+                        <span
+                          className="absolute bottom-0 left-0 h-px w-0 group-hover/name:w-full transition-all duration-300"
+                          style={{ backgroundColor: color }}
+                        />
+                      </span>
                     </Link>
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}

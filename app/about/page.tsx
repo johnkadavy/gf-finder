@@ -7,7 +7,7 @@ export default function AboutPage() {
         style={{ borderColor: "oklch(0.22 0 0)" }}
       >
         <div className="max-w-3xl mx-auto">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-6">
             About CleanPlate
           </p>
           <h1
@@ -23,7 +23,7 @@ export default function AboutPage() {
 
       {/* Body */}
       <article className="max-w-3xl mx-auto px-8 py-16 md:py-24">
-        <div className="space-y-8 font-mono text-[13px] leading-[1.9] text-[oklch(0.6_0_0)]">
+        <div className="space-y-8 text-[16px] leading-[1.85] text-[oklch(0.82_0_0)]">
           <p>
             Eating gluten-free should feel simple and predictable.
           </p>
@@ -40,12 +40,12 @@ export default function AboutPage() {
             the standard across all of them. By making safety signals more visible, we aim to
             encourage better practices and more transparency throughout the industry.
           </p>
-          <p className="text-[oklch(0.5_0_0)]">
-            <strong className="text-[oklch(0.7_0_0)] font-medium">CleanPlate is a guide, not a guarantee.</strong> Kitchen environments can change, and no
+          <p className="text-[oklch(0.72_0_0)]">
+            <strong className="text-[oklch(0.88_0_0)] font-medium">CleanPlate is a guide, not a guarantee.</strong> Kitchen environments can change, and no
             dataset can capture everything in real time. Always confirm details with the
             restaurant and use your own judgment when making decisions.
           </p>
-          <p className="text-[oklch(0.5_0_0)]">
+          <p className="text-[oklch(0.72_0_0)]">
             We are here to give you better visibility so you can spend less time researching
             and more time enjoying your meal.
           </p>
@@ -64,7 +64,7 @@ export default function AboutPage() {
 
         {/* CTA */}
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-6">
             Ready to explore?
           </p>
           <a

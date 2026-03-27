@@ -85,7 +85,7 @@ function SignalPanel({ title, children }: { title: string; children: React.React
       className="border p-5"
       style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
     >
-      <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.6_0_0)] mb-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.65_0_0)] mb-4">
         {title}
       </p>
       {children}
@@ -308,8 +308,8 @@ export default async function RestaurantPage({
           {/* Summary */}
           {d?.summary?.short_summary && (
             <p
-              className="font-mono text-[13px] leading-[1.9] max-w-2xl"
-              style={{ color: "oklch(0.62 0 0)" }}
+              className="text-[14px] leading-[1.7] max-w-2xl"
+              style={{ color: "oklch(0.82 0 0)" }}
             >
               {d.summary.short_summary}
             </p>
@@ -400,7 +400,7 @@ export default async function RestaurantPage({
           {/* Opening hours */}
           {hours && hours.length > 0 && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.6_0_0)] mb-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.65_0_0)] mb-4">
                 Hours
               </p>
               <div
@@ -430,7 +430,7 @@ export default async function RestaurantPage({
               className="font-mono text-[10px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
               style={{
                 borderColor: "oklch(0.45 0 0)",
-                color: "oklch(0.62 0 0)",
+                color: "oklch(0.72 0 0)",
               }}
             >
               {d.data_quality.confidence === "low"
