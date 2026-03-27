@@ -161,7 +161,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
 
   return (
     <div ref={containerRef} className="max-w-2xl mx-auto">
-      <div className="flex items-stretch gap-2">
+      <div className="flex flex-col gap-2 md:flex-row md:items-stretch">
 
         {/* Search input + suggestions */}
         <div className="flex-1 relative">
@@ -231,7 +231,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
             <button
               type="button"
               onClick={() => { setCityOpen((o) => !o); if (!cityOpen) setCitySearch(""); }}
-              className="h-full flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 border transition-colors duration-150 whitespace-nowrap"
+              className="w-full md:w-auto py-3 md:py-0 md:h-full flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 border transition-colors duration-150 whitespace-nowrap"
               style={{
                 borderColor: selectedCity !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
                 backgroundColor: selectedCity !== "all" ? "#FF744410" : "oklch(0.12 0 0)",

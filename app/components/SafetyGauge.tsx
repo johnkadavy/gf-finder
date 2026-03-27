@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { getScoreLabel, getGaugeColor } from "@/lib/score";
 
 const sizes = {
+  sm: { ring: "w-24 h-24",  numSize: "text-3xl",  labelSize: "text-[5px]",  inset: "inset-[4px]"  },
   md: { ring: "w-40 h-40",  numSize: "text-5xl",  labelSize: "text-[7px]",  inset: "inset-[6px]"  },
   lg: { ring: "w-56 h-56",  numSize: "text-7xl",  labelSize: "text-[9px]",  inset: "inset-[8px]"  },
 };
 
-export function SafetyGauge({ score, size = "md" }: { score: number | null; size?: "md" | "lg" }) {
+export function SafetyGauge({ score, size = "md" }: { score: number | null; size?: "sm" | "md" | "lg" }) {
   const { label } = getScoreLabel(score);
   const gaugeColor = getGaugeColor(score);
   const targetPct = score ?? 0;

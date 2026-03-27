@@ -109,10 +109,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className="pt-16">
       {/* Hero */}
-      <section className="grid-bg min-h-[400px] flex flex-col items-center justify-center px-6 pt-12 relative pb-24">
+      <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-16 md:pb-24">
         {/* Bottom fade — softens grid into results section */}
         <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
-        <div className="max-w-3xl w-full text-center space-y-8">
+        <div className="max-w-3xl w-full text-center space-y-6 md:space-y-8">
           <div>
             <h1
               className="font-[family-name:var(--font-display)] leading-none"
@@ -133,7 +133,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       {/* Results */}
-      <section className="max-w-4xl mx-auto px-8 pb-32 mt-8">
+      <section className="max-w-4xl mx-auto px-4 md:px-8 pb-24 md:pb-32 mt-6 md:mt-8">
         {!query ? null : restaurants.length === 0 ? (
           <div className="py-16 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)]">
@@ -169,16 +169,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     borderLeft: `2px solid ${accentColor}`,
                   }}
                 >
-                  {/* Main content: 2-column grid */}
+                  {/* Main content: 2-column grid on desktop */}
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-0">
 
                     {/* Left column */}
-                    <div className="px-8 pt-9 pb-6">
+                    <div className="px-4 pt-5 pb-4 md:px-8 md:pt-9 md:pb-6">
 
                       {/* Sick report warning */}
                       {sickCount > 0 && (
                         <div
-                          className="flex items-center gap-3 mb-6 px-4 py-2.5 border"
+                          className="flex items-center gap-3 mb-4 md:mb-6 px-4 py-2.5 border"
                           style={{ borderColor: "#FF744430", backgroundColor: "#FF744806" }}
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
@@ -188,17 +188,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         </div>
                       )}
 
-                      {/* Location */}
-                      <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] mb-4">
-                        {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
-                      </p>
+                      {/* Location + mobile gauge row */}
+                      <div className="flex items-start justify-between gap-4 mb-3 md:mb-0">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] md:mb-4">
+                          {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
+                        </p>
+                        {/* Gauge — mobile only */}
+                        <div className="shrink-0 md:hidden -mt-1">
+                          <SafetyGauge score={score} size="sm" />
+                        </div>
+                      </div>
 
                       {/* Restaurant name */}
                       <Link
                         href={`/restaurant/${restaurant.id}`}
-                        className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-5 hover:text-[#FF7444] transition-colors duration-150"
+                        className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-4 md:mb-5 hover:text-[#FF7444] transition-colors duration-150"
                         style={{
-                          fontSize: "clamp(1.9rem, 3.5vw, 2.75rem)",
+                          fontSize: "clamp(1.6rem, 5vw, 2.75rem)",
                           letterSpacing: "0.02em",
                           color: "oklch(0.95 0 0)",
                         }}
@@ -212,7 +218,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                       {/* Links */}
                       {(restaurant.website_url || restaurant.google_maps_url) && (
-                        <div className="flex items-center gap-6 mb-6">
+                        <div className="flex items-center gap-6 mb-4 md:mb-6">
                           {restaurant.website_url && (
                             <a
                               href={restaurant.website_url}
@@ -244,19 +250,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       )}
                     </div>
 
-                    {/* Right column — mobile: centered focal section | desktop: side column */}
-                    <div
-                      className="flex items-center justify-center pt-10 pb-10 border-t md:border-t-0 md:items-start md:justify-end md:pr-8 md:pt-5 md:pb-0"
-                      style={{ borderColor: "oklch(0.22 0 0)" }}
-                    >
+                    {/* Right column — desktop only */}
+                    <div className="hidden md:flex items-start justify-end pr-8 pt-5 pb-5">
                       <SafetyGauge score={score} />
                     </div>
                   </div>
 
-                  {/* Signal row — full width beneath both columns */}
+                  {/* Signal row — desktop only */}
                   {signals.length > 0 && (
                     <div
-                      className="grid grid-cols-1 md:grid-cols-3 border-t"
+                      className="hidden md:grid md:grid-cols-3 border-t"
                       style={{ borderColor: "oklch(0.16 0 0)" }}
                     >
                       {signals.map((signal, i) => (
