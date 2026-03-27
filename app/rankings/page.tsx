@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
+import { normalizeCuisine } from "@/lib/cuisine";
 
 const PAGE_SIZE = 25;
 
@@ -67,9 +68,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               .map((r) => r.neighborhood as string)
           )
         ).sort();
-  const cuisines = Array.from(
-    new Set(allRows.map((r) => r.cuisine).filter((c): c is string => !!c))
-  ).sort();
+  // Build normalized cuisine list for the filter UI
+  const rawCuisines = allRows.map((r) => r.cuisine).filter((c): c is string => !!c && c.toLowerCase() !== "unknown");
+  const cuisines = Array.from(new Set(rawCuisines.map(normalizeCuisine)))
+    .filter((c) => c !== "Other")
+    .sort();
 
   // Build paginated query with all filters applied DB-side
   let query = supabase
@@ -80,7 +83,10 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   if (filters.city !== "all")         query = query.eq("city", filters.city);
   if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
-  if (filters.cuisine !== "all")      query = query.eq("cuisine", filters.cuisine);
+  if (filters.cuisine !== "all") {
+    const matchingRaw = Array.from(new Set(rawCuisines.filter((c) => normalizeCuisine(c) === filters.cuisine)));
+    if (matchingRaw.length > 0) query = query.in("cuisine", matchingRaw);
+  }
   if (minScore > 0)                   query = query.gte("score", minScore);
   if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
   if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");

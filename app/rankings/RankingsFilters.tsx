@@ -72,6 +72,7 @@ export function RankingsSecondaryFilters({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
+  const [cuisineSearch, setCuisineSearch] = useState("");
 
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
 
@@ -110,7 +111,7 @@ export function RankingsSecondaryFilters({
         {/* Cuisine dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setCuisineOpen((o) => !o); setExpOpen(false); }}
+            onClick={() => { setCuisineOpen((o) => !o); setExpOpen(false); if (!cuisineOpen) setCuisineSearch(""); }}
             className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
             style={{
               color: filters.cuisine !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
@@ -126,40 +127,59 @@ export function RankingsSecondaryFilters({
             <>
               <div className="fixed inset-0 z-10" onClick={() => setCuisineOpen(false)} />
               <div
-                className="absolute left-0 top-full z-20 min-w-[200px] max-h-[320px] overflow-y-auto border"
+                className="absolute left-0 top-full z-20 min-w-[220px] border"
                 style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
               >
-                <button
-                  onClick={() => {
-                    router.push(rankingsUrl(filters, { cuisine: "all", page: 1 }));
-                    setCuisineOpen(false);
-                  }}
-                  className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
-                  style={{
-                    borderColor: "oklch(0.18 0 0)",
-                    color: filters.cuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                    backgroundColor: filters.cuisine === "all" ? "#FF744410" : "transparent",
-                  }}
-                >
-                  All Cuisines
-                </button>
-                {cuisines.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => {
-                      router.push(rankingsUrl(filters, { cuisine: c, page: 1 }));
-                      setCuisineOpen(false);
-                    }}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
-                    style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.cuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.cuisine === c ? "#FF744410" : "transparent",
-                    }}
-                  >
-                    {c}
-                  </button>
-                ))}
+                {/* Search input */}
+                <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search cuisines…"
+                    value={cuisineSearch}
+                    onChange={(e) => setCuisineSearch(e.target.value)}
+                    className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
+                    style={{ color: "oklch(0.85 0 0)" }}
+                  />
+                </div>
+                <div className="max-h-[280px] overflow-y-auto">
+                  {!cuisineSearch && (
+                    <button
+                      onClick={() => {
+                        router.push(rankingsUrl(filters, { cuisine: "all", page: 1 }));
+                        setCuisineOpen(false);
+                      }}
+                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                      style={{
+                        borderColor: "oklch(0.18 0 0)",
+                        color: filters.cuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                        backgroundColor: filters.cuisine === "all" ? "#FF744410" : "transparent",
+                      }}
+                    >
+                      All Cuisines
+                    </button>
+                  )}
+                  {cuisines
+                    .filter((c) => c.toLowerCase().includes(cuisineSearch.toLowerCase()))
+                    .map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          router.push(rankingsUrl(filters, { cuisine: c, page: 1 }));
+                          setCuisineOpen(false);
+                          setCuisineSearch("");
+                        }}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                        style={{
+                          borderColor: "oklch(0.18 0 0)",
+                          color: filters.cuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
+                          backgroundColor: filters.cuisine === c ? "#FF744410" : "transparent",
+                        }}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                </div>
               </div>
             </>
           )}
