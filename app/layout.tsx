@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Nav } from "./components/Nav";
+import { Analytics } from "@vercel/analytics/next";
 import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
@@ -67,6 +68,7 @@ export default function RootLayout({
         </header>
 
         <div className="min-h-screen">{children}</div>
+        <Analytics />
 
         {/* Footer */}
         <footer
