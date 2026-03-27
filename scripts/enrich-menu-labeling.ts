@@ -23,8 +23,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const limitIdx = process.argv.indexOf("--limit");
 const limitArg = limitIdx >= 0 ? process.argv[limitIdx + 1] : undefined;
-const LIMIT: number = !limitArg || limitArg === "all" ? 10 : parseInt(limitArg, 10);
-const FETCH_BATCH = Math.min(LIMIT * 5, 200);
+const LIMIT: number = limitArg === "all" ? Infinity : !limitArg ? 10 : parseInt(limitArg, 10);
+const FETCH_BATCH = Number.isFinite(LIMIT) ? Math.min(LIMIT * 5, 500) : 500;
 const FETCH_TIMEOUT_MS = 8000;
 
 // ── JSON-LD detection ───────────────────────────────────────────────────────
@@ -260,7 +260,10 @@ type Row = {
   name: string;
   website_url: string;
   dossier: { menu?: { gf_labeling?: string } } | null;
-  verified_data: { menu?: { gf_labeling?: string } } | null;
+  verified_data: {
+    menu?: { gf_labeling?: string };
+    meta?: { gf_labeling_attempted_at?: string; gf_labeling_source?: string };
+  } | null;
 };
 
 async function main() {
@@ -286,7 +289,7 @@ async function main() {
 
   const rows = (data ?? []) as Row[];
   const toProcess = rows
-    .filter((r) => !r.verified_data?.menu?.gf_labeling)
+    .filter((r) => !r.verified_data?.meta?.gf_labeling_attempted_at)
     .slice(0, LIMIT);
 
   console.log(`Found ${rows.length} candidates, ${toProcess.length} unscraped — processing ${toProcess.length}\n`);
@@ -316,8 +319,12 @@ async function main() {
         .from("restaurants")
         .update({
           verified_data: {
-            menu: { gf_labeling: "unknown" },
-            meta: { gf_labeling_scraped_at: new Date().toISOString(), gf_labeling_source: "no_content" },
+            ...row.verified_data,
+            meta: {
+              ...row.verified_data?.meta,
+              gf_labeling_attempted_at: new Date().toISOString(),
+              gf_labeling_source: "no_content",
+            },
           },
         })
         .eq("id", row.id);
@@ -332,13 +339,20 @@ async function main() {
 
     console.log(`${aiValue.padEnd(12)}${scrapedValue.padEnd(12)}${shortSource} [${method}]`);
 
+    // Only store menu.gf_labeling for confident results; unknown just marks as attempted
+    const verifiedMenuUpdate = scrapedValue !== "unknown"
+      ? { menu: { ...row.verified_data?.menu, gf_labeling: scrapedValue } }
+      : { menu: row.verified_data?.menu };
+
     const { error: updateError } = await supabase
       .from("restaurants")
       .update({
         verified_data: {
-          menu: { gf_labeling: scrapedValue },
+          ...row.verified_data,
+          ...verifiedMenuUpdate,
           meta: {
-            gf_labeling_scraped_at: new Date().toISOString(),
+            ...row.verified_data?.meta,
+            gf_labeling_attempted_at: new Date().toISOString(),
             gf_labeling_source: menuContent.source,
           },
         },
