@@ -100,7 +100,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
         />
         <div className="max-w-6xl mx-auto">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-6">
             CleanPlate Rankings
           </p>
           <h1
@@ -125,11 +125,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       <div className="max-w-6xl mx-auto">
         <RankingsSecondaryFilters filters={filters} />
         {error ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] py-16 text-center">
             Error loading rankings
           </p>
         ) : totalCount === 0 ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] py-16 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] py-16 text-center">
             No restaurants match these filters
           </p>
         ) : (
@@ -139,13 +139,13 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               className="flex items-center justify-between py-4 border-b"
               style={{ borderColor: "oklch(0.22 0 0)" }}
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.7_0_0)]">
                 {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
                 {filters.city !== "all"
                   ? ` — ${filters.neighborhood !== "all" ? filters.neighborhood : filters.city}`
                   : ""}
               </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.35_0_0)]">
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)]">
                 Page {safePage} of {totalPages}
               </span>
             </div>
@@ -170,7 +170,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right"
                     style={{
                       fontSize: "clamp(1.25rem, 2vw, 1.75rem)",
-                      color: rank <= 3 ? color : "oklch(0.3 0 0)",
+                      color: rank <= 3 ? color : "oklch(0.5 0 0)",
                     }}
                   >
                     {String(rank).padStart(2, "0")}
@@ -189,11 +189,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     >
                       {restaurant.name}
                     </Link>
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mt-2 truncate">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                     </p>
                     {restaurant.dossier?.summary?.short_summary && (
-                      <p className="font-mono text-[12px] leading-[1.7] text-[oklch(0.58_0_0)] mt-2 max-w-xl">
+                      <p className="text-[14px] leading-[1.7] text-[oklch(0.82_0_0)] mt-2 max-w-xl">
                         {restaurant.dossier.summary.short_summary}
                       </p>
                     )}
@@ -204,7 +204,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                             href={restaurant.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                           >
                             Website ↗
                           </a>
@@ -214,7 +214,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                             href={restaurant.google_maps_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                           >
                             Google Maps ↗
                           </a>
@@ -232,8 +232,8 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                       {Math.round(restaurant.score)}
                     </span>
                     <span
-                      className="font-mono text-[8px] uppercase tracking-[0.15em] mt-1 text-right"
-                      style={{ color: `${color}90` }}
+                      className="font-mono text-[10px] uppercase tracking-[0.15em] mt-1 text-right"
+                      style={{ color: `${color}cc` }}
                     >
                       {label}
                     </span>
@@ -248,7 +248,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                 {safePage > 1 ? (
                   <Link
                     href={rankingsUrl(filters, { page: safePage - 1 })}
-                    className="font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.55_0_0)] hover:text-white hover:border-[oklch(0.4_0_0)]"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.7_0_0)] hover:text-white hover:border-[oklch(0.5_0_0)]"
                     style={{ borderColor: "oklch(0.22 0 0)" }}
                   >
                     ← Prev
@@ -265,7 +265,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     }, [])
                     .map((p, i) =>
                       p === "…" ? (
-                        <span key={`ellipsis-${i}`} className="font-mono text-[10px] px-2 text-[oklch(0.3_0_0)]">…</span>
+                        <span key={`ellipsis-${i}`} className="font-mono text-[10px] px-2 text-[oklch(0.55_0_0)]">…</span>
                       ) : (
                         <Link
                           key={p}
@@ -275,7 +275,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                             borderColor: "oklch(0.22 0 0)",
                             borderLeft: p === 1 ? "1px solid oklch(0.22 0 0)" : undefined,
                             backgroundColor: p === safePage ? "oklch(0.15 0 0)" : "transparent",
-                            color: p === safePage ? "oklch(0.9 0 0)" : "oklch(0.4 0 0)",
+                            color: p === safePage ? "oklch(0.9 0 0)" : "oklch(0.62 0 0)",
                           }}
                         >
                           {p}
@@ -287,7 +287,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                 {safePage < totalPages ? (
                   <Link
                     href={rankingsUrl(filters, { page: safePage + 1 })}
-                    className="font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.55_0_0)] hover:text-white hover:border-[oklch(0.4_0_0)]"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.7_0_0)] hover:text-white hover:border-[oklch(0.5_0_0)]"
                     style={{ borderColor: "oklch(0.22 0 0)" }}
                   >
                     Next →

@@ -50,10 +50,10 @@ type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
 function signalColor(level: SignalLevel): string {
   switch (level) {
     case "positive": return "#4A7C59";
-    case "neutral":  return "oklch(0.55 0 0)";
+    case "neutral":  return "oklch(0.65 0 0)";
     case "warning":  return "#C5A04A";
     case "negative": return "#FF7444";
-    default:         return "oklch(0.35 0 0)";
+    default:         return "oklch(0.55 0 0)";
   }
 }
 
@@ -66,7 +66,7 @@ function SignalRow({ label, value, level }: {
       className="flex items-center justify-between py-2.5 border-b"
       style={{ borderColor: "oklch(0.16 0 0)" }}
     >
-      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.45_0_0)]">
+      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.65_0_0)]">
         {label}
       </span>
       <span
@@ -85,7 +85,7 @@ function SignalPanel({ title, children }: { title: string; children: React.React
       className="border p-5"
       style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
     >
-      <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.35_0_0)] mb-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.6_0_0)] mb-4">
         {title}
       </p>
       {children}
@@ -193,7 +193,7 @@ export default async function RestaurantPage({
           {/* Back breadcrumb */}
           <Link
             href="/rankings"
-            className="inline-flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.38_0_0)] hover:text-[oklch(0.6_0_0)] transition-colors mb-10"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] hover:text-[oklch(0.8_0_0)] transition-colors mb-10"
           >
             ← Rankings
           </Link>
@@ -210,14 +210,14 @@ export default async function RestaurantPage({
                   style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
-                  <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#FF7444]">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
                     {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
                   </span>
                 </div>
               )}
 
               {/* Location + cuisine */}
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[oklch(0.4_0_0)] mb-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-3">
                 {[r.neighborhood, r.city].filter(Boolean).join(" / ")}
               </p>
 
@@ -234,7 +234,7 @@ export default async function RestaurantPage({
                 <div className="mb-5">
                   <span
                     className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border"
-                    style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.5 0 0)" }}
+                    style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.7 0 0)" }}
                   >
                     {cuisine}
                   </span>
@@ -244,17 +244,17 @@ export default async function RestaurantPage({
               {/* Meta row: rating, price, address */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mb-6">
                 {r.google_rating && (
-                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.58_0_0)]">
+                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
                     ★ {r.google_rating.toFixed(1)} Google
                   </span>
                 )}
                 {price && (
-                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.58_0_0)]">
+                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
                     {price}
                   </span>
                 )}
                 {r.address && (
-                  <span className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.42_0_0)]">
+                  <span className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.65_0_0)]">
                     {r.address}
                   </span>
                 )}
@@ -267,7 +267,7 @@ export default async function RestaurantPage({
                     href={r.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                   >
                     Website ↗
                   </a>
@@ -277,7 +277,7 @@ export default async function RestaurantPage({
                     href={r.google_maps_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                   >
                     Google Maps ↗
                   </a>
@@ -285,7 +285,7 @@ export default async function RestaurantPage({
                 {r.phone && (
                   <a
                     href={`tel:${r.phone}`}
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                   >
                     {r.phone}
                   </a>
@@ -400,7 +400,7 @@ export default async function RestaurantPage({
           {/* Opening hours */}
           {hours && hours.length > 0 && (
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.35_0_0)] mb-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.6_0_0)] mb-4">
                 Hours
               </p>
               <div
@@ -411,10 +411,10 @@ export default async function RestaurantPage({
                   const [day, ...rest] = line.split(": ");
                   return (
                     <div key={line} className="flex justify-between gap-8 py-1.5 border-b last:border-0" style={{ borderColor: "oklch(0.16 0 0)" }}>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.4_0_0)]">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.65_0_0)]">
                         {day}
                       </span>
-                      <span className="font-mono text-[11px] text-[oklch(0.58_0_0)]">
+                      <span className="font-mono text-[11px] text-[oklch(0.75_0_0)]">
                         {rest.join(": ")}
                       </span>
                     </div>
@@ -427,10 +427,10 @@ export default async function RestaurantPage({
           {/* Data confidence notice */}
           {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
             <p
-              className="font-mono text-[9px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
+              className="font-mono text-[10px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
               style={{
-                borderColor: "oklch(0.3 0 0)",
-                color: "oklch(0.38 0 0)",
+                borderColor: "oklch(0.45 0 0)",
+                color: "oklch(0.62 0 0)",
               }}
             >
               {d.data_quality.confidence === "low"

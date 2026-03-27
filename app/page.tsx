@@ -72,7 +72,7 @@ function SignalChip({ signal }: { signal: Signal }) {
         className="w-1.5 h-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: cfg.dot }}
       />
-      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[oklch(0.65_0_0)] leading-normal">
+      <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[oklch(0.78_0_0)] leading-normal">
         {signal.label}
       </span>
     </div>
@@ -111,7 +111,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <br />
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
-            <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)] mt-5">
+            <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)] mt-5">
               We evaluate risk so you don&apos;t have to
             </p>
           </div>
@@ -125,7 +125,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <section className="max-w-4xl mx-auto px-8 pb-32 mt-8">
         {!query ? null : restaurants.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)]">
               No results for &ldquo;{query}&rdquo;
             </p>
           </div>
@@ -136,7 +136,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               className="flex items-center justify-between px-0 py-4 border-b"
               style={{ borderColor: "oklch(0.22 0 0)" }}
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.7_0_0)]">
                 {restaurants.length} Result{restaurants.length !== 1 ? "s" : ""} — &ldquo;{query}&rdquo;
               </span>
             </div>
@@ -178,7 +178,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       )}
 
                       {/* Location */}
-                      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-4">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] mb-4">
                         {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                       </p>
 
@@ -203,7 +203,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                               href={restaurant.website_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                              className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                             >
                               Website ↗
                             </a>
@@ -213,7 +213,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                               href={restaurant.google_maps_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)] hover:text-[#FF7444] transition-colors"
+                              className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
                             >
                               Google Maps ↗
                             </a>
@@ -223,7 +223,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                       {/* Summary */}
                       {summary && (
-                        <p className="font-mono text-[12.5px] leading-[1.75] text-[oklch(0.68_0_0)] max-w-[520px]">
+                        <p className="text-[14px] leading-[1.75] text-[oklch(0.82_0_0)] max-w-[520px]">
                           {summary}
                         </p>
                       )}
