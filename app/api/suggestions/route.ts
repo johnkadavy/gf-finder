@@ -3,17 +3,22 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
+  const city = req.nextUrl.searchParams.get("city")?.trim() ?? "";
 
   if (q.length < 1) {
     return NextResponse.json([]);
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("restaurants")
     .select("id, name, city, neighborhood")
     .ilike("name", `%${q}%`)
     .order("name")
     .limit(6);
+
+  if (city) query = query.eq("city", city);
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json([], { status: 500 });

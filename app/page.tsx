@@ -26,7 +26,7 @@ type Restaurant = {
 };
 
 type HomePageProps = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; city?: string }>;
 };
 
 function buildSignals(dossier: Dossier): Signal[] {
@@ -82,16 +82,27 @@ function SignalChip({ signal }: { signal: Signal }) {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
+  const selectedCity = params.city ?? "all";
+
+  // Fetch distinct cities for the filter
+  const { data: cityRows } = await supabase
+    .from("restaurants")
+    .select("city")
+    .not("score", "is", null);
+  const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
 
   let restaurants: Restaurant[] = [];
 
   if (query) {
-    const { data, error } = await supabase
+    let q = supabase
       .from("restaurants")
       .select("id, name, city, neighborhood, website_url, google_maps_url, dossier, verified_data")
       .ilike("name", `%${query}%`)
       .order("name");
 
+    if (selectedCity !== "all") q = q.eq("city", selectedCity);
+
+    const { data, error } = await q;
     if (!error) restaurants = (data ?? []) as Restaurant[];
   }
 
@@ -112,11 +123,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
             <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)] mt-5">
-              We evaluate risk so you don&apos;t have to
+              Gluten-free search made simple
             </p>
           </div>
 
-          <SearchForm initialQuery={query} />
+          <SearchForm initialQuery={query} cities={cities} selectedCity={selectedCity} />
         </div>
 
       </section>

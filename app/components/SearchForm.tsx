@@ -35,7 +35,11 @@ function Preloader() {
   );
 }
 
-export function SearchForm({ initialQuery }: { initialQuery: string }) {
+export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: {
+  initialQuery: string;
+  cities?: string[];
+  selectedCity?: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [value, setValue] = useState(initialQuery);
@@ -47,6 +51,8 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPreloader, setShowPreloader] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [cityOpen, setCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
 
   useEffect(() => {
     setValue(initialQuery);
@@ -62,6 +68,14 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const buildUrl = (q: string, city: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (city !== "all") params.set("city", city);
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  };
 
   const fetchSuggestions = (q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -83,7 +97,8 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/suggestions?q=${encodeURIComponent(q)}`);
+        const cityParam = selectedCity !== "all" ? `&city=${encodeURIComponent(selectedCity)}` : "";
+        const res = await fetch(`/api/suggestions?q=${encodeURIComponent(q)}${cityParam}`);
         const data: Suggestion[] = await res.json();
         setSuggestions(data);
         setIsOpen(data.length > 0);
@@ -110,7 +125,7 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
     setIsOpen(false);
     setSuggestions([]);
     startTransition(() => {
-      router.push(`/?q=${encodeURIComponent(name)}`);
+      router.push(buildUrl(name, selectedCity));
     });
   };
 
@@ -119,7 +134,7 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
     const q = value.trim();
     setIsOpen(false);
     startTransition(() => {
-      router.push(q ? `/?q=${encodeURIComponent(q)}` : "/");
+      router.push(buildUrl(q, selectedCity));
     });
   };
 
@@ -139,6 +154,10 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
       setActiveIndex(-1);
     }
   };
+
+  const filteredCities = cities.filter((c) =>
+    c.toLowerCase().includes(citySearch.toLowerCase())
+  );
 
   return (
     <div ref={containerRef} className="max-w-2xl mx-auto relative">
@@ -166,6 +185,81 @@ export function SearchForm({ initialQuery }: { initialQuery: string }) {
           </button>
         </div>
       </form>
+
+      {/* City filter */}
+      {cities.length > 0 && (
+        <div className="flex items-center gap-2 mt-3 justify-start">
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)]">City:</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setCityOpen((o) => !o); if (!cityOpen) setCitySearch(""); }}
+              className="font-mono text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150"
+              style={{
+                borderColor: selectedCity !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
+                backgroundColor: selectedCity !== "all" ? "#FF744410" : "transparent",
+                color: selectedCity !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+              }}
+            >
+              {selectedCity === "all" ? "All" : selectedCity}
+              {selectedCity !== "all" && (
+                <span
+                  className="ml-2 cursor-pointer hover:opacity-100 opacity-60"
+                  onMouseDown={(e) => { e.stopPropagation(); startTransition(() => router.push(buildUrl(value.trim(), "all"))); }}
+                >✕</span>
+              )}
+              {selectedCity === "all" && <span className="ml-1.5 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>}
+            </button>
+
+            {cityOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setCityOpen(false)} />
+                <div
+                  className="absolute left-0 top-full z-20 min-w-[180px] border mt-px"
+                  style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
+                >
+                  {cities.length > 5 && (
+                    <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Search cities…"
+                        value={citySearch}
+                        onChange={(e) => setCitySearch(e.target.value)}
+                        className="w-full bg-transparent font-mono text-[11px] px-4 py-2 outline-none placeholder:opacity-40"
+                        style={{ color: "oklch(0.85 0 0)" }}
+                      />
+                    </div>
+                  )}
+                  <div className="max-h-[240px] overflow-y-auto">
+                    {!citySearch && (
+                      <button
+                        type="button"
+                        onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), "all"))); setCityOpen(false); }}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.16_0_0)]"
+                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === "all" ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === "all" ? "#FF744410" : "transparent" }}
+                      >
+                        All Cities
+                      </button>
+                    )}
+                    {filteredCities.map((city) => (
+                      <button
+                        type="button"
+                        key={city}
+                        onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), city))); setCityOpen(false); setCitySearch(""); }}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.16_0_0)]"
+                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === city ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === city ? "#FF744410" : "transparent" }}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Dropdown */}
       {(isOpen || (isLoading && showPreloader)) && (
