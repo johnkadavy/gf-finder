@@ -3,6 +3,7 @@ export type Experience = "all" | "good" | "great" | "excellent";
 export type Filters = {
   city: string;
   neighborhood: string;
+  cuisine: string;
   fryer: boolean;
   labeled: boolean;
   experience: Experience;
@@ -21,6 +22,7 @@ export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   const params = new URLSearchParams();
   if (merged.city !== "all")         params.set("city", merged.city);
   if (merged.neighborhood !== "all") params.set("neighborhood", merged.neighborhood);
+  if (merged.cuisine !== "all")      params.set("cuisine", merged.cuisine);
   if (merged.fryer)                  params.set("fryer", "1");
   if (merged.labeled)                params.set("labeled", "1");
   if (merged.experience !== "all")   params.set("experience", merged.experience);

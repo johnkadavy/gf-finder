@@ -25,6 +25,7 @@ type RankingsPageProps = {
   searchParams: Promise<{
     city?: string;
     neighborhood?: string;
+    cuisine?: string;
     fryer?: string;
     labeled?: string;
     experience?: string;
@@ -38,6 +39,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   const filters: Filters = {
     city:         params.city         ?? "all",
     neighborhood: params.neighborhood ?? "all",
+    cuisine:      params.cuisine      ?? "all",
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
     experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
@@ -47,13 +49,13 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
   const pageStart = (filters.page - 1) * PAGE_SIZE;
 
-  // Build query for cities/neighborhoods (fetch all scored restaurants for filter options)
+  // Build query for cities/neighborhoods/cuisines (fetch all scored restaurants for filter options)
   const { data: allForFilters } = await supabase
     .from("restaurants")
-    .select("city, neighborhood")
+    .select("city, neighborhood, cuisine")
     .not("score", "is", null);
 
-  const allRows = (allForFilters ?? []) as { city: string; neighborhood: string | null }[];
+  const allRows = (allForFilters ?? []) as { city: string; neighborhood: string | null; cuisine: string | null }[];
   const cities = Array.from(new Set(allRows.map((r) => r.city))).sort();
   const neighborhoods =
     filters.city === "all"
@@ -65,6 +67,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               .map((r) => r.neighborhood as string)
           )
         ).sort();
+  const cuisines = Array.from(
+    new Set(allRows.map((r) => r.cuisine).filter((c): c is string => !!c))
+  ).sort();
 
   // Build paginated query with all filters applied DB-side
   let query = supabase
@@ -75,6 +80,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   if (filters.city !== "all")         query = query.eq("city", filters.city);
   if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
+  if (filters.cuisine !== "all")      query = query.eq("cuisine", filters.cuisine);
   if (minScore > 0)                   query = query.gte("score", minScore);
   if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
   if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");
@@ -117,13 +123,14 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             neighborhoods={neighborhoods}
             filters={filters}
           />
+
         </div>
       </section>
 
       {/* Rankings list */}
       <section className="px-8 pb-32 mt-8">
       <div className="max-w-6xl mx-auto">
-        <RankingsSecondaryFilters filters={filters} />
+        <RankingsSecondaryFilters filters={filters} cuisines={cuisines} />
         {error ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] py-16 text-center">
             Error loading rankings
