@@ -40,6 +40,7 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     );
     url.searchParams.append("fields[]", "google_place_id");
     url.searchParams.append("fields[]", "JSON dossier");
+    url.searchParams.append("fields[]", "Sick reports JSON");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -84,7 +85,7 @@ async function sync() {
       continue;
     }
 
-    let dossier: unknown;
+    let dossier: any;
     try {
       dossier = JSON.parse(dossierText);
     } catch {
@@ -93,7 +94,28 @@ async function sync() {
       continue;
     }
 
-    const cuisine = (dossier as any)?.restaurant?.cuisine ?? null;
+    // Merge sick reports from dedicated field if present
+    const sickField = record.fields["Sick reports JSON"];
+    const sickText = typeof sickField === "string"
+      ? sickField
+      : (sickField as AirtableAIField)?.state === "generated"
+        ? (sickField as AirtableAIField).value
+        : null;
+
+    if (sickText) {
+      try {
+        const sickData = JSON.parse(sickText);
+        dossier.reviews = {
+          ...dossier.reviews,
+          sick_reports_recent: sickData.sick_reports_recent ?? 0,
+          sick_reports_details: sickData.sick_reports_details ?? [],
+        };
+      } catch {
+        console.warn(`  Could not parse sick reports JSON for ${googlePlaceId} — skipping merge`);
+      }
+    }
+
+    const cuisine = dossier?.restaurant?.cuisine ?? null;
 
     const { error } = await supabase
       .from("restaurants")

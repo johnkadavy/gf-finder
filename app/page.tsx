@@ -157,6 +157,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               const score = restaurant.dossier ? calculateScore(restaurant.dossier, restaurant.verified_data ?? undefined) : null;
               const signals = restaurant.dossier ? buildSignals(restaurant.dossier) : [];
               const sickCount = restaurant.dossier?.reviews?.sick_reports_recent ?? 0;
+              const sickSourceUrl = restaurant.dossier?.reviews?.sick_reports_details?.find((d) => d.source_url)?.source_url ?? null;
               const accentColor = getGaugeColor(score);
 
               return (
@@ -182,9 +183,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           style={{ borderColor: "#FF744430", backgroundColor: "#FF744806" }}
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
-                          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
-                            {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
-                          </span>
+                          {sickSourceUrl ? (
+                            <a
+                              href={sickSourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
+                            >
+                              {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
+                            </a>
+                          ) : (
+                            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+                              {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
+                            </span>
+                          )}
                         </div>
                       )}
 

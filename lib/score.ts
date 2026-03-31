@@ -12,6 +12,7 @@ export type ScoringDossier = {
     positive_count?: number;
     negative_count?: number;
     sick_reports_recent?: number;
+    sick_reports_details?: Array<{ date?: string; summary?: string; source_url?: string }>;
     recency_coverage?: "good" | "fair" | "limited" | "poor" | "unknown";
   };
   menu?: {

@@ -119,6 +119,7 @@ export default async function RestaurantPage({
   const d = r.dossier;
   const cuisine = r.cuisine;
   const sickCount = d?.reviews?.sick_reports_recent ?? 0;
+  const sickSourceUrl = d?.reviews?.sick_reports_details?.find((r) => r.source_url)?.source_url ?? null;
   const price = priceSymbol(r.price_level);
 
   // ── Signal levels ──────────────────────────────────────────────────────
@@ -210,9 +211,20 @@ export default async function RestaurantPage({
                   style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
-                  <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
-                    {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
-                  </span>
+                  {sickSourceUrl ? (
+                    <a
+                      href={sickSourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
+                    >
+                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
+                    </a>
+                  ) : (
+                    <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
+                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
+                    </span>
+                  )}
                 </div>
               )}
 
