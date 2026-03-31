@@ -43,7 +43,7 @@ function priceSymbol(level: number | null): string {
 }
 
 
-// ── Signal row ─────────────────────────────────────────────────────────────
+// ── Signal types ───────────────────────────────────────────────────────────
 
 type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
 
@@ -53,45 +53,101 @@ function signalColor(level: SignalLevel): string {
     case "neutral":  return "oklch(0.65 0 0)";
     case "warning":  return "#C5A04A";
     case "negative": return "#FF7444";
-    default:         return "oklch(0.55 0 0)";
+    default:         return "oklch(0.38 0 0)";
   }
 }
 
-function SignalRow({ label, value, level }: {
-  label: string; value: string; level: SignalLevel;
+function signalBg(level: SignalLevel): string {
+  switch (level) {
+    case "positive": return "#4A7C5912";
+    case "negative": return "#FF744412";
+    case "warning":  return "#C5A04A12";
+    default:         return "oklch(0.095 0 0)";
+  }
+}
+
+function signalBorder(level: SignalLevel): string {
+  switch (level) {
+    case "positive": return "#4A7C5930";
+    case "negative": return "#FF744430";
+    case "warning":  return "#C5A04A30";
+    default:         return "oklch(0.2 0 0)";
+  }
+}
+
+// ── Signal card ────────────────────────────────────────────────────────────
+
+function SignalCard({ icon, label, value, level }: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  level: SignalLevel;
 }) {
   const color = signalColor(level);
   return (
     <div
-      className="flex items-center justify-between py-2.5 border-b"
-      style={{ borderColor: "oklch(0.16 0 0)" }}
+      className="border p-5 flex flex-col gap-4"
+      style={{ borderColor: signalBorder(level), backgroundColor: signalBg(level) }}
     >
-      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.65_0_0)]">
-        {label}
-      </span>
-      <span
-        className="font-mono text-[11px] uppercase tracking-[0.1em]"
-        style={{ color }}
-      >
-        {value}
-      </span>
+      <div style={{ color }} aria-hidden="true">{icon}</div>
+      <div>
+        <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-[oklch(0.48_0_0)] mb-2">
+          {label}
+        </p>
+        <p className="font-mono text-[12px] uppercase tracking-[0.12em]" style={{ color }}>
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
 
-function SignalPanel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      className="border p-5"
-      style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
-    >
-      <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.65_0_0)] mb-4">
-        {title}
-      </p>
-      {children}
-    </div>
-  );
-}
+// ── Icons ──────────────────────────────────────────────────────────────────
+
+const IconTag = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const IconMenu = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/>
+    <line x1="8" y1="12" x2="21" y2="12"/>
+    <line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/>
+    <line x1="3" y1="12" x2="3.01" y2="12"/>
+    <line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+
+const IconShield = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+
+const IconPerson = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const IconChat = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -327,85 +383,45 @@ export default async function RestaurantPage({
             </p>
           )}
 
-          {/* Signal panels — 3 columns */}
+          {/* Signal grid */}
           {d && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-              {/* Menu */}
-              <SignalPanel title="Menu">
-                <SignalRow label="GF labeling"  value={labelingText} level={labelingLevel} />
-                <SignalRow label="GF options"   value={optionsText}  level={optionsLevel} />
-                <SignalRow
-                  label="GF substitutes"
-                  value={
-                    d.menu?.gf_substitutes?.available === true  ? "Available" :
-                    d.menu?.gf_substitutes?.available === false ? "Not available" : "Unknown"
-                  }
-                  level={
-                    d.menu?.gf_substitutes?.available === true  ? "positive" :
-                    d.menu?.gf_substitutes?.available === false ? "neutral" : "unknown"
-                  }
-                />
-              </SignalPanel>
-
-              {/* Kitchen */}
-              <SignalPanel title="Kitchen Safety">
-                <SignalRow label="Cross-contamination" value={contamText}  level={contamLevel} />
-                <SignalRow label="Staff knowledge"     value={staffText}   level={staffLevel} />
-                <SignalRow
-                  label="Dedicated fryer"
-                  value={
-                    d.operations?.dedicated_equipment?.fryer === true  ? "Yes" :
-                    d.operations?.dedicated_equipment?.fryer === false ? "No" : "Unknown"
-                  }
-                  level={
-                    d.operations?.dedicated_equipment?.fryer === true  ? "positive" :
-                    d.operations?.dedicated_equipment?.fryer === false ? "neutral" : "unknown"
-                  }
-                />
-                <SignalRow
-                  label="Dedicated prep area"
-                  value={
-                    d.operations?.dedicated_equipment?.prep_area === "yes" ? "Yes" :
-                    d.operations?.dedicated_equipment?.prep_area === "no"  ? "No" : "Unknown"
-                  }
-                  level={
-                    d.operations?.dedicated_equipment?.prep_area === "yes" ? "positive" :
-                    d.operations?.dedicated_equipment?.prep_area === "no"  ? "neutral" : "unknown"
-                  }
-                />
-              </SignalPanel>
-
-              {/* Reviews */}
-              <SignalPanel title="Diner Reviews">
-                <SignalRow label="GF sentiment"    value={sentimentText} level={sentimentLevel} />
-                <SignalRow
-                  label="Positive reviews"
-                  value={d.reviews?.positive_count != null ? String(d.reviews.positive_count) : "Unknown"}
-                  level={
-                    (d.reviews?.positive_count ?? 0) >= 10 ? "positive" :
-                    (d.reviews?.positive_count ?? 0) > 0   ? "neutral"  : "unknown"
-                  }
-                />
-                <SignalRow
-                  label="Illness reports"
-                  value={sickCount > 0 ? String(sickCount) : "None reported"}
-                  level={sickCount > 0 ? "negative" : "positive"}
-                />
-                <SignalRow
-                  label="Data recency"
-                  value={
-                    d.reviews?.recency_coverage === "good"    ? "Good" :
-                    d.reviews?.recency_coverage === "limited" ? "Limited" :
-                    d.reviews?.recency_coverage === "poor"    ? "Poor" : "Unknown"
-                  }
-                  level={
-                    d.reviews?.recency_coverage === "good"    ? "positive" :
-                    d.reviews?.recency_coverage === "limited" ? "neutral"  :
-                    d.reviews?.recency_coverage === "poor"    ? "warning"  : "unknown"
-                  }
-                />
-              </SignalPanel>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <SignalCard
+                icon={<IconTag />}
+                label="GF Labeling"
+                value={labelingText}
+                level={labelingLevel}
+              />
+              <SignalCard
+                icon={<IconMenu />}
+                label="GF Options"
+                value={optionsText}
+                level={optionsLevel}
+              />
+              <SignalCard
+                icon={<IconShield />}
+                label="Cross-Contamination"
+                value={contamText}
+                level={contamLevel}
+              />
+              <SignalCard
+                icon={<IconPerson />}
+                label="Staff Knowledge"
+                value={staffText}
+                level={staffLevel}
+              />
+              <SignalCard
+                icon={<IconChat />}
+                label="GF Sentiment"
+                value={sentimentText}
+                level={sentimentLevel}
+              />
+              <SignalCard
+                icon={<IconAlert />}
+                label="Illness Reports"
+                value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
+                level={sickCount > 0 ? "negative" : "positive"}
+              />
             </div>
           )}
 
