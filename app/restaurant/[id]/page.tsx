@@ -33,6 +33,18 @@ type Restaurant = {
   opening_hours: OpeningHours | null;
   dossier: Dossier | null;
   verified_data: VerifiedData | null;
+  google_place_id: string | null;
+};
+
+type VerifiedVisit = {
+  visit_date: string | null;
+  overall_sentiment: string | null;
+  staff_knowledge: string | null;
+  gf_labeling: string | null;
+  gf_options_level: string | null;
+  cross_contamination_risk: string | null;
+  dedicated_fryer: string | null;
+  notes: string | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -161,7 +173,7 @@ export default async function RestaurantPage({
   const { data, error } = await supabase
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data"
+      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id"
     )
     .eq("id", id)
     .single();
@@ -169,6 +181,19 @@ export default async function RestaurantPage({
   if (error || !data) notFound();
 
   const r = data as Restaurant;
+
+  // Fetch verified visit if one exists
+  const { data: visitData } = r.google_place_id
+    ? await supabase
+        .from("verified_visits")
+        .select("visit_date, overall_sentiment, staff_knowledge, gf_labeling, gf_options_level, cross_contamination_risk, dedicated_fryer, notes")
+        .eq("google_place_id", r.google_place_id)
+        .order("visit_date", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+
+  const visit = visitData as VerifiedVisit | null;
   const score = r.dossier ? calculateScore(r.dossier, r.verified_data ?? undefined) : null;
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);
@@ -381,6 +406,76 @@ export default async function RestaurantPage({
             >
               {d.summary.short_summary}
             </p>
+          )}
+
+          {/* Verified visit */}
+          {visit && (
+            <div
+              className="border-l-2 pl-6 py-1 space-y-4"
+              style={{ borderColor: "#4A7C59" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#4A7C59]">
+                    CleanPlate Verified Visit
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {visit.overall_sentiment && (
+                    <span
+                      className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
+                      style={{
+                        borderColor: visit.overall_sentiment === "positive" ? "#4A7C5940" : "#FF744440",
+                        color: visit.overall_sentiment === "positive" ? "#4A7C59" : "#FF7444",
+                        backgroundColor: visit.overall_sentiment === "positive" ? "#4A7C5910" : "#FF744410",
+                      }}
+                    >
+                      {visit.overall_sentiment}
+                    </span>
+                  )}
+                  {visit.visit_date && (
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)]">
+                      {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Signal chips */}
+              {(() => {
+                const chips: { label: string; value: string }[] = [];
+                if (visit.gf_labeling) chips.push({ label: "Labeling", value: visit.gf_labeling });
+                if (visit.gf_options_level) chips.push({ label: "Options", value: visit.gf_options_level });
+                if (visit.staff_knowledge) chips.push({ label: "Staff", value: visit.staff_knowledge });
+                if (visit.cross_contamination_risk) chips.push({ label: "CC Risk", value: visit.cross_contamination_risk });
+                if (visit.dedicated_fryer) chips.push({ label: "Dedicated fryer", value: visit.dedicated_fryer });
+                if (chips.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {chips.map(({ label, value }) => (
+                      <span
+                        key={label}
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border"
+                        style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.68 0 0)" }}
+                      >
+                        {label}: {value}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Notes */}
+              {visit.notes && (
+                <p className="text-[13px] leading-[1.7] text-[oklch(0.75_0_0)] max-w-2xl">
+                  {visit.notes}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Signal grid */}
