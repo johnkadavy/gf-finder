@@ -21,6 +21,8 @@ export function RankingsLocationFilters({
   const [citySearch, setCitySearch] = useState("");
   const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
   const [neighborhoodSearch, setNeighborhoodSearch] = useState("");
+  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+  const [hoveredNeighborhood, setHoveredNeighborhood] = useState<string | null>(null);
 
   const filteredCities = cities.filter((c) =>
     c.toLowerCase().includes(citySearch.toLowerCase())
@@ -80,11 +82,13 @@ export function RankingsLocationFilters({
                 {!citySearch && (
                   <button
                     onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 })); setCityOpen(false); }}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.15_0_0)]"
+                    onMouseEnter={() => setHoveredCity("all")}
+                    onMouseLeave={() => setHoveredCity(null)}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
                     style={{
                       borderColor: "oklch(0.18 0 0)",
-                      color: filters.city === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.city === "all" ? "#FF744410" : "transparent",
+                      color: filters.city === "all" || hoveredCity === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                      backgroundColor: filters.city === "all" ? "#FF744410" : hoveredCity === "all" ? "#FF744408" : "transparent",
                     }}
                   >
                     All Cities
@@ -94,11 +98,13 @@ export function RankingsLocationFilters({
                   <button
                     key={city}
                     onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", page: 1 })); setCityOpen(false); setCitySearch(""); }}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.15_0_0)]"
+                    onMouseEnter={() => setHoveredCity(city)}
+                    onMouseLeave={() => setHoveredCity(null)}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
                     style={{
                       borderColor: "oklch(0.18 0 0)",
-                      color: filters.city === city ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.city === city ? "#FF744410" : "transparent",
+                      color: filters.city === city || hoveredCity === city ? "#FF7444" : "oklch(0.72 0 0)",
+                      backgroundColor: filters.city === city ? "#FF744410" : hoveredCity === city ? "#FF744408" : "transparent",
                     }}
                   >
                     {city}
@@ -159,11 +165,13 @@ export function RankingsLocationFilters({
                   {!neighborhoodSearch && (
                     <button
                       onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 })); setNeighborhoodOpen(false); }}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.15_0_0)]"
+                      onMouseEnter={() => setHoveredNeighborhood("all")}
+                      onMouseLeave={() => setHoveredNeighborhood(null)}
+                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
                       style={{
                         borderColor: "oklch(0.18 0 0)",
-                        color: filters.neighborhood === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.neighborhood === "all" ? "#FF744410" : "transparent",
+                        color: filters.neighborhood === "all" || hoveredNeighborhood === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                        backgroundColor: filters.neighborhood === "all" ? "#FF744410" : hoveredNeighborhood === "all" ? "#FF744408" : "transparent",
                       }}
                     >
                       All Neighborhoods
@@ -173,11 +181,13 @@ export function RankingsLocationFilters({
                     <button
                       key={n}
                       onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, page: 1 })); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.15_0_0)]"
+                      onMouseEnter={() => setHoveredNeighborhood(n)}
+                      onMouseLeave={() => setHoveredNeighborhood(null)}
+                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
                       style={{
                         borderColor: "oklch(0.18 0 0)",
-                        color: filters.neighborhood === n ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.neighborhood === n ? "#FF744410" : "transparent",
+                        color: filters.neighborhood === n || hoveredNeighborhood === n ? "#FF7444" : "oklch(0.72 0 0)",
+                        backgroundColor: filters.neighborhood === n ? "#FF744410" : hoveredNeighborhood === n ? "#FF744408" : "transparent",
                       }}
                     >
                       {n}
@@ -207,6 +217,8 @@ export function RankingsSecondaryFilters({
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
   const [cuisineSearch, setCuisineSearch] = useState("");
+  const [hoveredCuisine, setHoveredCuisine] = useState<string | null>(null);
+  const [hoveredExp, setHoveredExp] = useState<string | null>(null);
 
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
 
@@ -279,15 +291,14 @@ export function RankingsSecondaryFilters({
                 <div className="max-h-[280px] overflow-y-auto">
                   {!cuisineSearch && (
                     <button
-                      onClick={() => {
-                        router.push(rankingsUrl(filters, { cuisine: "all", page: 1 }));
-                        setCuisineOpen(false);
-                      }}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                      onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", page: 1 })); setCuisineOpen(false); }}
+                      onMouseEnter={() => setHoveredCuisine("all")}
+                      onMouseLeave={() => setHoveredCuisine(null)}
+                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
                       style={{
                         borderColor: "oklch(0.18 0 0)",
-                        color: filters.cuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.cuisine === "all" ? "#FF744410" : "transparent",
+                        color: filters.cuisine === "all" || hoveredCuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                        backgroundColor: filters.cuisine === "all" ? "#FF744410" : hoveredCuisine === "all" ? "#FF744408" : "transparent",
                       }}
                     >
                       All Cuisines
@@ -298,16 +309,14 @@ export function RankingsSecondaryFilters({
                     .map((c) => (
                       <button
                         key={c}
-                        onClick={() => {
-                          router.push(rankingsUrl(filters, { cuisine: c, page: 1 }));
-                          setCuisineOpen(false);
-                          setCuisineSearch("");
-                        }}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                        onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, page: 1 })); setCuisineOpen(false); setCuisineSearch(""); }}
+                        onMouseEnter={() => setHoveredCuisine(c)}
+                        onMouseLeave={() => setHoveredCuisine(null)}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
                         style={{
                           borderColor: "oklch(0.18 0 0)",
-                          color: filters.cuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
-                          backgroundColor: filters.cuisine === c ? "#FF744410" : "transparent",
+                          color: filters.cuisine === c || hoveredCuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
+                          backgroundColor: filters.cuisine === c ? "#FF744410" : hoveredCuisine === c ? "#FF744408" : "transparent",
                         }}
                       >
                         {c}
@@ -344,15 +353,14 @@ export function RankingsSecondaryFilters({
                 {EXPERIENCE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => {
-                      router.push(rankingsUrl(filters, { experience: opt.value, page: 1 }));
-                      setExpOpen(false);
-                    }}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150 hover:bg-[oklch(0.15_0_0)]"
+                    onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, page: 1 })); setExpOpen(false); }}
+                    onMouseEnter={() => setHoveredExp(opt.value)}
+                    onMouseLeave={() => setHoveredExp(null)}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
                     style={{
                       borderColor: "oklch(0.18 0 0)",
-                      color: filters.experience === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.experience === opt.value ? "#FF744410" : "transparent",
+                      color: filters.experience === opt.value || hoveredExp === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                      backgroundColor: filters.experience === opt.value ? "#FF744410" : hoveredExp === opt.value ? "#FF744408" : "transparent",
                     }}
                   >
                     {opt.label}

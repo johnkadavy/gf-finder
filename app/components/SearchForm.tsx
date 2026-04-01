@@ -53,6 +53,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const [cityOpen, setCityOpen] = useState(false);
   const [citySearch, setCitySearch] = useState("");
+  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
 
   useEffect(() => {
     setValue(initialQuery);
@@ -274,8 +275,10 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                       <button
                         type="button"
                         onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), "all"))); setCityOpen(false); }}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.16_0_0)]"
-                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === "all" ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === "all" ? "#FF744410" : "transparent" }}
+                        onMouseEnter={() => setHoveredCity("all")}
+                        onMouseLeave={() => setHoveredCity(null)}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === "all" || hoveredCity === "all" ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === "all" ? "#FF744410" : hoveredCity === "all" ? "#FF744408" : "transparent" }}
                       >
                         All Cities
                       </button>
@@ -285,8 +288,10 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                         type="button"
                         key={city}
                         onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), city))); setCityOpen(false); setCitySearch(""); }}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors hover:bg-[oklch(0.16_0_0)]"
-                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === city ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === city ? "#FF744410" : "transparent" }}
+                        onMouseEnter={() => setHoveredCity(city)}
+                        onMouseLeave={() => setHoveredCity(null)}
+                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === city || hoveredCity === city ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === city ? "#FF744410" : hoveredCity === city ? "#FF744408" : "transparent" }}
                       >
                         {city}
                       </button>

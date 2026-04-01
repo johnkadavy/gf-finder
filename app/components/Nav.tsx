@@ -65,7 +65,7 @@ export function Nav() {
             {pathname !== "/" && (
               <Link
                 href="/"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
                 style={{ borderColor: "oklch(0.18 0 0)" }}
               >
                 Search
@@ -73,14 +73,14 @@ export function Nav() {
             )}
             <Link
               href="/rankings"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b"
+              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
               style={{ borderColor: "oklch(0.18 0 0)" }}
             >
               Rankings
             </Link>
             <Link
               href="/about"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b"
+              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
               style={{ borderColor: "oklch(0.18 0 0)" }}
             >
               About
@@ -89,7 +89,7 @@ export function Nav() {
               href="https://airtable.com/appHZS7jRGolLejjZ/pagAO6Dy9uBO6pKfZ/form"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4"
+              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 hover:text-[#FF7444] transition-colors duration-150"
             >
               Feedback
             </a>
