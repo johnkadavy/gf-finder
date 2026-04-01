@@ -9,6 +9,10 @@ type Restaurant = {
   neighborhood: string | null;
   lat: number;
   lng: number;
+  cuisine: string | null;
+  google_rating: number | null;
+  price_level: number | null;
+  address: string | null;
   dossier: ScoringDossier | null;
   verified_data: VerifiedData | null;
 };
@@ -20,6 +24,10 @@ export type MapRestaurant = {
   neighborhood: string | null;
   lat: number;
   lng: number;
+  cuisine: string | null;
+  google_rating: number | null;
+  price_level: number | null;
+  address: string | null;
   score: number | null;
   color: string;
   scoreLabel: string;
@@ -28,7 +36,7 @@ export type MapRestaurant = {
 export default async function MapPage() {
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, lat, lng, dossier, verified_data")
+    .select("id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, dossier, verified_data")
     .not("lat", "is", null)
     .not("lng", "is", null);
 
@@ -43,6 +51,10 @@ export default async function MapPage() {
       neighborhood: r.neighborhood,
       lat: r.lat,
       lng: r.lng,
+      cuisine: r.cuisine,
+      google_rating: r.google_rating,
+      price_level: r.price_level,
+      address: r.address,
       score,
       color,
       scoreLabel: label,

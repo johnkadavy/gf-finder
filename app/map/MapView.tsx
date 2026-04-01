@@ -24,16 +24,23 @@ function matchesFilter(r: MapRestaurant, filter: ScoreFilter, search: string): b
   return true;
 }
 
+function priceStr(level: number | null) {
+  return level ? "$".repeat(level) : null;
+}
+
 export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markerEls = useRef<Map<number, HTMLElement>>(new Map());
   const [selected, setSelected] = useState<MapRestaurant | null>(null);
+  const [hovered, setHovered] = useState<MapRestaurant | null>(null);
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("excellent");
   const [search, setSearch] = useState("");
 
+  const handleMarkerHover = useCallback((r: MapRestaurant) => setHovered(r), []);
+  const handleMarkerLeave = useCallback(() => setHovered(null), []);
   const handleMarkerClick = useCallback((r: MapRestaurant) => {
-    setSelected(r);
+    setSelected((prev) => (prev?.id === r.id ? null : r));
   }, []);
 
   // Init map + create all markers once
@@ -51,14 +58,19 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
 
     map.current.on("load", () => {
       restaurants.forEach((r) => {
+        // Mapbox applies translate() transforms directly to the element it
+        // receives for positioning, so we must NOT transform `el` itself.
+        // Put the visual circle in a child `inner` element instead.
         const el = document.createElement("div");
-        el.style.cssText = `
+        el.style.cssText = "width: 28px; height: 28px; cursor: pointer;";
+
+        const inner = document.createElement("div");
+        inner.style.cssText = `
           width: 28px;
           height: 28px;
           border-radius: 50%;
           background-color: ${r.color};
           border: 2px solid rgba(0,0,0,0.4);
-          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -69,18 +81,21 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
           box-shadow: 0 0 0 2px ${r.color}40;
           transition: transform 0.15s ease, box-shadow 0.15s ease;
         `;
-        el.textContent = r.score !== null ? String(r.score) : "?";
+        inner.textContent = r.score !== null ? String(r.score) : "?";
+        el.appendChild(inner);
 
         // Default: hide non-excellent markers
         if ((r.score ?? 0) < 85) el.style.display = "none";
 
         el.addEventListener("mouseenter", () => {
-          el.style.transform = "scale(1.3)";
-          el.style.boxShadow = `0 0 0 4px ${r.color}60`;
+          inner.style.transform = "scale(1.3)";
+          inner.style.boxShadow = `0 0 0 4px ${r.color}60`;
+          handleMarkerHover(r);
         });
         el.addEventListener("mouseleave", () => {
-          el.style.transform = "scale(1)";
-          el.style.boxShadow = `0 0 0 2px ${r.color}40`;
+          inner.style.transform = "scale(1)";
+          inner.style.boxShadow = `0 0 0 2px ${r.color}40`;
+          handleMarkerLeave();
         });
         el.addEventListener("click", () => handleMarkerClick(r));
 
@@ -97,16 +112,15 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       map.current = null;
       markerEls.current.clear();
     };
-  }, [restaurants, handleMarkerClick]);
+  }, [restaurants, handleMarkerHover, handleMarkerLeave, handleMarkerClick]);
 
   // Show/hide markers when filter or search changes
   useEffect(() => {
     restaurants.forEach((r) => {
       const el = markerEls.current.get(r.id);
       if (!el) return;
-      el.style.display = matchesFilter(r, scoreFilter, search) ? "flex" : "none";
+      el.style.display = matchesFilter(r, scoreFilter, search) ? "" : "none";
     });
-    // Clear selection if it no longer matches
     if (selected && !matchesFilter(selected, scoreFilter, search)) {
       setSelected(null);
     }
@@ -132,9 +146,94 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       {/* Map */}
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Top-left controls */}
-      <div className="absolute top-20 left-4 z-10 flex flex-col gap-2 w-64">
+      {/* Left side panel (slide in on selection) */}
+      <div
+        className="absolute top-16 left-0 bottom-0 z-20 w-80 flex flex-col border-r overflow-hidden"
+        style={{
+          backgroundColor: "oklch(0.08 0 0)",
+          borderColor: "oklch(0.18 0 0)",
+          transform: selected ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.25s ease",
+          pointerEvents: selected ? "auto" : "none",
+        }}
+      >
+        {selected && (
+          <>
+            {/* Score + name header */}
+            <div
+              className="p-6 border-b shrink-0"
+              style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
+            >
+              <button
+                onClick={() => setSelected(null)}
+                className="absolute top-[4.75rem] right-4 font-mono text-[11px] text-[oklch(0.4_0_0)] hover:text-white transition-colors"
+              >
+                ✕
+              </button>
 
+              <div className="flex items-center gap-3 mb-4">
+                <span
+                  className="font-[family-name:var(--font-display)] leading-none"
+                  style={{ fontSize: "3rem", color: selected.color }}
+                >
+                  {selected.score ?? "—"}
+                </span>
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)]">GF Score</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
+                    {selected.scoreLabel}
+                  </p>
+                </div>
+              </div>
+
+              <p
+                className="font-[family-name:var(--font-display)] leading-tight mb-1"
+                style={{ fontSize: "clamp(1.2rem, 3vw, 1.6rem)", color: "oklch(0.95 0 0)" }}
+              >
+                {selected.name}
+              </p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)]">
+                {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+
+            {/* Details */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {[
+                selected.cuisine    && { label: "Cuisine",  value: selected.cuisine },
+                selected.google_rating && { label: "Rating",   value: `★ ${selected.google_rating}` },
+                priceStr(selected.price_level) && { label: "Price",    value: priceStr(selected.price_level)! },
+                selected.address    && { label: "Address",  value: selected.address },
+              ].filter(Boolean).map((row) => {
+                const { label, value } = row as { label: string; value: string };
+                return (
+                  <div key={label}>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">{label}</p>
+                    <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* CTA */}
+            <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
+              <Link
+                href={`/restaurant/${selected.id}`}
+                className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
+                style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+              >
+                View Full Details →
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Top-left controls — shift right when panel is open */}
+      <div
+        className="absolute top-20 z-10 flex flex-col gap-2 w-64 transition-[left] duration-[250ms] ease-[ease]"
+        style={{ left: selected ? "336px" : "16px" }}
+      >
         {/* Search box */}
         <div
           className="flex items-center gap-2 border px-3 py-2"
@@ -197,54 +296,27 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
         Near me
       </button>
 
-      {/* Selected restaurant card */}
-      {selected && (
+      {/* Hover preview card — only shown when no panel is open */}
+      {hovered && !selected && (
         <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-2rem)] max-w-sm border p-5 space-y-3"
-          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.25 0 0)", borderLeft: `3px solid ${selected.color}` }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-2rem)] max-w-sm border p-4 pointer-events-none"
+          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.25 0 0)", borderLeft: `3px solid ${hovered.color}` }}
         >
-          <button
-            onClick={() => setSelected(null)}
-            className="absolute top-3 right-4 font-mono text-[11px] text-[oklch(0.45_0_0)] hover:text-white transition-colors"
-          >
-            ✕
-          </button>
-
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-1">
-              {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.5_0_0)] mb-1">
+            {[hovered.neighborhood, hovered.city].filter(Boolean).join(" · ")}
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-[family-name:var(--font-display)] text-lg text-white leading-tight truncate">
+              {hovered.name}
             </p>
-            <p
-              className="font-[family-name:var(--font-display)] leading-none"
-              style={{ fontSize: "clamp(1.3rem, 4vw, 1.8rem)", color: "oklch(0.95 0 0)" }}
-            >
-              {selected.name}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span
-                className="font-[family-name:var(--font-display)] text-3xl leading-none"
-                style={{ color: selected.color }}
-              >
-                {selected.score ?? "—"}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-[family-name:var(--font-display)] text-2xl leading-none" style={{ color: hovered.color }}>
+                {hovered.score ?? "—"}
               </span>
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.5_0_0)]">GF Score</p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
-                  {selected.scoreLabel}
-                </p>
-              </div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.color }}>
+                {hovered.scoreLabel}
+              </p>
             </div>
-
-            <Link
-              href={`/restaurant/${selected.id}`}
-              className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
-              style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-            >
-              View →
-            </Link>
           </div>
         </div>
       )}
