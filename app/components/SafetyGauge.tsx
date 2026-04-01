@@ -78,12 +78,12 @@ export function SafetyGauge({ score, size = "md" }: { score: number | null; size
 
       {/* Descriptor */}
       <div
-        className="px-3 py-1 border"
-        style={{ borderColor: `${gaugeColor}28` }}
+        className="px-4 py-1.5 border"
+        style={{ borderColor: `${gaugeColor}40` }}
       >
         <span
-          className="font-mono text-[8px] uppercase tracking-[0.2em]"
-          style={{ color: `${gaugeColor}B0` }}
+          className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]"
+          style={{ color: gaugeColor }}
         >
           {label}
         </span>
