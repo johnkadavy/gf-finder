@@ -54,7 +54,6 @@ function priceSymbol(level: number | null): string {
   return ["Free", "$", "$$", "$$$", "$$$$"][level] ?? "";
 }
 
-
 // ── Signal types ───────────────────────────────────────────────────────────
 
 type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
@@ -161,6 +160,34 @@ const IconAlert = () => (
   </svg>
 );
 
+const IconPin = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const IconPhone = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.13 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+  </svg>
+);
+
+const IconGlobe = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function RestaurantPage({
@@ -202,6 +229,7 @@ export default async function RestaurantPage({
   const sickCount = d?.reviews?.sick_reports_recent ?? 0;
   const sickSourceUrl = d?.reviews?.sick_reports_details?.find((r) => r.source_url)?.source_url ?? null;
   const price = priceSymbol(r.price_level);
+  const hours = r.opening_hours?.weekdayDescriptions;
 
   // ── Signal levels ──────────────────────────────────────────────────────
 
@@ -257,310 +285,322 @@ export default async function RestaurantPage({
     d?.reviews?.recent_sentiment === "mixed"           ? "Mixed" :
     d?.reviews?.recent_sentiment === "mostly_negative" ? "Mostly negative" : "Unknown";
 
-  const hours = r.opening_hours?.weekdayDescriptions;
-
   return (
     <main className="pt-16">
-      {/* ── Hero ── */}
+
+      {/* ── Hero — centered ── */}
       <section
-        className="grid-bg border-b px-8 py-14 md:py-20 relative"
+        className="grid-bg border-b px-6 pt-12 pb-14 md:pt-16 md:pb-20 relative text-center"
         style={{ borderColor: "oklch(0.2 0 0)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
         />
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto relative">
 
           {/* Back breadcrumb */}
-          <Link
-            href="/rankings"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] hover:text-[oklch(0.8_0_0)] transition-colors mb-10"
-          >
-            ← Rankings
-          </Link>
-
-          {/* Two-column: meta left, gauge right */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-12 items-center">
-
-            {/* Left */}
-            <div>
-              {/* Illness warning */}
-              {sickCount > 0 && (
-                <div
-                  className="inline-flex items-center gap-2.5 px-4 py-2 border mb-6"
-                  style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
-                  {sickSourceUrl ? (
-                    <a
-                      href={sickSourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
-                    >
-                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
-                    </a>
-                  ) : (
-                    <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
-                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Location + cuisine */}
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-3">
-                {[r.neighborhood, r.city].filter(Boolean).join(" / ")}
-              </p>
-
-              {/* Name */}
-              <h1
-                className="font-[family-name:var(--font-display)] leading-none mb-5"
-                style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", letterSpacing: "0.02em" }}
-              >
-                {r.name}
-              </h1>
-
-              {/* Cuisine tag */}
-              {cuisine && (
-                <div className="mb-5">
-                  <span
-                    className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border"
-                    style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.7 0 0)" }}
-                  >
-                    {cuisine}
-                  </span>
-                </div>
-              )}
-
-              {/* Meta row: rating, price, address */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mb-6">
-                {r.google_rating && (
-                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
-                    ★ {r.google_rating.toFixed(1)} Google
-                  </span>
-                )}
-                {price && (
-                  <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
-                    {price}
-                  </span>
-                )}
-                {r.address && (
-                  <span className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.65_0_0)]">
-                    {r.address}
-                  </span>
-                )}
-              </div>
-
-              {/* Links */}
-              <div className="flex items-center gap-5">
-                {r.website_url && (
-                  <a
-                    href={r.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                  >
-                    Website ↗
-                  </a>
-                )}
-                {r.google_maps_url && (
-                  <a
-                    href={r.google_maps_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                  >
-                    Google Maps ↗
-                  </a>
-                )}
-                {r.phone && (
-                  <a
-                    href={`tel:${r.phone}`}
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                  >
-                    {r.phone}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Right — score gauge */}
-            <div className="flex items-center justify-center md:justify-center">
-              <SafetyGauge score={score} size="lg" />
-            </div>
+          <div className="text-left mb-10">
+            <Link
+              href="/rankings"
+              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] hover:text-[oklch(0.8_0_0)] transition-colors"
+            >
+              ← Rankings
+            </Link>
           </div>
+
+          {/* Gauge */}
+          <div className="flex justify-center mb-6">
+            <SafetyGauge score={score} size="lg" />
+          </div>
+
+          {/* Illness warning */}
+          {sickCount > 0 && (
+            <div className="flex justify-center mb-5">
+              <div
+                className="inline-flex items-center gap-2.5 px-4 py-2 border"
+                style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+                {sickSourceUrl ? (
+                  <a
+                    href={sickSourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
+                  >
+                    {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
+                  </a>
+                ) : (
+                  <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
+                    {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Name */}
+          <h1
+            className="font-[family-name:var(--font-display)] leading-none mb-5"
+            style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
+          >
+            {r.name}
+          </h1>
+
+          {/* Meta row */}
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            {r.google_rating && (
+              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+                ★ {r.google_rating.toFixed(1)} Google
+              </span>
+            )}
+            {price && (
+              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">·</span>
+            )}
+            {price && (
+              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+                {price}
+              </span>
+            )}
+            {cuisine && (
+              <>
+                <span className="font-mono text-[12px] text-[oklch(0.55_0_0)]">·</span>
+                <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+                  {cuisine}
+                </span>
+              </>
+            )}
+            <span className="font-mono text-[12px] text-[oklch(0.55_0_0)]">·</span>
+            <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+              {[r.neighborhood, r.city].filter(Boolean).join(", ")}
+            </span>
+          </div>
+
         </div>
       </section>
 
-      {/* ── Body ── */}
-      <section className="px-8 pb-32 mt-10">
-        <div className="max-w-6xl mx-auto space-y-10">
+      {/* ── Body — two-column ── */}
+      <section className="px-6 pb-32 mt-10">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_300px] gap-10 items-start">
 
-          {/* Summary */}
-          {d?.summary?.short_summary && (
-            <p
-              className="text-[14px] leading-[1.7] max-w-2xl"
-              style={{ color: "oklch(0.82 0 0)" }}
-            >
-              {d.summary.short_summary}
-            </p>
-          )}
+          {/* ── Left column ── */}
+          <div className="space-y-10">
 
-          {/* Verified visit */}
-          {visit && (
-            <div
-              className="border-l-2 pl-6 py-1 space-y-4"
-              style={{ borderColor: "#4A7C59" }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#4A7C59]">
-                    CleanPlate Verified Visit
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {visit.overall_sentiment && (
-                    <span
-                      className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
-                      style={{
-                        borderColor: visit.overall_sentiment === "positive" ? "#4A7C5940" : "#FF744440",
-                        color: visit.overall_sentiment === "positive" ? "#4A7C59" : "#FF7444",
-                        backgroundColor: visit.overall_sentiment === "positive" ? "#4A7C5910" : "#FF744410",
-                      }}
-                    >
-                      {visit.overall_sentiment}
-                    </span>
-                  )}
-                  {visit.visit_date && (
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)]">
-                      {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Signal chips */}
-              {(() => {
-                const chips: { label: string; value: string }[] = [];
-                if (visit.gf_labeling) chips.push({ label: "Labeling", value: visit.gf_labeling });
-                if (visit.gf_options_level) chips.push({ label: "Options", value: visit.gf_options_level });
-                if (visit.staff_knowledge) chips.push({ label: "Staff", value: visit.staff_knowledge });
-                if (visit.cross_contamination_risk) chips.push({ label: "CC Risk", value: visit.cross_contamination_risk });
-                if (visit.dedicated_fryer) chips.push({ label: "Dedicated fryer", value: visit.dedicated_fryer });
-                if (chips.length === 0) return null;
-                return (
-                  <div className="flex flex-wrap gap-2">
-                    {chips.map(({ label, value }) => (
-                      <span
-                        key={label}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border"
-                        style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.68 0 0)" }}
-                      >
-                        {label}: {value}
-                      </span>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {/* Notes */}
-              {visit.notes && (
-                <p className="text-[13px] leading-[1.7] text-[oklch(0.75_0_0)] max-w-2xl">
-                  {visit.notes}
+            {/* Summary */}
+            {d?.summary?.short_summary && (
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)] mb-4">
+                  Overview
                 </p>
-              )}
-            </div>
-          )}
+                <p
+                  className="text-[15px] leading-[1.75] max-w-2xl"
+                  style={{ color: "oklch(0.85 0 0)" }}
+                >
+                  {d.summary.short_summary}
+                </p>
+              </div>
+            )}
 
-          {/* Signal grid */}
-          {d && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <SignalCard
-                icon={<IconTag />}
-                label="GF Labeling"
-                value={labelingText}
-                level={labelingLevel}
-              />
-              <SignalCard
-                icon={<IconMenu />}
-                label="GF Options"
-                value={optionsText}
-                level={optionsLevel}
-              />
-              <SignalCard
-                icon={<IconShield />}
-                label="Cross-Contamination"
-                value={contamText}
-                level={contamLevel}
-              />
-              <SignalCard
-                icon={<IconPerson />}
-                label="Staff Knowledge"
-                value={staffText}
-                level={staffLevel}
-              />
-              <SignalCard
-                icon={<IconChat />}
-                label="GF Sentiment"
-                value={sentimentText}
-                level={sentimentLevel}
-              />
-              <SignalCard
-                icon={<IconAlert />}
-                label="Illness Reports"
-                value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
-                level={sickCount > 0 ? "negative" : "positive"}
-              />
-            </div>
-          )}
-
-          {/* Opening hours */}
-          {hours && hours.length > 0 && (
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[oklch(0.65_0_0)] mb-4">
-                Hours
-              </p>
+            {/* Verified visit */}
+            {visit && (
               <div
-                className="border p-5 inline-block min-w-[280px]"
-                style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
+                className="border p-6 space-y-5"
+                style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
               >
-                {hours.map((line) => {
-                  const [day, ...rest] = line.split(": ");
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#4A7C59]">
+                      Verified Visit
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {visit.overall_sentiment && (
+                      <span
+                        className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
+                        style={{
+                          borderColor: visit.overall_sentiment === "positive" ? "#4A7C5940" : "#FF744440",
+                          color: visit.overall_sentiment === "positive" ? "#4A7C59" : "#FF7444",
+                          backgroundColor: visit.overall_sentiment === "positive" ? "#4A7C5910" : "#FF744410",
+                        }}
+                      >
+                        {visit.overall_sentiment}
+                      </span>
+                    )}
+                    {visit.visit_date && (
+                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)]">
+                        {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {visit.notes && (
+                  <p className="text-[13px] leading-[1.75] text-[oklch(0.78_0_0)]">
+                    {visit.notes}
+                  </p>
+                )}
+
+                {/* Signal chips */}
+                {(() => {
+                  const chips: { label: string; value: string }[] = [];
+                  if (visit.gf_labeling) chips.push({ label: "Labeling", value: visit.gf_labeling });
+                  if (visit.gf_options_level) chips.push({ label: "Options", value: visit.gf_options_level });
+                  if (visit.staff_knowledge) chips.push({ label: "Staff", value: visit.staff_knowledge });
+                  if (visit.cross_contamination_risk) chips.push({ label: "CC Risk", value: visit.cross_contamination_risk });
+                  if (visit.dedicated_fryer) chips.push({ label: "Dedicated fryer", value: visit.dedicated_fryer });
+                  if (chips.length === 0) return null;
                   return (
-                    <div key={line} className="flex justify-between gap-8 py-1.5 border-b last:border-0" style={{ borderColor: "oklch(0.16 0 0)" }}>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.65_0_0)]">
-                        {day}
-                      </span>
-                      <span className="font-mono text-[11px] text-[oklch(0.75_0_0)]">
-                        {rest.join(": ")}
-                      </span>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {chips.map(({ label, value }) => (
+                        <span
+                          key={label}
+                          className="font-mono text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border"
+                          style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.65 0 0)" }}
+                        >
+                          {label}: {value}
+                        </span>
+                      ))}
                     </div>
                   );
-                })}
+                })()}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Data confidence notice */}
-          {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
-            <p
-              className="font-mono text-[10px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
-              style={{
-                borderColor: "oklch(0.45 0 0)",
-                color: "oklch(0.72 0 0)",
-              }}
-            >
-              {d.data_quality.confidence === "low"
-                ? "Limited data — scores are based on partial information and may not fully reflect this restaurant's practices."
-                : "Moderate confidence — some signals are inferred. Confirm details directly with the restaurant."}
+            {/* Signal grid */}
+            {d && (
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)] mb-4">
+                  Signal Breakdown
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <SignalCard icon={<IconTag />} label="GF Labeling" value={labelingText} level={labelingLevel} />
+                  <SignalCard icon={<IconMenu />} label="GF Options" value={optionsText} level={optionsLevel} />
+                  <SignalCard icon={<IconShield />} label="Cross-Contamination" value={contamText} level={contamLevel} />
+                  <SignalCard icon={<IconPerson />} label="Staff Knowledge" value={staffText} level={staffLevel} />
+                  <SignalCard icon={<IconChat />} label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
+                  <SignalCard
+                    icon={<IconAlert />}
+                    label="Illness Reports"
+                    value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
+                    level={sickCount > 0 ? "negative" : "positive"}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Data confidence notice */}
+            {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
+              <p
+                className="font-mono text-[10px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
+                style={{
+                  borderColor: "oklch(0.45 0 0)",
+                  color: "oklch(0.72 0 0)",
+                }}
+              >
+                {d.data_quality.confidence === "low"
+                  ? "Limited data — scores are based on partial information and may not fully reflect this restaurant's practices."
+                  : "Moderate confidence — some signals are inferred. Confirm details directly with the restaurant."}
+              </p>
+            )}
+          </div>
+
+          {/* ── Right sidebar ── */}
+          <div
+            className="border p-6 space-y-6 md:sticky md:top-24"
+            style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
+          >
+            <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)]">
+              Info
             </p>
-          )}
+
+            {/* Address */}
+            {r.address && (
+              <div className="flex gap-3">
+                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPin /></span>
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Location</p>
+                  <p className="font-mono text-[12px] text-[oklch(0.78_0_0)] leading-relaxed">{r.address}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Phone */}
+            {r.phone && (
+              <div className="flex gap-3">
+                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Phone</p>
+                  <a
+                    href={`tel:${r.phone}`}
+                    className="font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                  >
+                    {r.phone}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Links */}
+            {(r.website_url || r.google_maps_url) && (
+              <div className="flex gap-3">
+                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
+                <div className="space-y-1.5">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Links</p>
+                  {r.website_url && (
+                    <a
+                      href={r.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                    >
+                      Website ↗
+                    </a>
+                  )}
+                  {r.google_maps_url && (
+                    <a
+                      href={r.google_maps_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                    >
+                      Google Maps ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Hours */}
+            {hours && hours.length > 0 && (
+              <div className="flex gap-3">
+                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconClock /></span>
+                <div className="w-full">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-3">Hours</p>
+                  <div className="space-y-2">
+                    {hours.map((line) => {
+                      const [day, ...rest] = line.split(": ");
+                      return (
+                        <div key={line} className="flex justify-between gap-4">
+                          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.55_0_0)]">
+                            {day}
+                          </span>
+                          <span className="font-mono text-[10px] text-[oklch(0.7_0_0)] text-right">
+                            {rest.join(": ")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
         </div>
       </section>
