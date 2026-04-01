@@ -58,31 +58,32 @@ function priceSymbol(level: number | null): string {
 
 type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
 
+// Value text — bright so it reads as the primary info
 function signalColor(level: SignalLevel): string {
   switch (level) {
-    case "positive": return "#4A7C59";
-    case "neutral":  return "oklch(0.65 0 0)";
-    case "warning":  return "#C5A04A";
-    case "negative": return "#FF7444";
-    default:         return "oklch(0.38 0 0)";
+    case "positive": return "#7ECF9A";
+    case "neutral":  return "oklch(0.72 0 0)";
+    case "warning":  return "#D4AE62";
+    case "negative": return "#FF8060";
+    default:         return "oklch(0.42 0 0)";
   }
 }
 
 function signalBg(level: SignalLevel): string {
   switch (level) {
-    case "positive": return "#4A7C5912";
-    case "negative": return "#FF744412";
-    case "warning":  return "#C5A04A12";
+    case "positive": return "#4A7C590D";
+    case "negative": return "#FF74440D";
+    case "warning":  return "#C5A04A0D";
     default:         return "oklch(0.095 0 0)";
   }
 }
 
 function signalBorder(level: SignalLevel): string {
   switch (level) {
-    case "positive": return "#4A7C5930";
-    case "negative": return "#FF744430";
-    case "warning":  return "#C5A04A30";
-    default:         return "oklch(0.2 0 0)";
+    case "positive": return "#4A7C5938";
+    case "negative": return "#FF744438";
+    case "warning":  return "#C5A04A38";
+    default:         return "oklch(0.18 0 0)";
   }
 }
 
@@ -97,15 +98,15 @@ function SignalCard({ icon, label, value, level }: {
   const color = signalColor(level);
   return (
     <div
-      className="border p-5 flex flex-col gap-4"
+      className="border p-6 flex flex-col gap-5"
       style={{ borderColor: signalBorder(level), backgroundColor: signalBg(level) }}
     >
-      <div style={{ color }} aria-hidden="true">{icon}</div>
+      <div className="opacity-40" style={{ color }} aria-hidden="true">{icon}</div>
       <div>
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">
           {label}
         </p>
-        <p className="font-mono text-[13px] uppercase tracking-[0.08em]" style={{ color }}>
+        <p className="font-mono text-[14px] uppercase tracking-[0.04em]" style={{ color }}>
           {value}
         </p>
       </div>
@@ -267,7 +268,7 @@ export default async function RestaurantPage({
 
   const contamLevel: SignalLevel =
     d?.operations?.cross_contamination_risk === "low"    ? "positive" :
-    d?.operations?.cross_contamination_risk === "medium" ? "neutral"  :
+    d?.operations?.cross_contamination_risk === "medium" ? "warning"  :
     d?.operations?.cross_contamination_risk === "high"   ? "negative" : "unknown";
 
   const contamText =
@@ -390,9 +391,12 @@ export default async function RestaurantPage({
             {/* Summary */}
             {d?.summary?.short_summary && (
               <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-4">
-                  Overview
-                </p>
+                <div className="flex items-center gap-4 mb-5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                    Overview
+                  </p>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                </div>
                 <p
                   className="text-[19px] leading-[1.65] max-w-xl"
                   style={{ color: "oklch(0.92 0 0)" }}
@@ -402,8 +406,40 @@ export default async function RestaurantPage({
               </div>
             )}
 
+            {/* Signal grid */}
+            {d && (
+              <div>
+                <div className="flex items-center gap-4 mb-5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                    Signal Breakdown
+                  </p>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <SignalCard icon={<IconTag />} label="GF Labeling" value={labelingText} level={labelingLevel} />
+                  <SignalCard icon={<IconMenu />} label="GF Options" value={optionsText} level={optionsLevel} />
+                  <SignalCard icon={<IconShield />} label="Cross-Contamination" value={contamText} level={contamLevel} />
+                  <SignalCard icon={<IconPerson />} label="Staff Knowledge" value={staffText} level={staffLevel} />
+                  <SignalCard icon={<IconChat />} label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
+                  <SignalCard
+                    icon={<IconAlert />}
+                    label="Illness Reports"
+                    value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
+                    level={sickCount > 0 ? "negative" : "positive"}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Verified visit */}
             {visit && (
+              <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                  Reviews
+                </p>
+                <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+              </div>
               <div
                 className="border p-6 space-y-5"
                 style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
@@ -470,27 +506,6 @@ export default async function RestaurantPage({
                   );
                 })()}
               </div>
-            )}
-
-            {/* Signal grid */}
-            {d && (
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-4">
-                  Signal Breakdown
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <SignalCard icon={<IconTag />} label="GF Labeling" value={labelingText} level={labelingLevel} />
-                  <SignalCard icon={<IconMenu />} label="GF Options" value={optionsText} level={optionsLevel} />
-                  <SignalCard icon={<IconShield />} label="Cross-Contamination" value={contamText} level={contamLevel} />
-                  <SignalCard icon={<IconPerson />} label="Staff Knowledge" value={staffText} level={staffLevel} />
-                  <SignalCard icon={<IconChat />} label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
-                  <SignalCard
-                    icon={<IconAlert />}
-                    label="Illness Reports"
-                    value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
-                    level={sickCount > 0 ? "negative" : "positive"}
-                  />
-                </div>
               </div>
             )}
 
@@ -515,7 +530,7 @@ export default async function RestaurantPage({
             className="border p-6 space-y-6 md:sticky md:top-24"
             style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
           >
-            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
               Info
             </p>
 
@@ -524,7 +539,7 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPin /></span>
                 <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Location</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Location</p>
                   <p className="font-mono text-[13px] text-[oklch(0.82_0_0)] leading-relaxed">{r.address}</p>
                 </div>
               </div>
@@ -535,7 +550,7 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
                 <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Phone</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Phone</p>
                   <a
                     href={`tel:${r.phone}`}
                     className="font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
@@ -551,7 +566,7 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
                 <div className="space-y-1.5">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Links</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Links</p>
                   {r.website_url && (
                     <a
                       href={r.website_url}
@@ -581,13 +596,13 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconClock /></span>
                 <div className="w-full">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.5_0_0)] mb-3">Hours</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">Hours</p>
                   <div className="space-y-2">
                     {hours.map((line) => {
                       const [day, ...rest] = line.split(": ");
                       return (
                         <div key={line} className="flex justify-between gap-4">
-                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[oklch(0.62_0_0)]">
+                          <span className="font-mono text-[11px] tracking-[0.02em] text-[oklch(0.82_0_0)]">
                             {day}
                           </span>
                           <span className="font-mono text-[11px] text-[oklch(0.78_0_0)] text-right">
