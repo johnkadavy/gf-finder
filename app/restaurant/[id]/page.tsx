@@ -394,8 +394,8 @@ export default async function RestaurantPage({
                   Overview
                 </p>
                 <p
-                  className="text-[16px] leading-[1.7] max-w-2xl"
-                  style={{ color: "oklch(0.88 0 0)" }}
+                  className="text-[19px] leading-[1.65] max-w-xl"
+                  style={{ color: "oklch(0.92 0 0)" }}
                 >
                   {d.summary.short_summary}
                 </p>
