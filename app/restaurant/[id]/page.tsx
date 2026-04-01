@@ -102,10 +102,10 @@ function SignalCard({ icon, label, value, level }: {
     >
       <div style={{ color }} aria-hidden="true">{icon}</div>
       <div>
-        <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-[oklch(0.48_0_0)] mb-2">
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-2">
           {label}
         </p>
-        <p className="font-mono text-[12px] uppercase tracking-[0.12em]" style={{ color }}>
+        <p className="font-mono text-[13px] uppercase tracking-[0.08em]" style={{ color }}>
           {value}
         </p>
       </div>
@@ -349,30 +349,30 @@ export default async function RestaurantPage({
           </h1>
 
           {/* Meta row */}
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {r.google_rating && (
-              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
                 ★ {r.google_rating.toFixed(1)} Google
               </span>
             )}
             {price && (
-              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">·</span>
+              <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
             )}
             {price && (
-              <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
                 {price}
               </span>
             )}
             {cuisine && (
               <>
-                <span className="font-mono text-[12px] text-[oklch(0.55_0_0)]">·</span>
-                <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+                <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
+                <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
                   {cuisine}
                 </span>
               </>
             )}
-            <span className="font-mono text-[12px] text-[oklch(0.55_0_0)]">·</span>
-            <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+            <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
+            <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
               {[r.neighborhood, r.city].filter(Boolean).join(", ")}
             </span>
           </div>
@@ -390,12 +390,12 @@ export default async function RestaurantPage({
             {/* Summary */}
             {d?.summary?.short_summary && (
               <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)] mb-4">
+                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-4">
                   Overview
                 </p>
                 <p
-                  className="text-[15px] leading-[1.75] max-w-2xl"
-                  style={{ color: "oklch(0.85 0 0)" }}
+                  className="text-[16px] leading-[1.7] max-w-2xl"
+                  style={{ color: "oklch(0.88 0 0)" }}
                 >
                   {d.summary.short_summary}
                 </p>
@@ -414,7 +414,7 @@ export default async function RestaurantPage({
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#4A7C59]">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#4A7C59]">
                       Verified Visit
                     </span>
                   </div>
@@ -432,7 +432,7 @@ export default async function RestaurantPage({
                       </span>
                     )}
                     {visit.visit_date && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)]">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.58_0_0)]">
                         {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                       </span>
                     )}
@@ -441,7 +441,7 @@ export default async function RestaurantPage({
 
                 {/* Notes */}
                 {visit.notes && (
-                  <p className="text-[13px] leading-[1.75] text-[oklch(0.78_0_0)]">
+                  <p className="text-[15px] leading-[1.7] text-[oklch(0.85_0_0)]">
                     {visit.notes}
                   </p>
                 )}
@@ -460,8 +460,8 @@ export default async function RestaurantPage({
                       {chips.map(({ label, value }) => (
                         <span
                           key={label}
-                          className="font-mono text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border"
-                          style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.65 0 0)" }}
+                          className="font-mono text-[11px] uppercase tracking-[0.08em] px-2.5 py-1 border"
+                          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
                         >
                           {label}: {value}
                         </span>
@@ -475,7 +475,7 @@ export default async function RestaurantPage({
             {/* Signal grid */}
             {d && (
               <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)] mb-4">
+                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] mb-4">
                   Signal Breakdown
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -515,7 +515,7 @@ export default async function RestaurantPage({
             className="border p-6 space-y-6 md:sticky md:top-24"
             style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
           >
-            <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-[oklch(0.5_0_0)]">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)]">
               Info
             </p>
 
@@ -524,8 +524,8 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPin /></span>
                 <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Location</p>
-                  <p className="font-mono text-[12px] text-[oklch(0.78_0_0)] leading-relaxed">{r.address}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Location</p>
+                  <p className="font-mono text-[13px] text-[oklch(0.82_0_0)] leading-relaxed">{r.address}</p>
                 </div>
               </div>
             )}
@@ -535,10 +535,10 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
                 <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Phone</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Phone</p>
                   <a
                     href={`tel:${r.phone}`}
-                    className="font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                    className="font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
                   >
                     {r.phone}
                   </a>
@@ -551,13 +551,13 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
                 <div className="space-y-1.5">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-1">Links</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.5_0_0)] mb-1">Links</p>
                   {r.website_url && (
                     <a
                       href={r.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                      className="block font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
                     >
                       Website ↗
                     </a>
@@ -567,7 +567,7 @@ export default async function RestaurantPage({
                       href={r.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block font-mono text-[12px] text-[oklch(0.78_0_0)] hover:text-[#FF7444] transition-colors"
+                      className="block font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
                     >
                       Google Maps ↗
                     </a>
@@ -581,16 +581,16 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconClock /></span>
                 <div className="w-full">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.45_0_0)] mb-3">Hours</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[oklch(0.5_0_0)] mb-3">Hours</p>
                   <div className="space-y-2">
                     {hours.map((line) => {
                       const [day, ...rest] = line.split(": ");
                       return (
                         <div key={line} className="flex justify-between gap-4">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.55_0_0)]">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[oklch(0.62_0_0)]">
                             {day}
                           </span>
-                          <span className="font-mono text-[10px] text-[oklch(0.7_0_0)] text-right">
+                          <span className="font-mono text-[11px] text-[oklch(0.78_0_0)] text-right">
                             {rest.join(": ")}
                           </span>
                         </div>
