@@ -297,17 +297,17 @@ export default async function RestaurantPage({
           className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
         />
-        <div className="max-w-4xl mx-auto relative">
+        {/* Back breadcrumb — aligned with body left edge */}
+        <div className="max-w-6xl mx-auto mb-10 text-left">
+          <Link
+            href="/rankings"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.75_0_0)] hover:text-[oklch(0.95_0_0)] transition-colors"
+          >
+            ← Rankings
+          </Link>
+        </div>
 
-          {/* Back breadcrumb */}
-          <div className="text-left mb-10">
-            <Link
-              href="/rankings"
-              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] hover:text-[oklch(0.8_0_0)] transition-colors"
-            >
-              ← Rankings
-            </Link>
-          </div>
+        <div className="max-w-4xl mx-auto relative">
 
           {/* Gauge */}
           <div className="flex justify-center mb-6">
