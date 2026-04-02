@@ -7,6 +7,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
+import { calculateScore, type VerifiedData } from "../lib/score";
 
 dotenv.config({ path: ".env.local" });
 
@@ -69,6 +70,7 @@ async function sync() {
   let saved = 0;
   let skipped = 0;
   let failed = 0;
+  const savedPlaceIds: string[] = [];
 
   for (const record of records) {
     const googlePlaceId = record.fields["google_place_id"] as string | undefined;
@@ -128,10 +130,39 @@ async function sync() {
     } else {
       console.log(`  Saved: ${googlePlaceId}`);
       saved++;
+      savedPlaceIds.push(googlePlaceId);
     }
   }
 
   console.log(`\nDone. Saved: ${saved} | Skipped: ${skipped} | Failed: ${failed}`);
+
+  // ── Score backfill for newly synced records ───────────────────────────────
+  if (savedPlaceIds.length === 0) return;
+
+  console.log(`\nCalculating scores for ${savedPlaceIds.length} synced restaurants...`);
+
+  const { data: rows, error: fetchError } = await supabase
+    .from("restaurants")
+    .select("id, dossier, verified_data")
+    .in("google_place_id", savedPlaceIds);
+
+  if (fetchError) {
+    console.error("Could not fetch rows for scoring:", fetchError.message);
+    return;
+  }
+
+  let scored = 0;
+  await Promise.all(
+    (rows ?? []).map(async (row) => {
+      const score = calculateScore(row.dossier, row.verified_data as VerifiedData | undefined);
+      if (score === null) return;
+      const { error } = await supabase.from("restaurants").update({ score }).eq("id", row.id);
+      if (error) console.error(`  Score update failed for id ${row.id}:`, error.message);
+      else scored++;
+    })
+  );
+
+  console.log(`✓ Scores written: ${scored}`);
 }
 
 sync();
