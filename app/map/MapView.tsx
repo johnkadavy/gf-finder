@@ -231,9 +231,58 @@ export function MapView() {
     searchMode.current = true;
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/map-search?q=${encodeURIComponent(q)}`);
-      const data: MapRestaurant[] = await res.json();
-      setRestaurants(data);
+      // Run restaurant search and geocoding in parallel
+      const [searchRes, geoRes] = await Promise.all([
+        fetch(`/api/map-search?q=${encodeURIComponent(q)}`),
+        fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json` +
+          `?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&limit=1`
+        ),
+      ]);
+
+      const restaurants: MapRestaurant[] = await searchRes.json();
+
+      if (restaurants.length > 0) {
+        // Found restaurant results — show them
+        setRestaurants(restaurants);
+      } else {
+        // No restaurant matches — try navigating to the geocoded location
+        const geoData = await geoRes.json();
+        const feature = geoData.features?.[0];
+        if (feature && map.current) {
+          const [lng, lat] = feature.center;
+          const currentCenter = map.current.getCenter();
+
+          // Haversine distance in km
+          const R = 6371;
+          const dLat = ((lat - currentCenter.lat) * Math.PI) / 180;
+          const dLng = ((lng - currentCenter.lng) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos((currentCenter.lat * Math.PI) / 180) *
+              Math.cos((lat * Math.PI) / 180) *
+              Math.sin(dLng / 2) ** 2;
+          const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+          // Determine zoom based on place type
+          const placeType = feature.place_type?.[0] ?? "";
+          const zoom =
+            placeType === "address" ? 16 :
+            placeType === "neighborhood" ? 14 :
+            placeType === "place" ? 12 : 13;
+
+          if (distKm > 100) {
+            map.current.jumpTo({ center: [lng, lat], zoom });
+          } else {
+            map.current.flyTo({ center: [lng, lat], zoom, duration: 900 });
+          }
+
+          // Switch to viewport mode so the map loads local restaurants
+          searchMode.current = false;
+          setCommittedSearch("");
+        }
+        setRestaurants([]);
+      }
     } finally {
       setIsSearching(false);
     }
