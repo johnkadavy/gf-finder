@@ -104,6 +104,7 @@ export function MapView() {
   const fetchViewport = useCallback(async () => {
     if (!map.current) return;
     const bounds = map.current.getBounds();
+    if (!bounds) return;
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
     const params = new URLSearchParams({
@@ -245,8 +246,8 @@ export function MapView() {
     debounceRef.current = setTimeout(async () => {
       try {
         const params = new URLSearchParams({ q });
-        if (map.current) {
-          const b = map.current.getBounds();
+        const b = map.current?.getBounds();
+        if (b) {
           params.set("swLat", String(b.getSouthWest().lat));
           params.set("swLng", String(b.getSouthWest().lng));
           params.set("neLat", String(b.getNorthEast().lat));
