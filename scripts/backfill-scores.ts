@@ -53,18 +53,21 @@ async function main() {
       }
     }
 
-    // Update scores in parallel
+    // Update scores in chunks of 25 to avoid rate limits
     if (updates.length > 0) {
-      const results = await Promise.all(
-        updates.map(({ id, score }) =>
-          supabase.from("restaurants").update({ score }).eq("id", id)
-        )
-      );
-
-      const failed = results.filter((r) => r.error);
-      if (failed.length > 0) {
-        console.error("  Update errors:", failed.map((r) => r.error!.message).join(", "));
-        process.exit(1);
+      const CHUNK = 25;
+      for (let i = 0; i < updates.length; i += CHUNK) {
+        const chunk = updates.slice(i, i + CHUNK);
+        const results = await Promise.all(
+          chunk.map(({ id, score }) =>
+            supabase.from("restaurants").update({ score }).eq("id", id)
+          )
+        );
+        const failed = results.filter((r) => r.error);
+        if (failed.length > 0) {
+          console.error("  Update errors:", failed.map((r) => r.error!.message).join(", "));
+          process.exit(1);
+        }
       }
 
       totalUpdated += updates.length;

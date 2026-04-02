@@ -141,26 +141,39 @@ async function sync() {
 
   console.log(`\nCalculating scores for ${savedPlaceIds.length} synced restaurants...`);
 
-  const { data: rows, error: fetchError } = await supabase
-    .from("restaurants")
-    .select("id, dossier, verified_data")
-    .in("google_place_id", savedPlaceIds);
+  // Fetch in batches of 200 to stay under Supabase query size limits
+  const BATCH = 200;
+  const allRows: { id: number; dossier: any; verified_data: any }[] = [];
 
-  if (fetchError) {
-    console.error("Could not fetch rows for scoring:", fetchError.message);
-    return;
+  for (let i = 0; i < savedPlaceIds.length; i += BATCH) {
+    const chunk = savedPlaceIds.slice(i, i + BATCH);
+    const { data, error: fetchError } = await supabase
+      .from("restaurants")
+      .select("id, dossier, verified_data")
+      .in("google_place_id", chunk);
+    if (fetchError) {
+      console.error("Could not fetch rows for scoring:", fetchError.message);
+      return;
+    }
+    allRows.push(...(data ?? []));
   }
 
   let scored = 0;
-  await Promise.all(
-    (rows ?? []).map(async (row) => {
-      const score = calculateScore(row.dossier, row.verified_data as VerifiedData | undefined);
-      if (score === null) return;
-      const { error } = await supabase.from("restaurants").update({ score }).eq("id", row.id);
-      if (error) console.error(`  Score update failed for id ${row.id}:`, error.message);
-      else scored++;
-    })
-  );
+  const scoreUpdates = allRows
+    .map((row) => ({ id: row.id, score: calculateScore(row.dossier, row.verified_data as VerifiedData | undefined) }))
+    .filter((u) => u.score !== null) as { id: number; score: number }[];
+
+  const CHUNK = 25;
+  for (let i = 0; i < scoreUpdates.length; i += CHUNK) {
+    const chunk = scoreUpdates.slice(i, i + CHUNK);
+    await Promise.all(
+      chunk.map(async ({ id, score }) => {
+        const { error } = await supabase.from("restaurants").update({ score }).eq("id", id);
+        if (error) console.error(`  Score update failed for id ${id}:`, error.message);
+        else scored++;
+      })
+    );
+  }
 
   console.log(`✓ Scores written: ${scored}`);
 }
