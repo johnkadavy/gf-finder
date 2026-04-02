@@ -234,10 +234,7 @@ export function MapView() {
       // Run restaurant search and geocoding in parallel
       const [searchRes, geoRes] = await Promise.all([
         fetch(`/api/map-search?q=${encodeURIComponent(q)}`),
-        fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json` +
-          `?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&limit=1`
-        ),
+        fetch(`/api/geocode?q=${encodeURIComponent(q)}`),
       ]);
 
       const restaurants: MapRestaurant[] = await searchRes.json();
