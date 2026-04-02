@@ -13,6 +13,7 @@ type Row = {
   google_rating: number | null;
   price_level: number | null;
   address: string | null;
+  website_url: string | null;
   dossier: ScoringDossier | null;
   verified_data: VerifiedData | null;
 };
@@ -22,7 +23,7 @@ function toMapRestaurant(r: Row): MapRestaurant {
   return {
     id: r.id, name: r.name, city: r.city, neighborhood: r.neighborhood,
     lat: r.lat, lng: r.lng, cuisine: r.cuisine, google_rating: r.google_rating,
-    price_level: r.price_level, address: r.address,
+    price_level: r.price_level, address: r.address, website: r.website_url,
     score, color: getGaugeColor(score), scoreLabel: getScoreLabel(score).label,
   };
 }
@@ -64,7 +65,7 @@ function scoreMatch(name: string, cuisine: string | null, query: string): number
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, dossier, verified_data";
+const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, dossier, verified_data";
 const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
 
   // ── Viewport: top 50 by GF score within bounding box ─────────────────────
   if (swLat && swLng && neLat && neLng) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("restaurants")
       .select(SELECT)
       .not("lat", "is", null)

@@ -9,6 +9,7 @@ export type MapRestaurant = {
   google_rating: number | null;
   price_level: number | null;
   address: string | null;
+  website: string | null;
   score: number | null;
   color: string;
   scoreLabel: string;
