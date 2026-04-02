@@ -91,13 +91,21 @@ export async function GET(request: Request) {
       for (const t of unique) orParts.push(`name.ilike.%${t}%`);
     }
 
-    const { data } = await supabase
+    let query = supabase
       .from("restaurants")
       .select(SELECT)
       .not("lat", "is", null)
       .not("lng", "is", null)
-      .or(orParts.join(","))
-      .limit(300);
+      .or(orParts.join(","));
+
+    // Optionally scope to current viewport
+    if (swLat && swLng && neLat && neLng) {
+      query = query
+        .gte("lat", parseFloat(swLat)).lte("lat", parseFloat(neLat))
+        .gte("lng", parseFloat(swLng)).lte("lng", parseFloat(neLng));
+    }
+
+    const { data } = await query.limit(300);
 
     const results = (data ?? [])
       .map((r: Row) => ({ ...toMapRestaurant(r), _score: scoreMatch(r.name, r.cuisine, q) }))

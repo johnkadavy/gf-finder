@@ -232,8 +232,13 @@ export function MapView() {
     setIsSearching(true);
     try {
       // Run restaurant search and geocoding in parallel
+      const bounds = map.current?.getBounds();
+      const boundsParams = bounds
+        ? `&swLat=${bounds.getSouthWest().lat}&swLng=${bounds.getSouthWest().lng}` +
+          `&neLat=${bounds.getNorthEast().lat}&neLng=${bounds.getNorthEast().lng}`
+        : "";
       const [searchRes, geoRes] = await Promise.all([
-        fetch(`/api/map-search?q=${encodeURIComponent(q)}`),
+        fetch(`/api/map-search?q=${encodeURIComponent(q)}${boundsParams}`),
         fetch(`/api/geocode?q=${encodeURIComponent(q)}&token=${encodeURIComponent(process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "")}`),
       ]);
 
@@ -603,7 +608,7 @@ export function MapView() {
       {/* Locate me button */}
       <button
         onClick={locateUser}
-        className="absolute bottom-24 right-4 z-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
+        className="absolute bottom-8 left-4 z-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
         style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
