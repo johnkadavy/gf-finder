@@ -36,13 +36,16 @@ export function MapView() {
   const [mapReady, setMapReady] = useState(false);
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([]);
   const [selected, setSelected] = useState<MapRestaurant | null>(null);
-  const [hovered, setHovered] = useState<MapRestaurant | null>(null);
+  const [hovered, setHovered] = useState<{ r: MapRestaurant; x: number; y: number } | null>(null);
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [search, setSearch] = useState("");
   const [committedSearch, setCommittedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleMarkerHover = useCallback((r: MapRestaurant) => setHovered(r), []);
+  const handleMarkerHover = useCallback((r: MapRestaurant) => {
+    const pos = map.current?.project([r.lng, r.lat]);
+    if (pos) setHovered({ r, x: pos.x, y: pos.y });
+  }, []);
   const handleMarkerLeave = useCallback(() => setHovered(null), []);
   const handleMarkerClick = useCallback((r: MapRestaurant) => {
     setSelected((prev) => (prev?.id === r.id ? null : r));
@@ -382,27 +385,32 @@ export function MapView() {
         Near me
       </button>
 
-      {/* Hover preview card — only shown when no panel is open */}
+      {/* Hover tooltip — floats above the hovered pin */}
       {hovered && !selected && (
         <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-2rem)] max-w-sm border p-4 pointer-events-none"
-          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.25 0 0)", borderLeft: `3px solid ${hovered.color}` }}
+          className="absolute z-30 pointer-events-none border p-3 w-52"
+          style={{
+            left: hovered.x,
+            top: hovered.y + 64, // 64px = nav height (pt-16)
+            transform: "translate(-50%, calc(-100% - 18px))",
+            backgroundColor: "oklch(0.1 0 0)",
+            borderColor: "oklch(0.25 0 0)",
+            borderLeft: `3px solid ${hovered.r.color}`,
+          }}
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.5_0_0)] mb-1">
-            {[hovered.neighborhood, hovered.city].filter(Boolean).join(" · ")}
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.5_0_0)] mb-1">
+            {[hovered.r.neighborhood, hovered.r.city].filter(Boolean).join(" · ")}
           </p>
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-[family-name:var(--font-display)] text-lg text-white leading-tight truncate">
-              {hovered.name}
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-[family-name:var(--font-display)] text-2xl leading-none" style={{ color: hovered.color }}>
-                {hovered.score ?? "—"}
-              </span>
-              <p className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.color }}>
-                {hovered.scoreLabel}
-              </p>
-            </div>
+          <p className="font-[family-name:var(--font-display)] text-base text-white leading-tight mb-2">
+            {hovered.r.name}
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="font-[family-name:var(--font-display)] text-xl leading-none" style={{ color: hovered.r.color }}>
+              {hovered.r.score ?? "—"}
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.r.color }}>
+              {hovered.r.scoreLabel}
+            </span>
           </div>
         </div>
       )}
