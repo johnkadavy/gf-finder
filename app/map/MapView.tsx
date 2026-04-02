@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import Link from "next/link";
 import type { MapRestaurant } from "./types";
+import { getGaugeColor, getScoreLabel } from "@/lib/score";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -52,7 +53,8 @@ export function MapView() {
   const [isSearching, setIsSearching] = useState(false);
 
   // Autocomplete
-  const [suggestions, setSuggestions] = useState<{ id: number; name: string; city: string; neighborhood: string | null }[]>([]);
+  type Suggestion = { id: number; name: string; city: string; neighborhood: string | null; lat: number; lng: number; cuisine: string | null; google_rating: number | null; price_level: number | null; address: string | null; website_url: string | null; score: number | null };
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -319,7 +321,7 @@ export function MapView() {
     }
   }, [fetchViewport]);
 
-  // Fetch autocomplete suggestions as user types, filtered to current map viewport
+  // Fetch autocomplete suggestions as user types, scoped to a 3x-expanded viewport
   const fetchSuggestions = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!q) { setSuggestions([]); setShowSuggestions(false); return; }
@@ -328,10 +330,16 @@ export function MapView() {
         const params = new URLSearchParams({ q });
         const b = map.current?.getBounds();
         if (b) {
-          params.set("swLat", String(b.getSouthWest().lat));
-          params.set("swLng", String(b.getSouthWest().lng));
-          params.set("neLat", String(b.getNorthEast().lat));
-          params.set("neLng", String(b.getNorthEast().lng));
+          const sw = b.getSouthWest();
+          const ne = b.getNorthEast();
+          const cLat = (sw.lat + ne.lat) / 2;
+          const cLng = (sw.lng + ne.lng) / 2;
+          const dLat = (ne.lat - sw.lat) * 1.5; // expand 3x (1.5 each side)
+          const dLng = (ne.lng - sw.lng) * 1.5;
+          params.set("swLat", String(cLat - dLat));
+          params.set("swLng", String(cLng - dLng));
+          params.set("neLat", String(cLat + dLat));
+          params.set("neLng", String(cLng + dLng));
         }
         const res = await fetch(`/api/suggestions?${params}`);
         const data = await res.json();
@@ -356,35 +364,27 @@ export function MapView() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const selectSuggestion = useCallback(async (s: { id: number; name: string }) => {
+  const selectSuggestion = useCallback((s: Suggestion) => {
     setSearch(s.name);
     setSuggestions([]);
     setShowSuggestions(false);
-    setScoreFilter("all");        // ensure the restaurant is visible
-    searchMode.current = false;   // stay in viewport mode after flyTo
+    setScoreFilter("all");
+    searchMode.current = false;
     setCommittedSearch("");
+    setShowSearchArea(false);
 
-    setIsSearching(true);
-    try {
-      const res = await fetch(`/api/map-search?q=${encodeURIComponent(s.name)}`);
-      const results: MapRestaurant[] = await res.json();
-      const restaurant = results.find((r) => r.id === s.id) ?? null;
+    const restaurant: MapRestaurant = {
+      id: s.id, name: s.name, city: s.city, neighborhood: s.neighborhood,
+      lat: s.lat, lng: s.lng, cuisine: s.cuisine, google_rating: s.google_rating,
+      price_level: s.price_level, address: s.address, website: s.website_url,
+      score: s.score, color: getGaugeColor(s.score), scoreLabel: getScoreLabel(s.score).label,
+    };
 
-      if (restaurant) {
-        // Make sure this restaurant has a marker even before the viewport refreshes
-        setRestaurants((prev) =>
-          prev.some((r) => r.id === restaurant.id) ? prev : [restaurant, ...prev]
-        );
-        setSelected(restaurant);
-        map.current?.flyTo({
-          center: [restaurant.lng, restaurant.lat],
-          zoom: 15,
-          duration: 900,
-        });
-      }
-    } finally {
-      setIsSearching(false);
-    }
+    setRestaurants((prev) =>
+      prev.some((r) => r.id === restaurant.id) ? prev : [restaurant, ...prev]
+    );
+    setSelected(restaurant);
+    map.current?.flyTo({ center: [restaurant.lng, restaurant.lat], zoom: 15, duration: 900 });
   }, []);
 
   const visibleCount = restaurants.filter((r) => meetsScoreFilter(r, scoreFilter)).length;
