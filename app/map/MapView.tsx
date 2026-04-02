@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import Link from "next/link";
-import type { MapRestaurant } from "./page";
+import type { MapRestaurant } from "./types";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -17,25 +17,30 @@ const SCORE_FILTERS: { value: ScoreFilter; label: string; min: number }[] = [
   { value: "all",      label: "All",       min: 0  },
 ];
 
-function matchesFilter(r: MapRestaurant, filter: ScoreFilter, search: string): boolean {
-  const min = SCORE_FILTERS.find((f) => f.value === filter)!.min;
-  if ((r.score ?? 0) < min) return false;
-  if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
-  return true;
+function meetsScoreFilter(r: MapRestaurant, filter: ScoreFilter): boolean {
+  return (r.score ?? 0) >= SCORE_FILTERS.find((f) => f.value === filter)!.min;
 }
 
 function priceStr(level: number | null) {
   return level ? "$".repeat(level) : null;
 }
 
-export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
+export function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<Map<number, mapboxgl.Marker>>(new Map());
   const markerEls = useRef<Map<number, HTMLElement>>(new Map());
+  const searchMode = useRef(false);       // true while user has an active search
+  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [mapReady, setMapReady] = useState(false);
+  const [restaurants, setRestaurants] = useState<MapRestaurant[]>([]);
   const [selected, setSelected] = useState<MapRestaurant | null>(null);
   const [hovered, setHovered] = useState<MapRestaurant | null>(null);
-  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("excellent");
+  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [search, setSearch] = useState("");
+  const [committedSearch, setCommittedSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleMarkerHover = useCallback((r: MapRestaurant) => setHovered(r), []);
   const handleMarkerLeave = useCallback(() => setHovered(null), []);
@@ -43,7 +48,58 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
     setSelected((prev) => (prev?.id === r.id ? null : r));
   }, []);
 
-  // Init map + create all markers once
+  const createMarkerEl = useCallback((r: MapRestaurant, visible: boolean): HTMLElement => {
+    const el = document.createElement("div");
+    el.style.cssText = `width: 28px; height: 28px; cursor: pointer;${visible ? "" : " display: none;"}`;
+
+    const inner = document.createElement("div");
+    inner.style.cssText = `
+      width: 28px; height: 28px; border-radius: 50%;
+      background-color: ${r.color}; border: 2px solid rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-family: monospace; font-size: 9px; font-weight: 700; color: #111;
+      box-shadow: 0 0 0 2px ${r.color}40;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    `;
+    inner.textContent = r.score !== null ? String(r.score) : "?";
+    el.appendChild(inner);
+
+    el.addEventListener("mouseenter", () => {
+      inner.style.transform = "scale(1.3)";
+      inner.style.boxShadow = `0 0 0 4px ${r.color}60`;
+      handleMarkerHover(r);
+    });
+    el.addEventListener("mouseleave", () => {
+      inner.style.transform = "scale(1)";
+      inner.style.boxShadow = `0 0 0 2px ${r.color}40`;
+      handleMarkerLeave();
+    });
+    el.addEventListener("click", () => handleMarkerClick(r));
+
+    return el;
+  }, [handleMarkerHover, handleMarkerLeave, handleMarkerClick]);
+
+  // Fetch top restaurants for the current map viewport
+  const fetchViewport = useCallback(async () => {
+    if (!map.current) return;
+    const bounds = map.current.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const params = new URLSearchParams({
+      swLat: String(sw.lat), swLng: String(sw.lng),
+      neLat: String(ne.lat), neLng: String(ne.lng),
+    });
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/map-search?${params}`);
+      const data: MapRestaurant[] = await res.json();
+      setRestaurants(data);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Init map + attach moveend listener
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
@@ -53,80 +109,89 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       center: [-73.985, 40.758],
       zoom: 12,
     });
-
     map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    map.current.on("load", () => setMapReady(true));
 
-    map.current.on("load", () => {
-      restaurants.forEach((r) => {
-        // Mapbox applies translate() transforms directly to the element it
-        // receives for positioning, so we must NOT transform `el` itself.
-        // Put the visual circle in a child `inner` element instead.
-        const el = document.createElement("div");
-        el.style.cssText = "width: 28px; height: 28px; cursor: pointer;";
-
-        const inner = document.createElement("div");
-        inner.style.cssText = `
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background-color: ${r.color};
-          border: 2px solid rgba(0,0,0,0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: monospace;
-          font-size: 9px;
-          font-weight: 700;
-          color: #111;
-          box-shadow: 0 0 0 2px ${r.color}40;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        `;
-        inner.textContent = r.score !== null ? String(r.score) : "?";
-        el.appendChild(inner);
-
-        // Default: hide non-excellent markers
-        if ((r.score ?? 0) < 85) el.style.display = "none";
-
-        el.addEventListener("mouseenter", () => {
-          inner.style.transform = "scale(1.3)";
-          inner.style.boxShadow = `0 0 0 4px ${r.color}60`;
-          handleMarkerHover(r);
-        });
-        el.addEventListener("mouseleave", () => {
-          inner.style.transform = "scale(1)";
-          inner.style.boxShadow = `0 0 0 2px ${r.color}40`;
-          handleMarkerLeave();
-        });
-        el.addEventListener("click", () => handleMarkerClick(r));
-
-        new mapboxgl.Marker({ element: el })
-          .setLngLat([r.lng, r.lat])
-          .addTo(map.current!);
-
-        markerEls.current.set(r.id, el);
-      });
+    map.current.on("moveend", () => {
+      if (searchMode.current) return;
+      if (moveTimer.current) clearTimeout(moveTimer.current);
+      moveTimer.current = setTimeout(fetchViewport, 600);
     });
 
     return () => {
+      if (moveTimer.current) clearTimeout(moveTimer.current);
       map.current?.remove();
       map.current = null;
+      markers.current.clear();
       markerEls.current.clear();
     };
-  }, [restaurants, handleMarkerHover, handleMarkerLeave, handleMarkerClick]);
+  }, [fetchViewport]);
 
-  // Show/hide markers when filter or search changes
+  // Initial viewport fetch once map is ready
+  useEffect(() => {
+    if (mapReady) fetchViewport();
+  }, [mapReady, fetchViewport]);
+
+  // Sync markers whenever the restaurant list changes
+  useEffect(() => {
+    if (!mapReady || !map.current) return;
+
+    const newIds = new Set(restaurants.map((r) => r.id));
+
+    // Remove stale markers
+    markers.current.forEach((marker, id) => {
+      if (!newIds.has(id)) {
+        marker.remove();
+        markers.current.delete(id);
+        markerEls.current.delete(id);
+      }
+    });
+
+    // Add new markers
+    restaurants.forEach((r) => {
+      if (markers.current.has(r.id)) return;
+      const el = createMarkerEl(r, meetsScoreFilter(r, scoreFilter));
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([r.lng, r.lat])
+        .addTo(map.current!);
+      markers.current.set(r.id, marker);
+      markerEls.current.set(r.id, el);
+    });
+  }, [mapReady, restaurants, scoreFilter, createMarkerEl]);
+
+  // Show/hide existing markers when score filter changes
   useEffect(() => {
     restaurants.forEach((r) => {
       const el = markerEls.current.get(r.id);
       if (!el) return;
-      el.style.display = matchesFilter(r, scoreFilter, search) ? "" : "none";
+      el.style.display = meetsScoreFilter(r, scoreFilter) ? "" : "none";
     });
-    if (selected && !matchesFilter(selected, scoreFilter, search)) {
-      setSelected(null);
-    }
-  }, [scoreFilter, search, restaurants, selected]);
+    if (selected && !meetsScoreFilter(selected, scoreFilter)) setSelected(null);
+  }, [scoreFilter, restaurants, selected]);
 
-  const visibleCount = restaurants.filter((r) => matchesFilter(r, scoreFilter, search)).length;
+  // Commit search: text search or clear back to viewport
+  const commitSearch = useCallback(async (q: string) => {
+    setCommittedSearch(q);
+    setSelected(null);
+
+    if (!q) {
+      searchMode.current = false;
+      fetchViewport();
+      return;
+    }
+
+    searchMode.current = true;
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/map-search?q=${encodeURIComponent(q)}`);
+      const data: MapRestaurant[] = await res.json();
+      setRestaurants(data);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [fetchViewport]);
+
+  const visibleCount = restaurants.filter((r) => meetsScoreFilter(r, scoreFilter)).length;
 
   const locateUser = () => {
     navigator.geolocation.getCurrentPosition(
@@ -146,7 +211,7 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       {/* Map */}
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Left side panel (slide in on selection) */}
+      {/* Left side panel */}
       <div
         className="absolute top-16 left-0 bottom-0 z-20 w-80 flex flex-col border-r overflow-hidden"
         style={{
@@ -159,7 +224,6 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       >
         {selected && (
           <>
-            {/* Score + name header */}
             <div
               className="p-6 border-b shrink-0"
               style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
@@ -197,13 +261,12 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
               </p>
             </div>
 
-            {/* Details */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {[
-                selected.cuisine    && { label: "Cuisine",  value: selected.cuisine },
-                selected.google_rating && { label: "Rating",   value: `★ ${selected.google_rating}` },
-                priceStr(selected.price_level) && { label: "Price",    value: priceStr(selected.price_level)! },
-                selected.address    && { label: "Address",  value: selected.address },
+                selected.cuisine       && { label: "Cuisine", value: selected.cuisine },
+                selected.google_rating && { label: "Rating",  value: `★ ${selected.google_rating}` },
+                priceStr(selected.price_level) && { label: "Price",   value: priceStr(selected.price_level)! },
+                selected.address       && { label: "Address", value: selected.address },
               ].filter(Boolean).map((row) => {
                 const { label, value } = row as { label: string; value: string };
                 return (
@@ -215,7 +278,6 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
               })}
             </div>
 
-            {/* CTA */}
             <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
               <Link
                 href={`/restaurant/${selected.id}`}
@@ -236,23 +298,45 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
       >
         {/* Search box */}
         <div
-          className="flex items-center gap-2 border px-3 py-2"
-          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)" }}
+          className="flex items-center border"
+          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: committedSearch ? "#FF744460" : "oklch(0.28 0 0)" }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search restaurants…"
-            className="bg-transparent outline-none w-full font-mono text-[12px] placeholder:text-[oklch(0.38_0_0)]"
-            style={{ color: "oklch(0.88 0 0)" }}
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="text-[oklch(0.45_0_0)] hover:text-white transition-colors text-[11px]">✕</button>
-          )}
+          <div className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0">
+            {isSearching ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 animate-spin">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            )}
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitSearch(search.trim());
+                if (e.key === "Escape") { setSearch(""); commitSearch(""); }
+              }}
+              placeholder="Search restaurants…"
+              className="bg-transparent outline-none w-full font-mono text-[12px] placeholder:text-[oklch(0.38_0_0)] min-w-0"
+              style={{ color: "oklch(0.88 0 0)" }}
+            />
+            {(search || committedSearch) && (
+              <button
+                onClick={() => { setSearch(""); commitSearch(""); }}
+                className="text-[oklch(0.45_0_0)] hover:text-white transition-colors text-[11px] shrink-0"
+              >✕</button>
+            )}
+          </div>
+          <button
+            onClick={() => commitSearch(search.trim())}
+            className="font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border-l shrink-0 transition-colors hover:text-[#FF7444]"
+            style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.55 0 0)" }}
+          >
+            Go
+          </button>
         </div>
 
         {/* Score filter pills */}
@@ -278,7 +362,9 @@ export function MapView({ restaurants }: { restaurants: MapRestaurant[] }) {
 
         {/* Count */}
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.48_0_0)] pl-1">
-          {visibleCount} restaurant{visibleCount !== 1 ? "s" : ""}
+          {committedSearch
+            ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
+            : `${visibleCount} in view`}
         </p>
       </div>
 
