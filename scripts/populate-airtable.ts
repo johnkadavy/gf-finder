@@ -84,7 +84,7 @@ async function createAirtableRecords(records: object[]): Promise<number> {
           Authorization: `Bearer ${AIRTABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ records: batch }),
+        body: JSON.stringify({ records: batch, typecast: true }),
       }
     );
 
@@ -162,12 +162,11 @@ async function main() {
       google_place_id: r.google_place_id,
       phone: r.phone ?? undefined,
       website: r.website_url ?? undefined,
-      lat: r.lat ?? undefined,
-      lng: r.lng ?? undefined,
+      lat: r.lat != null ? String(r.lat) : undefined,
+      lng: r.lng != null ? String(r.lng) : undefined,
       neighborhood: r.neighborhood ?? undefined,
       city: r.city,
       address: r.address ?? undefined,
-      created_at: new Date().toISOString(),
     },
   }));
 
