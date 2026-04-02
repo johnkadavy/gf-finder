@@ -32,7 +32,7 @@ export function MapView() {
   const markerEls = useRef<Map<number, HTMLElement>>(new Map());
   const searchMode = useRef(false);
   const committedSearchRef = useRef("");
-  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showSearchArea, setShowSearchArea] = useState(false);
   const selectedRef = useRef<MapRestaurant | null>(null);
   const selectedIdRef = useRef<number | null>(null); // for use inside DOM event listeners
 
@@ -114,6 +114,7 @@ export function MapView() {
       swLat: String(sw.lat), swLng: String(sw.lng),
       neLat: String(ne.lat), neLng: String(ne.lng),
     });
+    setShowSearchArea(false);
     setIsSearching(true);
     try {
       const res = await fetch(`/api/map-search?${params}`);
@@ -135,6 +136,7 @@ export function MapView() {
       swLat: String(sw.lat), swLng: String(sw.lng),
       neLat: String(ne.lat), neLng: String(ne.lng),
     });
+    setShowSearchArea(false);
     setIsSearching(true);
     try {
       const res = await fetch(`/api/map-search?${params}`);
@@ -170,13 +172,10 @@ export function MapView() {
     map.current.on("moveend", () => {
       const c = map.current!.getCenter();
       localStorage.setItem("mapPosition", JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.current!.getZoom() }));
-      if (moveTimer.current) clearTimeout(moveTimer.current);
-      const q = committedSearchRef.current;
-      moveTimer.current = setTimeout(q ? () => fetchSearch(q) : fetchViewport, 600);
+      setShowSearchArea(true);
     });
 
     return () => {
-      if (moveTimer.current) clearTimeout(moveTimer.current);
       map.current?.remove();
       map.current = null;
       markers.current.clear();
@@ -250,6 +249,7 @@ export function MapView() {
   const commitSearch = useCallback(async (q: string) => {
     setCommittedSearch(q);
     setSelected(null);
+    setShowSearchArea(false);
 
     if (!q) {
       searchMode.current = false;
@@ -633,6 +633,22 @@ export function MapView() {
             : `${visibleCount} in view`}
         </p>
       </div>
+
+      {/* Search this area button */}
+      {showSearchArea && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+          <button
+            onClick={() => {
+              const q = committedSearchRef.current;
+              if (q) fetchSearch(q); else fetchViewport();
+            }}
+            className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
+            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+          >
+            Search this area
+          </button>
+        </div>
+      )}
 
       {/* Locate me button */}
       <button

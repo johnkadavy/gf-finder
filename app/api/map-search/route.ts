@@ -109,6 +109,7 @@ export async function GET(request: Request) {
       .map((r: Row) => ({ ...toMapRestaurant(r), _score: scoreMatch(r.name, r.cuisine, q) }))
       .filter((r) => r._score >= MIN_SCORE)
       .sort((a, b) => b._score - a._score)
+      .slice(0, 50)
       .map(({ _score: _, ...r }) => r);
 
     return Response.json(results);
