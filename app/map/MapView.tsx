@@ -31,6 +31,7 @@ export function MapView() {
   const markers = useRef<Map<number, mapboxgl.Marker>>(new Map());
   const markerEls = useRef<Map<number, HTMLElement>>(new Map());
   const searchMode = useRef(false);
+  const committedSearchRef = useRef("");
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedRef = useRef<MapRestaurant | null>(null);
   const selectedIdRef = useRef<number | null>(null); // for use inside DOM event listeners
@@ -47,6 +48,7 @@ export function MapView() {
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [search, setSearch] = useState("");
   const [committedSearch, setCommittedSearch] = useState("");
+  useEffect(() => { committedSearchRef.current = committedSearch; }, [committedSearch]);
   const [isSearching, setIsSearching] = useState(false);
 
   // Autocomplete
@@ -100,6 +102,28 @@ export function MapView() {
     return el;
   }, [handleMarkerHover, handleMarkerLeave, handleMarkerClick]);
 
+  // Re-run an active text/cuisine search scoped to the current viewport
+  const fetchSearch = useCallback(async (q: string) => {
+    if (!map.current) return;
+    const bounds = map.current.getBounds();
+    if (!bounds) return;
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const params = new URLSearchParams({
+      q,
+      swLat: String(sw.lat), swLng: String(sw.lng),
+      neLat: String(ne.lat), neLng: String(ne.lng),
+    });
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/map-search?${params}`);
+      const data: MapRestaurant[] = await res.json();
+      setRestaurants(data);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
   // Fetch top restaurants for the current map viewport
   const fetchViewport = useCallback(async () => {
     if (!map.current) return;
@@ -146,9 +170,9 @@ export function MapView() {
     map.current.on("moveend", () => {
       const c = map.current!.getCenter();
       localStorage.setItem("mapPosition", JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.current!.getZoom() }));
-      if (searchMode.current) return;
       if (moveTimer.current) clearTimeout(moveTimer.current);
-      moveTimer.current = setTimeout(fetchViewport, 600);
+      const q = committedSearchRef.current;
+      moveTimer.current = setTimeout(q ? () => fetchSearch(q) : fetchViewport, 600);
     });
 
     return () => {
@@ -158,7 +182,7 @@ export function MapView() {
       markers.current.clear();
       markerEls.current.clear();
     };
-  }, [fetchViewport]);
+  }, [fetchViewport, fetchSearch]);
 
   // Initial viewport fetch once map is ready
   useEffect(() => {
