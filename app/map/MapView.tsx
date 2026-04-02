@@ -131,16 +131,21 @@ export function MapView() {
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
+    const saved = (() => {
+      try { return JSON.parse(localStorage.getItem("mapPosition") ?? "null"); } catch { return null; }
+    })();
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/dark-v11",
-      center: [-73.985, 40.758],
-      zoom: 12,
+      center: saved ? [saved.lng, saved.lat] : [-73.985, 40.758],
+      zoom: saved?.zoom ?? 12,
     });
     map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     map.current.on("load", () => setMapReady(true));
 
     map.current.on("moveend", () => {
+      const c = map.current!.getCenter();
+      localStorage.setItem("mapPosition", JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.current!.getZoom() }));
       if (searchMode.current) return;
       if (moveTimer.current) clearTimeout(moveTimer.current);
       moveTimer.current = setTimeout(fetchViewport, 600);
