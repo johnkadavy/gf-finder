@@ -234,7 +234,7 @@ export function MapView() {
       // Run restaurant search and geocoding in parallel
       const [searchRes, geoRes] = await Promise.all([
         fetch(`/api/map-search?q=${encodeURIComponent(q)}`),
-        fetch(`/api/geocode?q=${encodeURIComponent(q)}`),
+        fetch(`/api/geocode?q=${encodeURIComponent(q)}&token=${encodeURIComponent(process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "")}`),
       ]);
 
       const restaurants: MapRestaurant[] = await searchRes.json();
