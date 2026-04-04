@@ -531,7 +531,7 @@ export function MapView() {
   );
 
   return (
-    <div className="relative w-full h-screen pt-16">
+    <div className="fixed inset-0 pt-16 z-0">
       <style>{`
         @keyframes markerPulse {
           0%, 100% { transform: scale(1.25); }
@@ -677,7 +677,7 @@ export function MapView() {
           )}
         </div>
 
-        {/* Score filter pills */}
+        {/* Score filter pills + Open now — single row */}
         <div
           className="flex border divide-x"
           style={{ borderColor: "oklch(0.28 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
@@ -696,50 +696,35 @@ export function MapView() {
               {f.label}
             </button>
           ))}
-        </div>
-
-        {/* Open now toggle */}
-        <button
-          onClick={() => setOpenNow((v) => !v)}
-          className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150"
-          style={{
-            borderColor: openNow ? "#FF744460" : "oklch(0.28 0 0)",
-            color: openNow ? "#FF7444" : "oklch(0.62 0 0)",
-            backgroundColor: openNow ? "#FF744412" : "oklch(0.1 0 0)",
-          }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }}
-          />
-          Open now
-        </button>
-
-        {/* Count + Near me (mobile only) */}
-        <div className="flex items-center justify-between pl-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.48_0_0)]">
-            {committedSearch
-              ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
-              : `${visibleCount} in view`}
-          </p>
+          {/* Open now pill — appended to filter row */}
           <button
-            onClick={locateUser}
-            className="md:hidden flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-1.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
-            style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.65 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+            onClick={() => setOpenNow((v) => !v)}
+            className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 transition-colors duration-150"
+            style={{
+              color: openNow ? "#FF7444" : "oklch(0.62 0 0)",
+              backgroundColor: openNow ? "#FF744412" : "transparent",
+              borderColor: "oklch(0.28 0 0)",
+            }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-              <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-              <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
-            </svg>
-            Near me
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }}
+            />
+            Open
           </button>
         </div>
+
+        {/* Result count */}
+        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.42_0_0)] pl-0.5">
+          {committedSearch
+            ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
+            : `${visibleCount} in view`}
+        </p>
       </div>
 
       {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-44">
+        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-36">
           <button
             onClick={() => {
               const q = committedSearchRef.current;
@@ -753,18 +738,16 @@ export function MapView() {
         </div>
       )}
 
-      {/* Locate me button — desktop only (mobile has it in the controls row) */}
+      {/* Near me FAB — compass icon, bottom-right */}
       <button
         onClick={locateUser}
-        className="hidden md:flex absolute bottom-8 left-4 z-10 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-        style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+        aria-label="Near me"
+        className="absolute bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] rounded-full"
+        style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-          <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-          <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
         </svg>
-        Near me
       </button>
 
       {/* Hover tooltip — desktop only (touch devices don't hover) */}
