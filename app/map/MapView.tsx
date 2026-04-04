@@ -35,6 +35,7 @@ export function MapView() {
   const searchMode = useRef(false);
   const committedSearchRef = useRef("");
   const autoFetchOnMoveEnd = useRef(false);
+  const searchAreaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSearchArea, setShowSearchArea] = useState(false);
   const selectedRef = useRef<MapRestaurant | null>(null);
   const selectedIdRef = useRef<number | null>(null);
@@ -183,6 +184,11 @@ export function MapView() {
     }
     map.current.on("load", () => setMapReady(true));
 
+    map.current.on("movestart", () => {
+      if (searchAreaTimer.current) { clearTimeout(searchAreaTimer.current); searchAreaTimer.current = null; }
+      setShowSearchArea(false);
+    });
+
     map.current.on("moveend", () => {
       const c = map.current!.getCenter();
       localStorage.setItem("mapPosition", JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.current!.getZoom() }));
@@ -190,7 +196,7 @@ export function MapView() {
         autoFetchOnMoveEnd.current = false;
         fetchViewport();
       } else {
-        setShowSearchArea(true);
+        searchAreaTimer.current = setTimeout(() => setShowSearchArea(true), 600);
       }
     });
 
@@ -537,6 +543,10 @@ export function MapView() {
           0%, 100% { transform: scale(1.25); }
           50%       { transform: scale(1.35); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
       `}</style>
 
       {/* Map */}
@@ -724,7 +734,7 @@ export function MapView() {
 
       {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-52">
+        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-48" style={{ animation: "fadeIn 0.2s ease-out" }}>
           <button
             onClick={() => {
               const q = committedSearchRef.current;
