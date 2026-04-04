@@ -207,6 +207,15 @@ export function MapView() {
     if (mapReady) fetchViewport();
   }, [mapReady, fetchViewport]);
 
+  const isVisible = useCallback((r: MapRestaurant) => {
+    if (!meetsScoreFilter(r, scoreFilter)) return false;
+    if (openNow) {
+      const open = isOpenNow(r.periods);
+      if (open === false) return false; // hide confirmed-closed; show unknown (null)
+    }
+    return true;
+  }, [scoreFilter, openNow]);
+
   // Sync markers whenever the restaurant list changes
   useEffect(() => {
     if (!mapReady || !map.current) return;
@@ -387,6 +396,7 @@ export function MapView() {
       lat: s.lat, lng: s.lng, cuisine: s.cuisine, google_rating: s.google_rating,
       price_level: s.price_level, address: s.address, website: s.website_url,
       score: s.score, color: getGaugeColor(s.score), scoreLabel: getScoreLabel(s.score).label,
+      periods: null,
     };
 
     setRestaurants((prev) =>
@@ -395,15 +405,6 @@ export function MapView() {
     setSelected(restaurant);
     map.current?.flyTo({ center: [restaurant.lng, restaurant.lat], zoom: 15, duration: 900 });
   }, []);
-
-  const isVisible = useCallback((r: MapRestaurant) => {
-    if (!meetsScoreFilter(r, scoreFilter)) return false;
-    if (openNow) {
-      const open = isOpenNow(r.periods);
-      if (open === false) return false; // hide confirmed-closed; show unknown (null)
-    }
-    return true;
-  }, [scoreFilter, openNow]);
 
   const visibleCount = restaurants.filter(isVisible).length;
 
