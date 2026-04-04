@@ -174,7 +174,10 @@ export function MapView() {
       center: saved ? [saved.lng, saved.lat] : [-73.985, 40.758],
       zoom: saved?.zoom ?? 12,
     });
-    map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    // Only add zoom controls on desktop — mobile uses pinch-to-zoom
+    if (window.innerWidth >= 768) {
+      map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    }
     map.current.on("load", () => setMapReady(true));
 
     map.current.on("moveend", () => {
@@ -676,12 +679,26 @@ export function MapView() {
           ))}
         </div>
 
-        {/* Count */}
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.48_0_0)] pl-1">
-          {committedSearch
-            ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
-            : `${visibleCount} in view`}
-        </p>
+        {/* Count + Near me (mobile only) */}
+        <div className="flex items-center justify-between pl-1">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.48_0_0)]">
+            {committedSearch
+              ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
+              : `${visibleCount} in view`}
+          </p>
+          <button
+            onClick={locateUser}
+            className="md:hidden flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-1.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
+            style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.65 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+              <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+            </svg>
+            Near me
+          </button>
+        </div>
       </div>
 
       {/* Search this area button — centered, below controls on mobile */}
@@ -700,21 +717,19 @@ export function MapView() {
         </div>
       )}
 
-      {/* Locate me button — hidden on mobile when bottom sheet is open */}
-      {(!isMobile || !selected) && (
-        <button
-          onClick={locateUser}
-          className="absolute bottom-8 left-4 z-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-            <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-            <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
-          </svg>
-          Near me
-        </button>
-      )}
+      {/* Locate me button — desktop only (mobile has it in the controls row) */}
+      <button
+        onClick={locateUser}
+        className="hidden md:flex absolute bottom-8 left-4 z-10 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
+        style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+          <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+        </svg>
+        Near me
+      </button>
 
       {/* Hover tooltip — desktop only (touch devices don't hover) */}
       {!isMobile && hovered && hovered.r.id !== selected?.id && (
