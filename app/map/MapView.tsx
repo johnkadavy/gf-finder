@@ -33,6 +33,7 @@ export function MapView() {
   const markerEls = useRef<Map<number, HTMLElement>>(new Map());
   const searchMode = useRef(false);
   const committedSearchRef = useRef("");
+  const autoFetchOnMoveEnd = useRef(false);
   const [showSearchArea, setShowSearchArea] = useState(false);
   const selectedRef = useRef<MapRestaurant | null>(null);
   const selectedIdRef = useRef<number | null>(null);
@@ -183,7 +184,12 @@ export function MapView() {
     map.current.on("moveend", () => {
       const c = map.current!.getCenter();
       localStorage.setItem("mapPosition", JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.current!.getZoom() }));
-      setShowSearchArea(true);
+      if (autoFetchOnMoveEnd.current) {
+        autoFetchOnMoveEnd.current = false;
+        fetchViewport();
+      } else {
+        setShowSearchArea(true);
+      }
     });
 
     return () => {
@@ -393,6 +399,7 @@ export function MapView() {
   const locateUser = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        autoFetchOnMoveEnd.current = true;
         map.current?.flyTo({
           center: [pos.coords.longitude, pos.coords.latitude],
           zoom: 14,
