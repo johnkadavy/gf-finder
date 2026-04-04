@@ -15,6 +15,7 @@ type Row = {
   address: string | null;
   website_url: string | null;
   score: number | null;
+  opening_hours: { periods?: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] } | null;
 };
 
 function toMapRestaurant(r: Row): MapRestaurant {
@@ -23,6 +24,7 @@ function toMapRestaurant(r: Row): MapRestaurant {
     lat: r.lat, lng: r.lng, cuisine: r.cuisine, google_rating: r.google_rating,
     price_level: r.price_level, address: r.address, website: r.website_url,
     score: r.score, color: getGaugeColor(r.score), scoreLabel: getScoreLabel(r.score).label,
+    periods: r.opening_hours?.periods ?? null,
   };
 }
 
@@ -63,7 +65,7 @@ function scoreMatch(name: string, cuisine: string | null, query: string): number
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score";
+const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, opening_hours";
 const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {

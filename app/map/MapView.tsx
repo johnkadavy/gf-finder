@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import Link from "next/link";
 import type { MapRestaurant } from "./types";
+import { isOpenNow } from "./types";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -47,6 +48,7 @@ export function MapView() {
   }, [selected]);
   const [hovered, setHovered] = useState<{ r: MapRestaurant; x: number; y: number } | null>(null);
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
+  const [openNow, setOpenNow] = useState(false);
   const [search, setSearch] = useState("");
   const [committedSearch, setCommittedSearch] = useState("");
   useEffect(() => { committedSearchRef.current = committedSearch; }, [committedSearch]);
@@ -221,14 +223,14 @@ export function MapView() {
 
     restaurants.forEach((r) => {
       if (markers.current.has(r.id)) return;
-      const el = createMarkerEl(r, meetsScoreFilter(r, scoreFilter));
+      const el = createMarkerEl(r, isVisible(r));
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([r.lng, r.lat])
         .addTo(map.current!);
       markers.current.set(r.id, marker);
       markerEls.current.set(r.id, el);
     });
-  }, [mapReady, restaurants, scoreFilter, createMarkerEl]);
+  }, [mapReady, restaurants, isVisible, createMarkerEl]);
 
   // Apply / remove selected marker highlight
   useEffect(() => {
@@ -255,10 +257,10 @@ export function MapView() {
     restaurants.forEach((r) => {
       const el = markerEls.current.get(r.id);
       if (!el) return;
-      el.style.display = meetsScoreFilter(r, scoreFilter) ? "" : "none";
+      el.style.display = isVisible(r) ? "" : "none";
     });
-    if (selected && !meetsScoreFilter(selected, scoreFilter)) setSelected(null);
-  }, [scoreFilter, restaurants, selected]);
+    if (selected && !isVisible(selected)) setSelected(null);
+  }, [isVisible, restaurants, selected]);
 
   // Commit search: text search or clear back to viewport
   const commitSearch = useCallback(async (q: string) => {
@@ -394,7 +396,16 @@ export function MapView() {
     map.current?.flyTo({ center: [restaurant.lng, restaurant.lat], zoom: 15, duration: 900 });
   }, []);
 
-  const visibleCount = restaurants.filter((r) => meetsScoreFilter(r, scoreFilter)).length;
+  const isVisible = useCallback((r: MapRestaurant) => {
+    if (!meetsScoreFilter(r, scoreFilter)) return false;
+    if (openNow) {
+      const open = isOpenNow(r.periods);
+      if (open === false) return false; // hide confirmed-closed; show unknown (null)
+    }
+    return true;
+  }, [scoreFilter, openNow]);
+
+  const visibleCount = restaurants.filter(isVisible).length;
 
   const locateUser = () => {
     navigator.geolocation.getCurrentPosition(
@@ -685,6 +696,23 @@ export function MapView() {
             </button>
           ))}
         </div>
+
+        {/* Open now toggle */}
+        <button
+          onClick={() => setOpenNow((v) => !v)}
+          className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150"
+          style={{
+            borderColor: openNow ? "#FF744460" : "oklch(0.28 0 0)",
+            color: openNow ? "#FF7444" : "oklch(0.62 0 0)",
+            backgroundColor: openNow ? "#FF744412" : "oklch(0.1 0 0)",
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }}
+          />
+          Open now
+        </button>
 
         {/* Count + Near me (mobile only) */}
         <div className="flex items-center justify-between pl-1">
