@@ -268,10 +268,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     </div>
                   </div>
 
-                  {/* Signal row — desktop only */}
+                  {/* Signal row */}
                   {signals.length > 0 && (
                     <div
-                      className="hidden md:grid md:grid-cols-3 border-t"
+                      className="grid grid-cols-1 md:grid-cols-3 border-t"
                       style={{ borderColor: "oklch(0.16 0 0)" }}
                     >
                       {signals.map((signal, i) => (

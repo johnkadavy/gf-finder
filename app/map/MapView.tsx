@@ -35,12 +35,11 @@ export function MapView() {
   const committedSearchRef = useRef("");
   const [showSearchArea, setShowSearchArea] = useState(false);
   const selectedRef = useRef<MapRestaurant | null>(null);
-  const selectedIdRef = useRef<number | null>(null); // for use inside DOM event listeners
+  const selectedIdRef = useRef<number | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([]);
   const [selected, setSelected] = useState<MapRestaurant | null>(null);
-  // Keep refs in sync so viewport fetch and DOM listeners can read current selected
   useEffect(() => {
     selectedRef.current = selected;
     selectedIdRef.current = selected?.id ?? null;
@@ -51,6 +50,15 @@ export function MapView() {
   const [committedSearch, setCommittedSearch] = useState("");
   useEffect(() => { committedSearchRef.current = committedSearch; }, [committedSearch]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Autocomplete
   type Suggestion = { id: number; name: string; city: string; neighborhood: string | null; lat: number; lng: number; cuisine: string | null; google_rating: number | null; price_level: number | null; address: string | null; website_url: string | null; score: number | null };
@@ -143,8 +151,6 @@ export function MapView() {
     try {
       const res = await fetch(`/api/map-search?${params}`);
       const data: MapRestaurant[] = await res.json();
-      // Always keep the currently-selected restaurant in the list so its
-      // marker stays visible even if it falls outside the top-50 by score.
       const pinned = selectedRef.current;
       if (pinned && !data.some((r) => r.id === pinned.id)) {
         data.push(pinned);
@@ -196,7 +202,6 @@ export function MapView() {
 
     const newIds = new Set(restaurants.map((r) => r.id));
 
-    // Remove stale markers
     markers.current.forEach((marker, id) => {
       if (!newIds.has(id)) {
         marker.remove();
@@ -205,7 +210,6 @@ export function MapView() {
       }
     });
 
-    // Add new markers
     restaurants.forEach((r) => {
       if (markers.current.has(r.id)) return;
       const el = createMarkerEl(r, meetsScoreFilter(r, scoreFilter));
@@ -262,7 +266,6 @@ export function MapView() {
     searchMode.current = true;
     setIsSearching(true);
     try {
-      // Run restaurant search and geocoding in parallel
       const bounds = map.current?.getBounds();
       const boundsParams = bounds
         ? `&swLat=${bounds.getSouthWest().lat}&swLng=${bounds.getSouthWest().lng}` +
@@ -276,17 +279,14 @@ export function MapView() {
       const restaurants: MapRestaurant[] = await searchRes.json();
 
       if (restaurants.length > 0) {
-        // Found restaurant results — show them
         setRestaurants(restaurants);
       } else {
-        // No restaurant matches — try navigating to the geocoded location
         const geoData = await geoRes.json();
         const feature = geoData.features?.[0];
         if (feature && map.current) {
           const [lng, lat] = feature.center;
           const currentCenter = map.current.getCenter();
 
-          // Haversine distance in km
           const R = 6371;
           const dLat = ((lat - currentCenter.lat) * Math.PI) / 180;
           const dLng = ((lng - currentCenter.lng) * Math.PI) / 180;
@@ -297,7 +297,6 @@ export function MapView() {
               Math.sin(dLng / 2) ** 2;
           const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-          // Determine zoom based on place type
           const placeType = feature.place_type?.[0] ?? "";
           const zoom =
             placeType === "address" ? 16 :
@@ -310,7 +309,6 @@ export function MapView() {
             map.current.flyTo({ center: [lng, lat], zoom, duration: 900 });
           }
 
-          // Switch to viewport mode so the map loads local restaurants
           searchMode.current = false;
           setCommittedSearch("");
         }
@@ -334,7 +332,7 @@ export function MapView() {
           const ne = b.getNorthEast();
           const cLat = (sw.lat + ne.lat) / 2;
           const cLng = (sw.lng + ne.lng) / 2;
-          const dLat = (ne.lat - sw.lat) * 1.5; // expand 3x (1.5 each side)
+          const dLat = (ne.lat - sw.lat) * 1.5;
           const dLng = (ne.lng - sw.lng) * 1.5;
           params.set("swLat", String(cLat - dLat));
           params.set("swLng", String(cLng - dLng));
@@ -402,6 +400,114 @@ export function MapView() {
     );
   };
 
+  // Panel content — shared between desktop left panel and mobile bottom sheet
+  const panelContent = selected && (
+    <>
+      {/* Drag handle — mobile only */}
+      <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "oklch(0.3 0 0)" }} />
+      </div>
+
+      {/* Close bar — desktop only */}
+      <button
+        onClick={() => setSelected(null)}
+        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-white"
+        style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.48 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Close
+      </button>
+
+      <div
+        className="p-5 md:p-6 border-b shrink-0"
+        style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
+      >
+        {/* Mobile: name + close button in a row */}
+        <div className="flex items-start justify-between gap-3 md:block">
+          <div className="min-w-0">
+            <p
+              className="font-[family-name:var(--font-display)] leading-tight mb-1"
+              style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
+            >
+              {selected.name}
+            </p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] mb-4">
+              {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          {/* Close button — mobile only */}
+          <button
+            onClick={() => setSelected(null)}
+            className="md:hidden shrink-0 mt-1 p-1"
+            style={{ color: "oklch(0.48 0 0)" }}
+            aria-label="Close"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span
+            className="font-[family-name:var(--font-display)] leading-none"
+            style={{ fontSize: "2.25rem", color: selected.color }}
+          >
+            {selected.score ?? "—"}
+          </span>
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)]">GF Score</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
+              {selected.scoreLabel}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4">
+        {selected.website && (
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">Website</p>
+            <a
+              href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[12px] leading-snug text-[oklch(0.55_0.18_250)] hover:text-[oklch(0.70_0.18_250)] underline underline-offset-2 break-all"
+            >
+              {selected.website.replace(/^https?:\/\/(www\.)?/, "")}
+            </a>
+          </div>
+        )}
+        {[
+          selected.cuisine       && { label: "Cuisine", value: selected.cuisine },
+          selected.google_rating && { label: "Rating",  value: `★ ${selected.google_rating}` },
+          priceStr(selected.price_level) && { label: "Price",   value: priceStr(selected.price_level)! },
+          selected.address       && { label: "Address", value: selected.address },
+        ].filter(Boolean).map((row) => {
+          const { label, value } = row as { label: string; value: string };
+          return (
+            <div key={label}>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">{label}</p>
+              <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
+        <Link
+          href={`/restaurant/${selected.id}`}
+          className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
+          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+        >
+          View Full Details →
+        </Link>
+      </div>
+    </>
+  );
+
   return (
     <div className="relative w-full h-screen pt-16">
       <style>{`
@@ -414,9 +520,9 @@ export function MapView() {
       {/* Map */}
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Left side panel */}
+      {/* ── Desktop: left side panel ── */}
       <div
-        className="absolute top-16 left-0 bottom-0 z-20 w-80 flex flex-col border-r overflow-hidden"
+        className="hidden md:flex absolute top-16 left-0 bottom-0 z-20 w-80 flex-col border-r overflow-hidden"
         style={{
           backgroundColor: "oklch(0.08 0 0)",
           borderColor: "oklch(0.18 0 0)",
@@ -425,97 +531,41 @@ export function MapView() {
           pointerEvents: selected ? "auto" : "none",
         }}
       >
-        {selected && (
-          <>
-            {/* Close bar */}
-            <button
-              onClick={() => setSelected(null)}
-              className="flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-white group"
-              style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.48 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-              Close
-            </button>
-
-            <div
-              className="p-6 border-b shrink-0"
-              style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
-            >
-              <p
-                className="font-[family-name:var(--font-display)] leading-tight mb-1"
-                style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
-              >
-                {selected.name}
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] mb-4">
-                {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
-              </p>
-
-              <div className="flex items-center gap-3">
-                <span
-                  className="font-[family-name:var(--font-display)] leading-none"
-                  style={{ fontSize: "2.25rem", color: selected.color }}
-                >
-                  {selected.score ?? "—"}
-                </span>
-                <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)]">GF Score</p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
-                    {selected.scoreLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {selected.website && (
-                <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">Website</p>
-                  <a
-                    href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[12px] leading-snug text-[oklch(0.55_0.18_250)] hover:text-[oklch(0.70_0.18_250)] underline underline-offset-2 break-all"
-                  >
-                    {selected.website.replace(/^https?:\/\/(www\.)?/, "")}
-                  </a>
-                </div>
-              )}
-              {[
-                selected.cuisine       && { label: "Cuisine", value: selected.cuisine },
-                selected.google_rating && { label: "Rating",  value: `★ ${selected.google_rating}` },
-                priceStr(selected.price_level) && { label: "Price",   value: priceStr(selected.price_level)! },
-                selected.address       && { label: "Address", value: selected.address },
-              ].filter(Boolean).map((row) => {
-                const { label, value } = row as { label: string; value: string };
-                return (
-                  <div key={label}>
-                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">{label}</p>
-                    <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
-              <Link
-                href={`/restaurant/${selected.id}`}
-                className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
-                style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-              >
-                View Full Details →
-              </Link>
-            </div>
-          </>
-        )}
+        {panelContent}
       </div>
 
-      {/* Top-left controls — shift right when panel is open */}
+      {/* ── Mobile: bottom sheet backdrop ── */}
+      {isMobile && selected && (
+        <div
+          className="fixed inset-0 z-20"
+          onClick={() => setSelected(null)}
+        />
+      )}
+
+      {/* ── Mobile: bottom sheet ── */}
       <div
-        className="absolute top-20 z-10 flex flex-col gap-2 w-64 transition-[left] duration-[250ms] ease-[ease]"
-        style={{ left: selected ? "336px" : "16px" }}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col overflow-hidden rounded-t-2xl"
+        style={{
+          backgroundColor: "oklch(0.08 0 0)",
+          height: "55vh",
+          transform: selected ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 0.3s ease",
+          pointerEvents: selected ? "auto" : "none",
+          boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
+        }}
+      >
+        {panelContent}
+      </div>
+
+      {/* ── Controls (search + filters) ──
+          Desktop: top-left, shifts right when panel open
+          Mobile:  full-width, no shift */}
+      <div
+        className="absolute top-20 z-10 flex flex-col gap-2 transition-[left] duration-[250ms] ease-[ease]"
+        style={isMobile
+          ? { left: "16px", right: "16px" }
+          : { left: selected ? "336px" : "16px", width: "256px" }
+        }
       >
         {/* Search box + autocomplete */}
         <div ref={searchBoxRef} className="relative">
@@ -634,9 +684,9 @@ export function MapView() {
         </p>
       </div>
 
-      {/* Search this area button */}
+      {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-44">
           <button
             onClick={() => {
               const q = committedSearchRef.current;
@@ -650,27 +700,29 @@ export function MapView() {
         </div>
       )}
 
-      {/* Locate me button */}
-      <button
-        onClick={locateUser}
-        className="absolute bottom-8 left-4 z-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-        style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-          <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-          <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
-        </svg>
-        Near me
-      </button>
+      {/* Locate me button — hidden on mobile when bottom sheet is open */}
+      {(!isMobile || !selected) && (
+        <button
+          onClick={locateUser}
+          className="absolute bottom-8 left-4 z-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
+          style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+          </svg>
+          Near me
+        </button>
+      )}
 
-      {/* Hover tooltip — floats above the hovered pin (shown for any marker except the pinned one) */}
-      {hovered && hovered.r.id !== selected?.id && (
+      {/* Hover tooltip — desktop only (touch devices don't hover) */}
+      {!isMobile && hovered && hovered.r.id !== selected?.id && (
         <div
           className="absolute z-30 pointer-events-none border p-3 w-52"
           style={{
             left: hovered.x,
-            top: hovered.y + 64, // 64px = nav height (pt-16)
+            top: hovered.y + 64,
             transform: "translate(-50%, calc(-100% - 18px))",
             backgroundColor: "oklch(0.1 0 0)",
             borderColor: "oklch(0.25 0 0)",

@@ -104,7 +104,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     <main className="pt-16">
       {/* Hero */}
       <section
-        className="grid-bg border-b px-8 py-16 md:py-24 relative"
+        className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"
         style={{ borderColor: "oklch(0.22 0 0)" }}
       >
         <div
@@ -134,7 +134,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       </section>
 
       {/* Rankings list */}
-      <section className="px-8 pb-32 mt-8">
+      <section className="px-4 md:px-8 pb-32 mt-8">
       <div className="max-w-6xl mx-auto">
         <RankingsSecondaryFilters filters={filters} cuisines={cuisines} />
         {error ? (
