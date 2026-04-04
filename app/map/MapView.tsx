@@ -595,13 +595,13 @@ export function MapView() {
             className="flex items-center border"
             style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: committedSearch ? "#FF744460" : "oklch(0.28 0 0)" }}
           >
-            <div className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2 px-3 py-3 flex-1 min-w-0">
               {isSearching ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 animate-spin">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 animate-spin">
                   <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                 </svg>
               ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
               )}
@@ -631,7 +631,7 @@ export function MapView() {
                 }}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 placeholder="Search restaurants…"
-                className="bg-transparent outline-none w-full font-mono text-[12px] placeholder:text-[oklch(0.38_0_0)] min-w-0"
+                className="bg-transparent outline-none w-full font-mono text-[13px] placeholder:text-[oklch(0.38_0_0)] min-w-0"
                 style={{ color: "oklch(0.88 0 0)" }}
               />
               {(search || committedSearch) && (
@@ -643,7 +643,7 @@ export function MapView() {
             </div>
             <button
               onClick={() => { setShowSuggestions(false); commitSearch(search.trim()); }}
-              className="font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border-l shrink-0 transition-colors hover:text-[#FF7444]"
+              className="font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-3 border-l shrink-0 transition-colors hover:text-[#FF7444]"
               style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.55 0 0)" }}
             >
               Go
@@ -724,13 +724,13 @@ export function MapView() {
 
       {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-36">
+        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-52">
           <button
             onClick={() => {
               const q = committedSearchRef.current;
               if (q) fetchSearch(q); else fetchViewport();
             }}
-            className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
+            className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
             style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
           >
             Search this area
