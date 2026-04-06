@@ -43,7 +43,7 @@ export default function RootLayout({
           className="fixed top-0 w-full z-50 border-b"
           style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.08 0 0)" }}
         >
-          <div className="flex justify-between items-center px-8 h-16 max-w-screen-xl mx-auto">
+          <div className="flex justify-between items-center px-8 h-16">
             <Link href="/" className="flex items-center gap-1.5">
               <div className="relative group">
                 <Image
@@ -52,7 +52,7 @@ export default function RootLayout({
                   width={32}
                   height={32}
                 />
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+                <div className="absolute left-0 top-full mt-2 px-3 py-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
                   style={{ backgroundColor: "oklch(0.18 0 0)", border: "1px solid oklch(0.28 0 0)" }}>
                   <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)]">
                     Guanacos eat gluten-free
