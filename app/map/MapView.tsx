@@ -596,7 +596,7 @@ export function MapView() {
         className="absolute top-20 z-10 flex flex-col gap-2 transition-[left] duration-[250ms] ease-[ease]"
         style={isMobile
           ? { left: "16px", right: "16px" }
-          : { left: selected ? "336px" : "16px", width: "256px" }
+          : { left: selected ? "336px" : "16px", width: "320px" }
         }
       >
         {/* Search box + autocomplete */}
