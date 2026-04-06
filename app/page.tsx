@@ -112,7 +112,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-16 md:pb-24">
         {/* Bottom fade — softens grid into results section */}
         <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
-        <div className="max-w-3xl w-full text-center space-y-6 md:space-y-8">
+        <div className="max-w-3xl md:max-w-5xl lg:max-w-6xl w-full text-center space-y-6 md:space-y-8">
           <div>
             <h1
               className="font-[family-name:var(--font-display)] leading-none"
