@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { MapRestaurant } from "./types";
 import { isOpenNow } from "./types";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
+import { SaveButton } from "@/app/components/SaveButton";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -16,18 +17,18 @@ type ScoreFilter = "excellent" | "great" | "all";
 const SCORE_FILTERS: { value: ScoreFilter; label: string; min: number }[] = [
   { value: "excellent", label: "Excellent", min: 85 },
   { value: "great",    label: "Great+",    min: 75 },
-  { value: "all",      label: "All",       min: 0  },
 ];
 
 function meetsScoreFilter(r: MapRestaurant, filter: ScoreFilter): boolean {
-  return (r.score ?? 0) >= SCORE_FILTERS.find((f) => f.value === filter)!.min;
+  const f = SCORE_FILTERS.find((f) => f.value === filter);
+  return f ? (r.score ?? 0) >= f.min : true;
 }
 
 function priceStr(level: number | null) {
   return level ? "$".repeat(level) : null;
 }
 
-export function MapView() {
+export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<number, mapboxgl.Marker>>(new Map());
@@ -35,6 +36,7 @@ export function MapView() {
   const searchMode = useRef(false);
   const committedSearchRef = useRef("");
   const autoFetchOnMoveEnd = useRef(false);
+  const showSavedOnlyRef = useRef(false);
   const searchAreaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSearchArea, setShowSearchArea] = useState(false);
   const selectedRef = useRef<MapRestaurant | null>(null);
@@ -50,6 +52,9 @@ export function MapView() {
   const [hovered, setHovered] = useState<{ r: MapRestaurant; x: number; y: number } | null>(null);
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [openNow, setOpenNow] = useState(false);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<number>>(() => new Set(initialSavedIds));
+  useEffect(() => { showSavedOnlyRef.current = showSavedOnly; }, [showSavedOnly]);
   const [search, setSearch] = useState("");
   const [committedSearch, setCommittedSearch] = useState("");
   useEffect(() => { committedSearchRef.current = committedSearch; }, [committedSearch]);
@@ -195,7 +200,7 @@ export function MapView() {
       if (autoFetchOnMoveEnd.current) {
         autoFetchOnMoveEnd.current = false;
         fetchViewport();
-      } else {
+      } else if (!showSavedOnlyRef.current) {
         searchAreaTimer.current = setTimeout(() => setShowSearchArea(true), 600);
       }
     });
@@ -217,7 +222,7 @@ export function MapView() {
     if (!meetsScoreFilter(r, scoreFilter)) return false;
     if (openNow) {
       const open = isOpenNow(r.periods);
-      if (open === false) return false; // hide confirmed-closed; show unknown (null)
+      if (open === false) return false;
     }
     return true;
   }, [scoreFilter, openNow]);
@@ -455,12 +460,32 @@ export function MapView() {
         {/* Mobile: name + close button in a row */}
         <div className="flex items-start justify-between gap-3 md:block">
           <div className="min-w-0">
-            <p
-              className="font-[family-name:var(--font-display)] leading-tight mb-1"
-              style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
-            >
-              {selected.name}
-            </p>
+            <div className="flex items-start gap-2 mb-1">
+              <p
+                className="font-[family-name:var(--font-display)] leading-tight"
+                style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
+              >
+                {selected.name}
+              </p>
+              <div className="shrink-0 mt-1">
+                <SaveButton
+                  restaurantId={selected.id}
+                  initialSaved={savedIds.has(selected.id)}
+                  redirectPath="/map"
+                  onToggle={(isSaved) => {
+                    setSavedIds((prev) => {
+                      const next = new Set(prev);
+                      if (isSaved) next.add(selected.id); else next.delete(selected.id);
+                      return next;
+                    });
+                    if (!isSaved && showSavedOnly) {
+                      setRestaurants((prev) => prev.filter((r) => r.id !== selected.id));
+                      setSelected(null);
+                    }
+                  }}
+                />
+              </div>
+            </div>
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] mb-4">
               {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
             </p>
@@ -695,7 +720,7 @@ export function MapView() {
           {SCORE_FILTERS.map((f) => (
             <button
               key={f.value}
-              onClick={() => setScoreFilter(f.value)}
+              onClick={() => setScoreFilter((prev) => prev === f.value ? "all" : f.value)}
               className="flex-1 font-mono text-[10px] uppercase tracking-[0.1em] py-2 transition-colors duration-150"
               style={{
                 color: scoreFilter === f.value ? "#FF7444" : "oklch(0.62 0 0)",
@@ -706,7 +731,7 @@ export function MapView() {
               {f.label}
             </button>
           ))}
-          {/* Open now pill — appended to filter row */}
+          {/* Open now pill */}
           <button
             onClick={() => setOpenNow((v) => !v)}
             className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 transition-colors duration-150"
@@ -721,6 +746,38 @@ export function MapView() {
               style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }}
             />
             Open
+          </button>
+          {/* Saved filter pill */}
+          <button
+            onClick={async () => {
+              const next = !showSavedOnly;
+              setShowSavedOnly(next);
+              setShowSearchArea(false);
+              if (next) {
+                setIsSearching(true);
+                setSelected(null);
+                try {
+                  const res = await fetch("/api/map-saved");
+                  const data = await res.json();
+                  setRestaurants(Array.isArray(data) ? data : []);
+                } finally {
+                  setIsSearching(false);
+                }
+              } else {
+                fetchViewport();
+              }
+            }}
+            className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 transition-colors duration-150"
+            style={{
+              color: showSavedOnly ? "#FF7444" : "oklch(0.62 0 0)",
+              backgroundColor: showSavedOnly ? "#FF744412" : "transparent",
+              borderColor: "oklch(0.28 0 0)",
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill={showSavedOnly ? "#FF7444" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+            Saved
           </button>
         </div>
 

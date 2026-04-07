@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
+import { SaveButton } from "@/app/components/SaveButton";
 import {
   calculateScore,
   getGaugeColor,
@@ -223,6 +225,20 @@ export default async function RestaurantPage({
 
   const visit = visitData as VerifiedVisit | null;
   const score = r.dossier ? calculateScore(r.dossier, r.verified_data ?? undefined) : null;
+
+  // Check if current user has saved this restaurant
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  let initialSaved = false;
+  if (user) {
+    const { data: save } = await serverClient
+      .from("saved_restaurants")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("restaurant_id", r.id)
+      .maybeSingle();
+    initialSaved = !!save;
+  }
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);
   const d = r.dossier;
@@ -341,13 +357,22 @@ export default async function RestaurantPage({
             </div>
           )}
 
-          {/* Name */}
-          <h1
-            className="font-[family-name:var(--font-display)] leading-none mb-5"
-            style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
-          >
-            {r.name}
-          </h1>
+          {/* Name + save */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            <h1
+              className="font-[family-name:var(--font-display)] leading-none"
+              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
+            >
+              {r.name}
+            </h1>
+            <div className="mt-2 shrink-0">
+              <SaveButton
+                restaurantId={r.id}
+                initialSaved={initialSaved}
+                redirectPath={`/restaurant/${r.id}`}
+              />
+            </div>
+          </div>
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">

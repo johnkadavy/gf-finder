@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/lib/supabase-admin";
 import { DossierSchema } from "@/lib/dossier-schema";
 
 export const maxDuration = 300;

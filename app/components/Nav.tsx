@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase-browser";
 
 const linkClass =
   "font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200";
@@ -10,11 +11,20 @@ const linkClass =
 export function Nav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  // Close menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setLoggedIn(!!user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <>
@@ -26,14 +36,9 @@ export function Nav() {
         <Link href="/rankings" className={linkClass}>Rankings</Link>
         <Link href="/map" className={linkClass}>Map</Link>
         <Link href="/about" className={linkClass}>About</Link>
-        <a
-          href="https://airtable.com/appHZS7jRGolLejjZ/pagAO6Dy9uBO6pKfZ/form"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={linkClass}
-        >
-          Feedback
-        </a>
+        {loggedIn && (
+          <Link href="/account" className={linkClass}>Account</Link>
+        )}
       </nav>
 
       {/* Mobile hamburger button */}
@@ -93,14 +98,14 @@ export function Nav() {
             >
               About
             </Link>
-            <a
-              href="https://airtable.com/appHZS7jRGolLejjZ/pagAO6Dy9uBO6pKfZ/form"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 hover:text-[#FF7444] transition-colors duration-150"
-            >
-              Feedback
-            </a>
+            {loggedIn && (
+              <Link
+                href="/account"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 hover:text-[#FF7444] transition-colors duration-150"
+              >
+                Account
+              </Link>
+            )}
           </nav>
         </div>
       )}

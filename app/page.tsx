@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
+import { SaveButton } from "./components/SaveButton";
 import { SearchForm } from "./components/SearchForm";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 
@@ -106,6 +108,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     if (!error) restaurants = (data ?? []) as Restaurant[];
   }
 
+  // Fetch saved restaurant IDs for the current user (if logged in)
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  let savedIds = new Set<number>();
+  if (user && restaurants.length > 0) {
+    const { data: saves } = await serverClient
+      .from("saved_restaurants")
+      .select("restaurant_id")
+      .eq("user_id", user.id)
+      .in("restaurant_id", restaurants.map((r) => r.id));
+    savedIds = new Set((saves ?? []).map((s) => s.restaurant_id));
+  }
+
   return (
     <main className="pt-16">
       {/* Hero */}
@@ -205,9 +220,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] md:mb-4">
                           {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                         </p>
-                        {/* Gauge — mobile only */}
-                        <div className="shrink-0 md:hidden -mt-1">
-                          <SafetyGauge score={score} size="sm" />
+                        <div className="flex items-center gap-2 shrink-0 -mt-1">
+                          <SaveButton
+                            restaurantId={restaurant.id}
+                            initialSaved={savedIds.has(restaurant.id)}
+                          />
+                          {/* Gauge — mobile only */}
+                          <div className="md:hidden">
+                            <SafetyGauge score={score} size="sm" />
+                          </div>
                         </div>
                       </div>
 
