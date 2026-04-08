@@ -191,6 +191,33 @@ const IconClock = () => (
   </svg>
 );
 
+// ── Metadata ───────────────────────────────────────────────────────────────
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { data } = await supabase
+    .from("restaurants")
+    .select("name, city, neighborhood, dossier, verified_data")
+    .eq("id", id)
+    .single();
+
+  if (!data) return {};
+
+  const score = data.dossier
+    ? calculateScore(data.dossier as ScoringDossier, (data.verified_data ?? undefined) as VerifiedData | undefined)
+    : null;
+  const { label } = getScoreLabel(score);
+  const location = [data.neighborhood, data.city].filter(Boolean).join(", ");
+
+  return {
+    title: `${data.name} — CleanPlate`,
+    description: score !== null
+      ? `${data.name} scores ${Math.round(score)} (${label}) for gluten-free safety${location ? ` in ${location}` : ""}.`
+      : `Gluten-free details for ${data.name}${location ? ` in ${location}` : ""}.`,
+    openGraph: { title: data.name },
+  };
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function RestaurantPage({
