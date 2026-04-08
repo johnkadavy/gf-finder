@@ -3,20 +3,17 @@ import { supabase } from "@/lib/supabase";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { loadBebasNeue } from "@/app/og-font";
 
-export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const fontData = await loadBebasNeue();
-  const fonts = fontData
-    ? [{ name: "BebasNeue", data: fontData, style: "normal" as const, weight: 400 as const }]
-    : undefined;
+  const hasFont = !!fontData;
 
   const { data } = await supabase
     .from("restaurants")
-    .select("name, city, neighborhood, cuisine, dossier, verified_data")
+    .select("name, city, neighborhood, dossier, verified_data")
     .eq("id", id)
     .single();
 
@@ -27,6 +24,9 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     : null;
   const color = getGaugeColor(score);
   const { label } = getScoreLabel(score);
+
+  const displayFont = hasFont ? "BebasNeue" : "sans-serif";
+  const displayWeight = hasFont ? 400 : 700;
 
   return new ImageResponse(
     (
@@ -57,14 +57,15 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
         {/* Main content */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, paddingRight: 60 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, paddingRight: 60 }}>
             <div
               style={{
-                fontFamily: "BebasNeue",
+                fontFamily: displayFont,
                 fontSize: name.length > 20 ? 88 : 112,
                 lineHeight: 0.9,
                 color: "#f2f2f2",
                 letterSpacing: "0.02em",
+                fontWeight: displayWeight,
               }}
             >
               {name}
@@ -89,14 +90,14 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
               <div
                 style={{
-                  fontFamily: "BebasNeue",
+                  fontFamily: displayFont,
                   fontSize: 160,
                   lineHeight: 1,
                   color,
-                  letterSpacing: "0.02em",
+                  fontWeight: displayWeight,
                 }}
               >
-                {Math.round(score)}
+                {String(Math.round(score))}
               </div>
               <div
                 style={{
@@ -104,7 +105,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                   fontSize: 14,
                   letterSpacing: "0.2em",
                   textTransform: "uppercase",
-                  color: `${color}99`,
+                  color: "#888888",
                 }}
               >
                 {label}
@@ -127,6 +128,11 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
       </div>
     ),
-    { ...size, ...(fonts ? { fonts } : {}) }
+    {
+      ...size,
+      ...(hasFont && fontData
+        ? { fonts: [{ name: "BebasNeue", data: fontData, style: "normal" as const, weight: 400 as const }] }
+        : {}),
+    }
   );
 }

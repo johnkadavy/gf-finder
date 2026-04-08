@@ -1,16 +1,13 @@
 import { ImageResponse } from "next/og";
 import { loadBebasNeue } from "./og-font";
 
-export const runtime = "edge";
 export const alt = "CleanPlate — Gluten-Free Restaurants You Can Trust";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image() {
   const fontData = await loadBebasNeue();
-  const fonts = fontData
-    ? [{ name: "BebasNeue", data: fontData, style: "normal" as const, weight: 400 as const }]
-    : undefined;
+  const hasFont = !!fontData;
 
   return new ImageResponse(
     (
@@ -43,16 +40,27 @@ export default async function Image() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div
             style={{
-              fontFamily: "BebasNeue",
-              fontSize: 128,
+              fontFamily: hasFont ? "BebasNeue" : "sans-serif",
+              fontSize: 120,
               lineHeight: 0.9,
               color: "#f2f2f2",
               letterSpacing: "0.02em",
+              fontWeight: hasFont ? 400 : 700,
             }}
           >
-            Gluten-free
-            <br />
-            <span style={{ color: "#FF7444" }}>you can trust.</span>
+            {"Gluten-free"}
+          </div>
+          <div
+            style={{
+              fontFamily: hasFont ? "BebasNeue" : "sans-serif",
+              fontSize: 120,
+              lineHeight: 0.9,
+              color: "#FF7444",
+              letterSpacing: "0.02em",
+              fontWeight: hasFont ? 400 : 700,
+            }}
+          >
+            {"you can trust."}
           </div>
           <div
             style={{
@@ -60,7 +68,7 @@ export default async function Image() {
               fontSize: 22,
               color: "#666666",
               letterSpacing: "0.08em",
-              marginTop: 8,
+              marginTop: 16,
             }}
           >
             Find and save gluten-free restaurants, scored for safety.
@@ -81,6 +89,11 @@ export default async function Image() {
         </div>
       </div>
     ),
-    { ...size, ...(fonts ? { fonts } : {}) }
+    {
+      ...size,
+      ...(hasFont && fontData
+        ? { fonts: [{ name: "BebasNeue", data: fontData, style: "normal" as const, weight: 400 as const }] }
+        : {}),
+    }
   );
 }
