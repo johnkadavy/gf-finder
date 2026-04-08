@@ -1,24 +1,18 @@
 import { ImageResponse } from "next/og";
 import { supabase } from "@/lib/supabase";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { loadBebasNeue } from "@/app/og-font";
 
 export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-async function loadFont() {
-  const css = await fetch(
-    "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap",
-    { headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" } }
-  ).then((r) => r.text());
-  const url = css.match(/src: url\((.+?)\) format/)?.[1];
-  if (!url) throw new Error("Could not parse Bebas Neue font URL");
-  return fetch(url).then((r) => r.arrayBuffer());
-}
-
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fontData = await loadFont();
+  const fontData = await loadBebasNeue();
+  const fonts = fontData
+    ? [{ name: "BebasNeue", data: fontData, style: "normal" as const, weight: 400 as const }]
+    : undefined;
 
   const { data } = await supabase
     .from("restaurants")
@@ -133,9 +127,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
       </div>
     ),
-    {
-      ...size,
-      fonts: [{ name: "BebasNeue", data: fontData, style: "normal", weight: 400 }],
-    }
+    { ...size, ...(fonts ? { fonts } : {}) }
   );
 }
