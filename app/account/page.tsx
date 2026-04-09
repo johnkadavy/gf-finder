@@ -5,6 +5,7 @@ import { supabase as publicSupabase } from "@/lib/supabase";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { AccountFilters } from "./AccountFilters";
+import { CopyButton } from "@/app/components/CopyButton";
 
 type SavedRestaurant = {
   id: number;
@@ -30,6 +31,16 @@ export default async function AccountPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const cityFilter = params.city ?? "all";
   const cuisineFilter = params.cuisine ?? "all";
+
+  // Fetch share token
+  const { data: profile } = await serverClient
+    .from("profiles")
+    .select("share_token")
+    .eq("user_id", user.id)
+    .single();
+  const shareToken = profile?.share_token ?? null;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trycleanplate.com";
+  const shareUrl = shareToken ? `${siteUrl}/map/${shareToken}` : null;
 
   // Fetch saved IDs in save order
   const { data: saves } = await serverClient
@@ -105,6 +116,41 @@ export default async function AccountPage({ searchParams }: PageProps) {
           </button>
         </form>
       </div>
+
+      {/* My Map */}
+      {shareUrl && (
+        <div
+          className="py-6 border-b"
+          style={{ borderColor: "oklch(0.18 0 0)" }}
+        >
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+                My Map
+              </p>
+              <p className="font-mono text-[11px] text-[oklch(0.38_0_0)] mt-1">
+                Share your saved spots with anyone.
+              </p>
+            </div>
+            <Link
+              href={`/map/${shareToken}`}
+              target="_blank"
+              className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#FF7444] hover:underline shrink-0"
+            >
+              Preview →
+            </Link>
+          </div>
+          <div
+            className="flex items-center gap-3 border px-4 py-3"
+            style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.09 0 0)" }}
+          >
+            <span className="font-mono text-[11px] text-[oklch(0.5_0_0)] truncate flex-1 min-w-0">
+              {shareUrl}
+            </span>
+            <CopyButton text={shareUrl} />
+          </div>
+        </div>
+      )}
 
       {/* Saved restaurants */}
       <div className="py-8">
