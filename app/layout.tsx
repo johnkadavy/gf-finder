@@ -23,7 +23,7 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "CleanPlate — Gluten-Free Restaurants You Can Trust",
+  title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
   description: "Find and save gluten-free restaurants, scored for safety. No guessing.",
   metadataBase: new URL("https://trycleanplate.com"),
   openGraph: {
