@@ -62,6 +62,19 @@ export default async function AccountPage({ searchParams }: PageProps) {
     )
   ).sort();
 
+  // Fetch user's reviews
+  const { data: reviewVisits } = await serverClient
+    .from("verified_visits")
+    .select("id, google_place_id, visit_date, overall_sentiment, notes, gf_labeling, gf_options_level, staff_knowledge, cross_contamination_risk, dedicated_fryer, synced_at")
+    .eq("user_id", user.id)
+    .order("synced_at", { ascending: false });
+
+  const reviewPlaceIds = (reviewVisits ?? []).map((v) => v.google_place_id).filter(Boolean);
+  const { data: reviewRestaurants } = reviewPlaceIds.length > 0
+    ? await publicSupabase.from("restaurants").select("id, name, google_place_id").in("google_place_id", reviewPlaceIds)
+    : { data: [] };
+  const placeIdToRestaurant = new Map((reviewRestaurants ?? []).map((r) => [r.google_place_id, r]));
+
   // Apply filters
   const restaurants = allRestaurants.filter((r) => {
     if (cityFilter !== "all" && r.city !== cityFilter) return false;
@@ -220,6 +233,152 @@ export default async function AccountPage({ searchParams }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* My Reviews */}
+      {reviewVisits && reviewVisits.length > 0 && (
+        <div className="py-8">
+          <div
+            className="flex items-center justify-between pb-5 border-b mb-6"
+            style={{ borderColor: "oklch(0.22 0 0)" }}
+          >
+            <div className="flex items-baseline gap-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+                My Reviews
+              </p>
+              <span className="font-mono text-[10px] text-[oklch(0.38_0_0)]">
+                {reviewVisits.length}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {reviewVisits.map((visit) => {
+              const restaurant = placeIdToRestaurant.get(visit.google_place_id);
+              const sentimentColor =
+                visit.overall_sentiment === "mostly_positive" ? "#7ECF9A" :
+                visit.overall_sentiment === "mixed" ? "#D4AE62" :
+                visit.overall_sentiment === "mostly_negative" ? "#FF8060" : null;
+              const sentimentLabel =
+                visit.overall_sentiment === "mostly_positive" ? "Positive" :
+                visit.overall_sentiment === "mixed" ? "Mixed" :
+                visit.overall_sentiment === "mostly_negative" ? "Negative" : null;
+
+              return (
+                <div key={visit.id} className="space-y-3">
+                  {/* Restaurant name link */}
+                  {restaurant && (
+                    <Link
+                      href={`/restaurant/${restaurant.id}`}
+                      className="font-[family-name:var(--font-display)] text-[1.5rem] leading-none hover:text-[#FF7444] transition-colors block"
+                      style={{ color: "oklch(0.92 0 0)", letterSpacing: "0.02em" }}
+                    >
+                      {restaurant.name}
+                    </Link>
+                  )}
+
+                  {/* Review card — mirrors restaurant page style */}
+                  <div
+                    className="border p-6 space-y-4"
+                    style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-2.5">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#4A7C59]">
+                          Verified Visit
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {sentimentLabel && sentimentColor && (
+                          <span
+                            className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
+                            style={{
+                              borderColor: `${sentimentColor}40`,
+                              color: sentimentColor,
+                              backgroundColor: `${sentimentColor}10`,
+                            }}
+                          >
+                            {sentimentLabel}
+                          </span>
+                        )}
+                        {visit.visit_date && (
+                          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.58_0_0)]">
+                            {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    {visit.notes && (
+                      <p className="text-[15px] leading-[1.7] text-[oklch(0.85_0_0)]">
+                        {visit.notes}
+                      </p>
+                    )}
+
+                    {/* Color-coded chips */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {visit.gf_labeling && <Chip label="GF Labeling" value={visit.gf_labeling} level={chipLevel("GF Labeling", visit.gf_labeling)} />}
+                      {visit.gf_options_level && <Chip label="GF Options" value={visit.gf_options_level} level={chipLevel("GF Options", visit.gf_options_level)} />}
+                      {visit.staff_knowledge && <Chip label="Staff Knowledge" value={visit.staff_knowledge} level={chipLevel("Staff Knowledge", visit.staff_knowledge)} />}
+                      {visit.cross_contamination_risk && <Chip label="Cross-Contamination" value={visit.cross_contamination_risk} level={chipLevel("Cross-Contamination", visit.cross_contamination_risk)} />}
+                      {visit.dedicated_fryer && <Chip label="Dedicated Fryer" value={visit.dedicated_fryer} level={chipLevel("Dedicated Fryer", visit.dedicated_fryer)} />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </main>
+  );
+}
+
+type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
+
+function signalColor(level: SignalLevel): string {
+  switch (level) {
+    case "positive": return "#7ECF9A";
+    case "neutral":  return "oklch(0.72 0 0)";
+    case "warning":  return "#D4AE62";
+    case "negative": return "#FF8060";
+    default:         return "oklch(0.42 0 0)";
+  }
+}
+
+function signalBg(level: SignalLevel): string {
+  switch (level) {
+    case "positive": return "#4A7C590D";
+    case "negative": return "#FF74440D";
+    case "warning":  return "#C5A04A0D";
+    default:         return "oklch(0.095 0 0)";
+  }
+}
+
+function chipLevel(field: string, value: string): SignalLevel {
+  if (field === "GF Labeling") return value === "clear" ? "positive" : value === "partial" ? "warning" : value === "none" ? "negative" : "unknown";
+  if (field === "GF Options") return value === "many" || value === "ample" ? "positive" : value === "moderate" ? "neutral" : value === "few" ? "warning" : value === "none" ? "negative" : "unknown";
+  if (field === "Staff Knowledge") return value === "high" ? "positive" : value === "medium" ? "neutral" : value === "low" ? "negative" : "unknown";
+  if (field === "Cross-Contamination") return value === "low" ? "positive" : value === "medium" ? "warning" : value === "high" ? "negative" : "unknown";
+  if (field === "Dedicated Fryer") return value === "yes" ? "positive" : "neutral";
+  return "unknown";
+}
+
+function Chip({ label, value, level }: { label: string; value: string; level: SignalLevel }) {
+  return (
+    <span
+      className="font-mono text-[11px] uppercase tracking-[0.08em] px-2.5 py-1 border"
+      style={{
+        borderColor: `${signalColor(level)}40`,
+        color: signalColor(level),
+        backgroundColor: signalBg(level),
+      }}
+    >
+      {label}: {value}
+    </span>
   );
 }
