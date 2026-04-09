@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-admin";
+import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { SharedMapView } from "./SharedMapView";
 import type { MapRestaurant } from "../types";
@@ -10,6 +11,9 @@ export default async function SharedMapPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+
+  const sessionClient = await createClient();
+  const { data: { user } } = await sessionClient.auth.getUser();
 
   const { data: profile } = await supabaseServer
     .from("profiles")
@@ -28,7 +32,7 @@ export default async function SharedMapPage({
   const ids = (saves ?? []).map((s) => s.restaurant_id);
 
   if (ids.length === 0) {
-    return <SharedMapView restaurants={[]} />;
+    return <SharedMapView restaurants={[]} isLoggedIn={!!user} />;
   }
 
   const { data: rows } = await supabaseServer
@@ -62,5 +66,5 @@ export default async function SharedMapPage({
       periods: ((r.dossier as any)?.hours?.periods ?? null) as MapRestaurant["periods"],
     }));
 
-  return <SharedMapView restaurants={restaurants} />;
+  return <SharedMapView restaurants={restaurants} isLoggedIn={!!user} />;
 }

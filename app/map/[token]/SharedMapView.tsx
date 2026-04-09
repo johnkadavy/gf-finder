@@ -15,7 +15,7 @@ function priceStr(level: number | null) {
 
 type SharedRestaurant = MapRestaurant & { google_maps_url: string | null };
 
-export function SharedMapView({ restaurants }: { restaurants: SharedRestaurant[] }) {
+export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: SharedRestaurant[]; isLoggedIn: boolean }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markerRefs = useRef<mapboxgl.Marker[]>([]);
@@ -273,29 +273,31 @@ export function SharedMapView({ restaurants }: { restaurants: SharedRestaurant[]
         </div>
       )}
 
-      {/* Bottom CTA */}
-      <div
-        className="absolute bottom-0 left-0 right-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t"
-        style={{
-          backgroundColor: "oklch(0.08 0 0)",
-          borderColor: "oklch(0.18 0 0)",
-          zIndex: 10,
-        }}
-      >
-        <p
-          className="font-mono text-[10px] uppercase tracking-[0.2em] text-center sm:text-left"
-          style={{ color: "oklch(0.45 0 0)" }}
+      {/* Bottom CTA — only for logged-out visitors */}
+      {!isLoggedIn && (
+        <div
+          className="absolute bottom-0 left-0 right-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t"
+          style={{
+            backgroundColor: "oklch(0.08 0 0)",
+            borderColor: "oklch(0.18 0 0)",
+            zIndex: 10,
+          }}
         >
-          Save your favorite gluten-free spots and share your own map.
-        </p>
-        <Link
-          href="/login"
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-2.5"
-          style={{ backgroundColor: "#FF7444", color: "#111" }}
-        >
-          Sign up free →
-        </Link>
-      </div>
+          <p
+            className="font-mono text-[10px] uppercase tracking-[0.2em] text-center sm:text-left"
+            style={{ color: "oklch(0.45 0 0)" }}
+          >
+            Save your favorite gluten-free spots and share your own map.
+          </p>
+          <Link
+            href="/login"
+            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-2.5"
+            style={{ backgroundColor: "#FF7444", color: "#111" }}
+          >
+            Sign up free →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
