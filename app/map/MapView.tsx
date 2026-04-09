@@ -44,7 +44,7 @@ export function MapView({ initialSavedIds, isPreview = false }: { initialSavedId
   const selectedRef = useRef<MapRestaurant | null>(null);
   const selectedIdRef = useRef<number | null>(null);
 
-  const [mapReady, setMapReady] = useState(false);
+const [mapReady, setMapReady] = useState(false);
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([]);
   const [selected, setSelected] = useState<MapRestaurant | null>(null);
   useEffect(() => {
@@ -251,11 +251,27 @@ export function MapView({ initialSavedIds, isPreview = false }: { initialSavedId
     restaurants.forEach((r) => {
       if (markers.current.has(r.id)) return;
       const el = createMarkerEl(r, isVisible(r));
+      const inner = el.firstChild as HTMLElement;
+
+      // Set hidden state before entering DOM so no transition fires on initial paint
+      inner.style.opacity = "0";
+      inner.style.transform = "scale(0.5)";
+
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([r.lng, r.lat])
         .addTo(map.current!);
       markers.current.set(r.id, marker);
       markerEls.current.set(r.id, el);
+
+      // After the next paint, transition to natural state
+      requestAnimationFrame(() => {
+        inner.style.transition = "transform 0.2s ease-out, opacity 0.15s ease-out";
+        inner.style.transform = "";
+        inner.style.opacity = "";
+        setTimeout(() => {
+          inner.style.transition = "transform 0.15s ease, box-shadow 0.15s ease";
+        }, 220);
+      });
     });
   }, [mapReady, restaurants, isVisible, createMarkerEl]);
 
