@@ -11,6 +11,7 @@ import {
   type VerifiedData,
 } from "@/lib/score";
 import { SafetyGauge } from "@/app/components/SafetyGauge";
+import { ReviewForm } from "@/app/components/ReviewForm";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -484,83 +485,111 @@ export default async function RestaurantPage({
               </div>
             )}
 
-            {/* Verified visit */}
-            {visit && (
-              <div className="space-y-5">
+            {/* Reviews section */}
+            <div className="space-y-5">
               <div className="flex items-center gap-4">
                 <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
                   Reviews
                 </p>
                 <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
               </div>
-              <div
-                className="border p-6 space-y-5"
-                style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-2.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#4A7C59]">
-                      Verified Visit
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {visit.overall_sentiment && (
-                      <span
-                        className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
-                        style={{
-                          borderColor: visit.overall_sentiment === "positive" ? "#4A7C5940" : "#FF744440",
-                          color: visit.overall_sentiment === "positive" ? "#4A7C59" : "#FF7444",
-                          backgroundColor: visit.overall_sentiment === "positive" ? "#4A7C5910" : "#FF744410",
-                        }}
-                      >
-                        {visit.overall_sentiment}
-                      </span>
-                    )}
-                    {visit.visit_date && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.58_0_0)]">
-                        {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                      </span>
-                    )}
-                  </div>
-                </div>
 
-                {/* Notes */}
-                {visit.notes && (
-                  <p className="text-[15px] leading-[1.7] text-[oklch(0.85_0_0)]">
-                    {visit.notes}
-                  </p>
-                )}
-
-                {/* Signal chips */}
-                {(() => {
-                  const chips: { label: string; value: string }[] = [];
-                  if (visit.gf_labeling) chips.push({ label: "Labeling", value: visit.gf_labeling });
-                  if (visit.gf_options_level) chips.push({ label: "Options", value: visit.gf_options_level });
-                  if (visit.staff_knowledge) chips.push({ label: "Staff", value: visit.staff_knowledge });
-                  if (visit.cross_contamination_risk) chips.push({ label: "CC Risk", value: visit.cross_contamination_risk });
-                  if (visit.dedicated_fryer) chips.push({ label: "Dedicated fryer", value: visit.dedicated_fryer });
-                  if (chips.length === 0) return null;
-                  return (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {chips.map(({ label, value }) => (
-                        <span
-                          key={label}
-                          className="font-mono text-[11px] uppercase tracking-[0.08em] px-2.5 py-1 border"
-                          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-                        >
-                          {label}: {value}
-                        </span>
-                      ))}
+              {visit ? (
+                <div
+                  className="border p-6 space-y-5"
+                  style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-2.5">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#4A7C59]">
+                        Verified Visit
+                      </span>
                     </div>
-                  );
-                })()}
-              </div>
-              </div>
-            )}
+                    <div className="flex items-center gap-3">
+                      {visit.overall_sentiment && (
+                        <span
+                          className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
+                          style={{
+                            borderColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5940" : visit.overall_sentiment === "mixed" ? "#D4AE6240" : "#FF744440",
+                            color: visit.overall_sentiment === "mostly_positive" ? "#4A7C59" : visit.overall_sentiment === "mixed" ? "#D4AE62" : "#FF7444",
+                            backgroundColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5910" : visit.overall_sentiment === "mixed" ? "#D4AE6210" : "#FF744410",
+                          }}
+                        >
+                          {visit.overall_sentiment === "mostly_positive" ? "Positive" : visit.overall_sentiment === "mixed" ? "Mixed" : "Negative"}
+                        </span>
+                      )}
+                      {visit.visit_date && (
+                        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.58_0_0)]">
+                          {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {visit.notes && (
+                    <p className="text-[15px] leading-[1.7] text-[oklch(0.85_0_0)]">
+                      {visit.notes}
+                    </p>
+                  )}
+
+                  {/* Signal chips */}
+                  {(() => {
+                    const chipLevel = (field: string, value: string): SignalLevel => {
+                      if (field === "GF Labeling") return value === "clear" ? "positive" : value === "partial" ? "warning" : value === "none" ? "negative" : "unknown";
+                      if (field === "GF Options") return value === "many" || value === "ample" ? "positive" : value === "moderate" ? "neutral" : value === "few" ? "warning" : value === "none" ? "negative" : "unknown";
+                      if (field === "Staff Knowledge") return value === "high" ? "positive" : value === "medium" ? "neutral" : value === "low" ? "negative" : "unknown";
+                      if (field === "Cross-Contamination") return value === "low" ? "positive" : value === "medium" ? "warning" : value === "high" ? "negative" : "unknown";
+                      if (field === "Dedicated Fryer") return value === "yes" ? "positive" : "neutral";
+                      return "unknown";
+                    };
+                    const chips: { label: string; value: string }[] = [];
+                    if (visit.gf_labeling) chips.push({ label: "GF Labeling", value: visit.gf_labeling });
+                    if (visit.gf_options_level) chips.push({ label: "GF Options", value: visit.gf_options_level });
+                    if (visit.staff_knowledge) chips.push({ label: "Staff Knowledge", value: visit.staff_knowledge });
+                    if (visit.cross_contamination_risk) chips.push({ label: "Cross-Contamination", value: visit.cross_contamination_risk });
+                    if (visit.dedicated_fryer) chips.push({ label: "Dedicated Fryer", value: visit.dedicated_fryer });
+                    if (chips.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {chips.map(({ label, value }) => {
+                          const level = chipLevel(label, value);
+                          return (
+                            <span
+                              key={label}
+                              className="font-mono text-[11px] uppercase tracking-[0.08em] px-2.5 py-1 border"
+                              style={{
+                                borderColor: `${signalColor(level)}40`,
+                                color: signalColor(level),
+                                backgroundColor: signalBg(level),
+                              }}
+                            >
+                              {label}: {value}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <p className="font-mono text-[11px] text-[oklch(0.38_0_0)]">
+                  No verified reviews yet.
+                </p>
+              )}
+
+              {/* Write a review — verified reviewers only */}
+              {r.google_place_id && (
+                <ReviewForm
+                  restaurantId={r.id}
+                  googlePlaceId={r.google_place_id}
+                />
+              )}
+            </div>
 
             {/* Data confidence notice */}
             {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
