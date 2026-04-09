@@ -266,7 +266,7 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
   );
 
   return (
-    <div className="fixed inset-0 pt-16 z-0">
+    <div className="fixed inset-0 pt-16 z-0 flex flex-col">
       <style>{`
         @keyframes markerPulse {
           0%, 100% { transform: scale(1.25); }
@@ -274,30 +274,87 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
         }
       `}</style>
 
-      {/* Map */}
-      <div ref={mapContainer} className="w-full h-full" />
-
-      {/* Empty state */}
-      {count === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "oklch(0.4 0 0)" }}>
-            No saved spots to show
-          </p>
-        </div>
-      )}
-
-      {/* Desktop side panel */}
+      {/* Top bar — spot count + create CTA */}
       <div
-        className="hidden md:flex absolute top-11 left-0 bottom-0 z-20 w-80 flex-col border-r overflow-hidden"
-        style={{
-          backgroundColor: "oklch(0.08 0 0)",
-          borderColor: "oklch(0.18 0 0)",
-          transform: selected ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.25s ease",
-          pointerEvents: selected ? "auto" : "none",
-        }}
+        className="shrink-0 flex items-center justify-between px-4 md:px-6 py-2.5 border-b"
+        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)", zIndex: 10 }}
       >
-        {panelContent}
+        <span
+          className="font-mono text-[10px] uppercase tracking-[0.2em]"
+          style={{ color: "oklch(0.45 0 0)" }}
+        >
+          {count === 0 ? "No spots saved" : `${count} Gluten-Free Spot${count === 1 ? "" : "s"}`}
+        </span>
+        <Link
+          href="/login"
+          className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border transition-colors"
+          style={{ borderColor: "#FF7444", color: "#FF7444" }}
+        >
+          Create yours →
+        </Link>
+      </div>
+
+      {/* Map area — fills remaining space */}
+      <div className="flex-1 relative overflow-hidden">
+        <div ref={mapContainer} className="absolute inset-0" />
+
+        {/* Empty state */}
+        {count === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "oklch(0.4 0 0)" }}>
+              No saved spots to show
+            </p>
+          </div>
+        )}
+
+        {/* Desktop side panel — positioned within map area so it never overlaps the nav */}
+        <div
+          className="hidden md:flex absolute top-0 left-0 bottom-0 z-20 w-80 flex-col border-r overflow-hidden"
+          style={{
+            backgroundColor: "oklch(0.08 0 0)",
+            borderColor: "oklch(0.18 0 0)",
+            transform: selected ? "translateX(0)" : "translateX(-100%)",
+            transition: "transform 0.25s ease",
+            pointerEvents: selected ? "auto" : "none",
+          }}
+        >
+          {panelContent}
+        </div>
+
+        {/* Hover tooltip — desktop only */}
+        {!isMobile && hovered && hovered.r.id !== selected?.id && (
+          <div
+            className="absolute z-30 pointer-events-none border p-3 w-52"
+            style={{
+              left: hovered.x,
+              top: hovered.y,
+              transform: "translate(-50%, calc(-100% - 18px))",
+              backgroundColor: "oklch(0.1 0 0)",
+              borderColor: "oklch(0.25 0 0)",
+              borderLeft: `3px solid ${hovered.r.color}`,
+            }}
+          >
+            <p className="font-[family-name:var(--font-display)] text-base text-white leading-tight mb-1.5">
+              {hovered.r.name}
+            </p>
+            {(hovered.r.google_rating || hovered.r.cuisine) && (
+              <p className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.72_0_0)] mb-2">
+                {[
+                  hovered.r.google_rating ? `★ ${hovered.r.google_rating}` : null,
+                  hovered.r.cuisine,
+                ].filter(Boolean).join("  ·  ")}
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="font-[family-name:var(--font-display)] text-xl leading-none" style={{ color: hovered.r.color }}>
+                {hovered.r.score ?? "—"}
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.r.color }}>
+                {hovered.r.scoreLabel}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile backdrop */}
@@ -320,65 +377,10 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
         {panelContent}
       </div>
 
-      {/* Top bar — spot count + create CTA */}
-      <div
-        className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 md:px-6 py-2.5 border-b"
-        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)", zIndex: 10 }}
-      >
-        <span
-          className="font-mono text-[10px] uppercase tracking-[0.2em]"
-          style={{ color: "oklch(0.45 0 0)" }}
-        >
-          {count === 0 ? "No spots saved" : `${count} Gluten-Free Spot${count === 1 ? "" : "s"}`}
-        </span>
-        <Link
-          href="/login"
-          className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border transition-colors"
-          style={{ borderColor: "#FF7444", color: "#FF7444" }}
-        >
-          Create yours →
-        </Link>
-      </div>
-
-      {/* Hover tooltip — desktop only */}
-      {!isMobile && hovered && hovered.r.id !== selected?.id && (
-        <div
-          className="absolute z-30 pointer-events-none border p-3 w-52"
-          style={{
-            left: hovered.x,
-            top: hovered.y + 64,
-            transform: "translate(-50%, calc(-100% - 18px))",
-            backgroundColor: "oklch(0.1 0 0)",
-            borderColor: "oklch(0.25 0 0)",
-            borderLeft: `3px solid ${hovered.r.color}`,
-          }}
-        >
-          <p className="font-[family-name:var(--font-display)] text-base text-white leading-tight mb-1.5">
-            {hovered.r.name}
-          </p>
-          {(hovered.r.google_rating || hovered.r.cuisine) && (
-            <p className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.72_0_0)] mb-2">
-              {[
-                hovered.r.google_rating ? `★ ${hovered.r.google_rating}` : null,
-                hovered.r.cuisine,
-              ].filter(Boolean).join("  ·  ")}
-            </p>
-          )}
-          <div className="flex items-center gap-2">
-            <span className="font-[family-name:var(--font-display)] text-xl leading-none" style={{ color: hovered.r.color }}>
-              {hovered.r.score ?? "—"}
-            </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.r.color }}>
-              {hovered.r.scoreLabel}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Bottom CTA — logged-out visitors only */}
       {!isLoggedIn && (
         <div
-          className="absolute bottom-0 left-0 right-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t"
+          className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t"
           style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)", zIndex: 10 }}
         >
           <p
