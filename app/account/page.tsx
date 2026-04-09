@@ -86,8 +86,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
         <form action="/auth/signout" method="post">
           <button
             formAction="/auth/signout"
-            className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2 border transition-colors hover:text-white hover:border-[oklch(0.45_0_0)]"
-            style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.5 0 0)" }}
+            className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2 border border-[oklch(0.22_0_0)] text-[oklch(0.5_0_0)] transition-colors hover:text-white hover:border-[oklch(0.45_0_0)]"
           >
             Sign out
           </button>
