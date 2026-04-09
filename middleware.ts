@@ -28,11 +28,11 @@ export async function middleware(request: NextRequest) {
   // Refresh session — must be called on every request
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Gate /map and /account behind auth
-  if (!user && (request.nextUrl.pathname.startsWith("/map") || request.nextUrl.pathname.startsWith("/account"))) {
+  // Gate /account behind auth (/map now has its own preview gate)
+  if (!user && request.nextUrl.pathname.startsWith("/account")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", "/map");
+    url.searchParams.set("next", "/account");
     return NextResponse.redirect(url);
   }
 

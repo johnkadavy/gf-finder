@@ -14,5 +14,5 @@ export default async function MapPage() {
     savedIds = (data ?? []).map((r) => r.restaurant_id);
   }
 
-  return <MapView initialSavedIds={savedIds} />;
+  return <MapView initialSavedIds={savedIds} isPreview={!user} />;
 }

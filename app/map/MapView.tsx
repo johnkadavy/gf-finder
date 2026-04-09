@@ -28,7 +28,9 @@ function priceStr(level: number | null) {
   return level ? "$".repeat(level) : null;
 }
 
-export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
+const PREVIEW_LIMIT = 10;
+
+export function MapView({ initialSavedIds, isPreview = false }: { initialSavedIds: number[]; isPreview?: boolean }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<number, mapboxgl.Marker>>(new Map());
@@ -59,6 +61,11 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
   const [committedSearch, setCommittedSearch] = useState("");
   useEffect(() => { committedSearchRef.current = committedSearch; }, [committedSearch]);
   const [isSearching, setIsSearching] = useState(false);
+  const PREVIEW_SEARCH_LIMIT = 3;
+  const [previewSearchesUsed, setPreviewSearchesUsed] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(sessionStorage.getItem("previewSearches") ?? "0", 10);
+  });
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -138,11 +145,11 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
     try {
       const res = await fetch(`/api/map-search?${params}`);
       const data: MapRestaurant[] = await res.json();
-      setRestaurants(data);
+      setRestaurants(isPreview ? data.slice(0, PREVIEW_LIMIT) : data);
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [isPreview]);
 
   // Fetch top restaurants for the current map viewport
   const fetchViewport = useCallback(async () => {
@@ -164,11 +171,11 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
       if (pinned && !data.some((r) => r.id === pinned.id)) {
         data.push(pinned);
       }
-      setRestaurants(data);
+      setRestaurants(isPreview ? data.slice(0, PREVIEW_LIMIT) : data);
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [isPreview]);
 
   // Init map + attach moveend listener
   useEffect(() => {
@@ -549,7 +556,7 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
         })}
       </div>
 
-      <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
+      <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "oklch(0.16 0 0)" }}>
         <Link
           href={`/restaurant/${selected.id}`}
           className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
@@ -557,6 +564,14 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
         >
           View Full Details →
         </Link>
+        {isPreview && (
+          <Link
+            href="/login?next=/map"
+            className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+          >
+            Sign up to save →
+          </Link>
+        )}
       </div>
     </>
   );
@@ -626,6 +641,19 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
       >
         {/* Search box + autocomplete */}
         <div ref={searchBoxRef} className="relative">
+          {/* Preview gate overlay on search */}
+          {isPreview && (
+            <Link
+              href="/login?next=/map"
+              className="absolute inset-0 z-10 flex items-center justify-center gap-2 border font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
+              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)", color: "oklch(0.55 0 0)" }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Sign up to search
+            </Link>
+          )}
           <div
             className="flex items-center border"
             style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: committedSearch ? "#FF744460" : "oklch(0.28 0 0)" }}
@@ -712,8 +740,8 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
           )}
         </div>
 
-        {/* Score filter pills + Open now — single row */}
-        <div
+        {/* Score filter pills + Open now — hidden in preview mode */}
+        {!isPreview && <div
           className="flex border divide-x"
           style={{ borderColor: "oklch(0.28 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
         >
@@ -747,8 +775,8 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
             />
             Open
           </button>
-          {/* Saved filter pill */}
-          <button
+          {/* Saved filter pill — authenticated only */}
+          {!isPreview && <button
             onClick={async () => {
               const next = !showSavedOnly;
               setShowSavedOnly(next);
@@ -778,30 +806,83 @@ export function MapView({ initialSavedIds }: { initialSavedIds: number[] }) {
               <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
             </svg>
             Saved
-          </button>
-        </div>
+          </button>}
+        </div>}
 
-        {/* Result count */}
+        {/* Result count — hidden in preview */}
+        {!isPreview &&
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.42_0_0)] pl-0.5">
           {committedSearch
             ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
             : `${visibleCount} in view`}
-        </p>
+        </p>}
       </div>
 
       {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
         <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-48" style={{ animation: "fadeIn 0.2s ease-out" }}>
-          <button
-            onClick={() => {
-              const q = committedSearchRef.current;
-              if (q) fetchSearch(q); else fetchViewport();
-            }}
-            className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
-            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+          {isPreview && previewSearchesUsed >= PREVIEW_SEARCH_LIMIT ? (
+            <Link
+              href="/login?next=/map"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg flex items-center gap-1.5"
+              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Sign up to search more
+            </Link>
+          ) : (
+            <button
+              onClick={() => {
+                if (isPreview) {
+                  const next = previewSearchesUsed + 1;
+                  setPreviewSearchesUsed(next);
+                  sessionStorage.setItem("previewSearches", String(next));
+                }
+                const q = committedSearchRef.current;
+                if (q) fetchSearch(q); else fetchViewport();
+              }}
+              className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
+              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+            >
+              Search this area
+              {isPreview && (
+                <span className="ml-1.5 opacity-40">{PREVIEW_SEARCH_LIMIT - previewSearchesUsed} left</span>
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Preview gate */}
+      {isPreview && (
+        <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
+          {/* Gradient fade */}
+          <div
+            className="h-24"
+            style={{ background: "linear-gradient(to bottom, transparent, rgba(8,8,8,0.92))" }}
+          />
+          {/* Banner */}
+          <div
+            className="pointer-events-auto px-5 py-4 flex flex-col md:flex-row items-center justify-between gap-3"
+            style={{ backgroundColor: "oklch(0.08 0 0)", borderTop: "1px solid oklch(0.18 0 0)" }}
           >
-            Search this area
-          </button>
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white text-center md:text-left">
+                Showing {PREVIEW_LIMIT} of 500+ restaurants
+              </p>
+              <p className="font-mono text-[10px] text-[oklch(0.45_0_0)] mt-0.5 text-center md:text-left">
+                Sign up for free to explore the full map.
+              </p>
+            </div>
+            <Link
+              href="/login?next=/map"
+              className="shrink-0 px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+            >
+              Create free account →
+            </Link>
+          </div>
         </div>
       )}
 
