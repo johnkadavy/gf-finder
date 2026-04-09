@@ -9,11 +9,13 @@ type Props = {
   initialSaved: boolean;
   redirectPath?: string;
   onToggle?: (saved: boolean) => void;
+  showLabel?: boolean;
 };
 
-export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle }: Props) {
+export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle, showLabel }: Props) {
   const [saved, setSaved] = useState(initialSaved);
   const [loading, setLoading] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const router = useRouter();
 
   async function toggle() {
@@ -46,24 +48,31 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle 
     setLoading(false);
   }
 
+  const color = saved ? "#FF7444" : hovered ? "#FF9470" : "#FF7444";
+
   return (
     <button
       onClick={toggle}
       disabled={loading}
       aria-label={saved ? "Unsave restaurant" : "Save restaurant"}
-      className="flex items-center justify-center w-8 h-8 transition-opacity disabled:opacity-40"
-      style={{ color: saved ? "#FF7444" : "oklch(0.45 0 0)" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex items-center gap-1.5 transition-opacity disabled:opacity-40"
+      style={{ color }}
     >
       {saved ? (
-        // Filled bookmark
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
         </svg>
       ) : (
-        // Outlined bookmark
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
         </svg>
+      )}
+      {showLabel && (
+        <span className="font-mono text-[10px] uppercase tracking-[0.15em]">
+          {saved ? "Saved" : "Save"}
+        </span>
       )}
     </button>
   );

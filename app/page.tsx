@@ -221,10 +221,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                         </p>
                         <div className="flex items-center gap-2 shrink-0 -mt-1">
-                          <SaveButton
-                            restaurantId={restaurant.id}
-                            initialSaved={savedIds.has(restaurant.id)}
-                          />
                           {/* Gauge — mobile only */}
                           <div className="md:hidden">
                             <SafetyGauge score={score} size="sm" />
@@ -249,31 +245,34 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         />
                       </Link>
 
-                      {/* Links */}
-                      {(restaurant.website_url || restaurant.google_maps_url) && (
-                        <div className="flex items-center gap-6 mb-4 md:mb-6">
-                          {restaurant.website_url && (
-                            <a
-                              href={restaurant.website_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                            >
-                              Website ↗
-                            </a>
-                          )}
-                          {restaurant.google_maps_url && (
-                            <a
-                              href={restaurant.google_maps_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                            >
-                              Google Maps ↗
-                            </a>
-                          )}
-                        </div>
-                      )}
+                      {/* Links + Save */}
+                      <div className="flex items-center gap-6 mb-4 md:mb-6">
+                        {restaurant.website_url && (
+                          <a
+                            href={restaurant.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
+                          >
+                            Website ↗
+                          </a>
+                        )}
+                        {restaurant.google_maps_url && (
+                          <a
+                            href={restaurant.google_maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
+                          >
+                            Google Maps ↗
+                          </a>
+                        )}
+                        <SaveButton
+                          restaurantId={restaurant.id}
+                          initialSaved={savedIds.has(restaurant.id)}
+                          showLabel
+                        />
+                      </div>
 
                       {/* Summary */}
                       {summary && (

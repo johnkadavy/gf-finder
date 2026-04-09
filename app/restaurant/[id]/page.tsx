@@ -397,6 +397,7 @@ export default async function RestaurantPage({
                 restaurantId={r.id}
                 initialSaved={initialSaved}
                 redirectPath={`/restaurant/${r.id}`}
+                showLabel
               />
             </div>
           </div>
