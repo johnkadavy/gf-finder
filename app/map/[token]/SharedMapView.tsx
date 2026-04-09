@@ -295,7 +295,7 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
       </div>
 
       {/* Map area — fills remaining space */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative">
         <div ref={mapContainer} className="absolute inset-0" />
 
         {/* Empty state */}
