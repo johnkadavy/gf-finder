@@ -294,9 +294,9 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
         </Link>
       </div>
 
-      {/* Map area — fills remaining space */}
-      <div className="flex-1 relative">
-        <div ref={mapContainer} className="absolute inset-0" />
+      {/* Map area — fills remaining space; min-h-0 lets flex child shrink so h-full works */}
+      <div className="flex-1 min-h-0 relative">
+        <div ref={mapContainer} className="w-full h-full" />
 
         {/* Empty state */}
         {count === 0 && (
