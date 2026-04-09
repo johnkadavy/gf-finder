@@ -52,7 +52,7 @@ export function RankingsLocationFilters({
             <span className="ml-2 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>
           </button>
           <button
-            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }))}
+            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }), { scroll: false })}
             className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.city === "all" ? "invisible" : ""}`}
             style={{ color: "oklch(0.55 0 0)" }}
           >
@@ -81,7 +81,7 @@ export function RankingsLocationFilters({
               <div className="max-h-[280px] overflow-y-auto">
                 {!citySearch && (
                   <button
-                    onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 })); setCityOpen(false); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }), { scroll: false }); setCityOpen(false); }}
                     onMouseEnter={() => setHoveredCity("all")}
                     onMouseLeave={() => setHoveredCity(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -97,7 +97,7 @@ export function RankingsLocationFilters({
                 {filteredCities.map((city) => (
                   <button
                     key={city}
-                    onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", page: 1 })); setCityOpen(false); setCitySearch(""); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", page: 1 }), { scroll: false }); setCityOpen(false); setCitySearch(""); }}
                     onMouseEnter={() => setHoveredCity(city)}
                     onMouseLeave={() => setHoveredCity(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -164,7 +164,7 @@ export function RankingsLocationFilters({
                 <div className="max-h-[280px] overflow-y-auto">
                   {!neighborhoodSearch && (
                     <button
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 })); setNeighborhoodOpen(false); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 }), { scroll: false }); setNeighborhoodOpen(false); }}
                       onMouseEnter={() => setHoveredNeighborhood("all")}
                       onMouseLeave={() => setHoveredNeighborhood(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -180,7 +180,7 @@ export function RankingsLocationFilters({
                   {filteredNeighborhoods.map((n) => (
                     <button
                       key={n}
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, page: 1 })); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, page: 1 }), { scroll: false }); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
                       onMouseEnter={() => setHoveredNeighborhood(n)}
                       onMouseLeave={() => setHoveredNeighborhood(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -291,7 +291,7 @@ export function RankingsSecondaryFilters({
                 <div className="max-h-[280px] overflow-y-auto">
                   {!cuisineSearch && (
                     <button
-                      onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", page: 1 })); setCuisineOpen(false); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", page: 1 }), { scroll: false }); setCuisineOpen(false); }}
                       onMouseEnter={() => setHoveredCuisine("all")}
                       onMouseLeave={() => setHoveredCuisine(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -309,7 +309,7 @@ export function RankingsSecondaryFilters({
                     .map((c) => (
                       <button
                         key={c}
-                        onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, page: 1 })); setCuisineOpen(false); setCuisineSearch(""); }}
+                        onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, page: 1 }), { scroll: false }); setCuisineOpen(false); setCuisineSearch(""); }}
                         onMouseEnter={() => setHoveredCuisine(c)}
                         onMouseLeave={() => setHoveredCuisine(null)}
                         className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -353,7 +353,7 @@ export function RankingsSecondaryFilters({
                 {EXPERIENCE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, page: 1 })); setExpOpen(false); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, page: 1 }), { scroll: false }); setExpOpen(false); }}
                     onMouseEnter={() => setHoveredExp(opt.value)}
                     onMouseLeave={() => setHoveredExp(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -378,6 +378,7 @@ export function RankingsSecondaryFilters({
               <Link
                 key={pill.label}
                 href={pill.clear}
+                scroll={false}
                 className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
                 style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
               >
@@ -387,6 +388,7 @@ export function RankingsSecondaryFilters({
             ))}
             <Link
               href={clearAll}
+              scroll={false}
               className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white ml-1"
               style={{ color: "oklch(0.6 0 0)" }}
             >
@@ -453,6 +455,7 @@ export function RankingsSecondaryFilters({
             <div className="flex flex-col gap-2 mb-7">
               <Link
                 href={rankingsUrl(filters, { cuisine: "all", page: 1 })}
+                scroll={false}
                 onClick={() => setSheetOpen(false)}
                 className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
                 style={{
@@ -467,6 +470,7 @@ export function RankingsSecondaryFilters({
                 <Link
                   key={c}
                   href={rankingsUrl(filters, { cuisine: c, page: 1 })}
+                  scroll={false}
                   onClick={() => setSheetOpen(false)}
                   className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
                   style={{
@@ -488,6 +492,7 @@ export function RankingsSecondaryFilters({
                 <Link
                   key={opt.value}
                   href={rankingsUrl(filters, { experience: opt.value, page: 1 })}
+                  scroll={false}
                   onClick={() => setSheetOpen(false)}
                   className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
                   style={{
@@ -521,6 +526,7 @@ function FilterToggle({ label, active, href }: { label: string; active: boolean;
   return (
     <Link
       href={href}
+      scroll={false}
       className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
       style={{
         backgroundColor: active ? "#FF744415" : "transparent",
@@ -547,6 +553,7 @@ function SheetToggle({ label, active, href, onNavigate }: {
   return (
     <Link
       href={href}
+      scroll={false}
       onClick={onNavigate}
       className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
       style={{
