@@ -23,6 +23,11 @@ export default async function SharedMapPage({
 
   if (!profile) notFound();
 
+  // Get owner's display name from their email prefix
+  const { data: ownerAuth } = await supabaseServer.auth.admin.getUserById(profile.user_id);
+  const ownerEmail = ownerAuth?.user?.email ?? "";
+  const ownerName = ownerEmail.split("@")[0] ?? "";
+
   const { data: saves } = await supabaseServer
     .from("saved_restaurants")
     .select("restaurant_id")
@@ -32,7 +37,7 @@ export default async function SharedMapPage({
   const ids = (saves ?? []).map((s) => s.restaurant_id);
 
   if (ids.length === 0) {
-    return <SharedMapView restaurants={[]} isLoggedIn={!!user} />;
+    return <SharedMapView restaurants={[]} isLoggedIn={!!user} ownerName={ownerName} />;
   }
 
   const { data: rows } = await supabaseServer
@@ -66,5 +71,5 @@ export default async function SharedMapPage({
       periods: ((r.dossier as any)?.hours?.periods ?? null) as MapRestaurant["periods"],
     }));
 
-  return <SharedMapView restaurants={restaurants} isLoggedIn={!!user} />;
+  return <SharedMapView restaurants={restaurants} isLoggedIn={!!user} ownerName={ownerName} />;
 }

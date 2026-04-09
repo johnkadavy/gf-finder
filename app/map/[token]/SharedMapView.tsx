@@ -14,7 +14,7 @@ function priceStr(level: number | null) {
 
 type SharedRestaurant = MapRestaurant & { google_maps_url: string | null };
 
-export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: SharedRestaurant[]; isLoggedIn: boolean }) {
+export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { restaurants: SharedRestaurant[]; isLoggedIn: boolean; ownerName?: string }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markerRefs = useRef<mapboxgl.Marker[]>([]);
@@ -281,17 +281,21 @@ export function SharedMapView({ restaurants, isLoggedIn }: { restaurants: Shared
       >
         <span
           className="font-mono text-[10px] uppercase tracking-[0.2em]"
-          style={{ color: "oklch(0.45 0 0)" }}
+          style={{ color: "oklch(0.55 0 0)" }}
         >
-          {count === 0 ? "No spots saved" : `${count} Gluten-Free Spot${count === 1 ? "" : "s"}`}
+          {ownerName
+            ? `${ownerName}'s Gluten-Free Spots`
+            : "Gluten-Free Spots"}
         </span>
-        <Link
-          href="/login"
-          className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border transition-colors"
-          style={{ borderColor: "#FF7444", color: "#FF7444" }}
-        >
-          Create yours →
-        </Link>
+        {!isLoggedIn && (
+          <Link
+            href="/login"
+            className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border transition-colors"
+            style={{ borderColor: "#FF7444", color: "#FF7444" }}
+          >
+            Create yours →
+          </Link>
+        )}
       </div>
 
       {/* Map area — fills remaining space; min-h-0 lets flex child shrink so h-full works */}
