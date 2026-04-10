@@ -6,6 +6,7 @@ import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type
 import { normalizeCuisine } from "@/lib/cuisine";
 import { AccountFilters } from "./AccountFilters";
 import { CopyButton } from "@/app/components/CopyButton";
+import { DisplayNameForm } from "./DisplayNameForm";
 
 type SavedRestaurant = {
   id: number;
@@ -32,13 +33,14 @@ export default async function AccountPage({ searchParams }: PageProps) {
   const cityFilter = params.city ?? "all";
   const cuisineFilter = params.cuisine ?? "all";
 
-  // Fetch share token
+  // Fetch profile (share token + display name)
   const { data: profile } = await serverClient
     .from("profiles")
-    .select("share_token")
+    .select("share_token, display_name")
     .eq("user_id", user.id)
     .single();
   const shareToken = profile?.share_token ?? null;
+  const displayName = profile?.display_name ?? null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trycleanplate.com";
   const shareUrl = shareToken ? `${siteUrl}/map/${shareToken}` : null;
 
@@ -123,15 +125,10 @@ export default async function AccountPage({ searchParams }: PageProps) {
           className="py-6 border-b"
           style={{ borderColor: "oklch(0.18 0 0)" }}
         >
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
-                My Map
-              </p>
-              <p className="font-mono text-[11px] text-[oklch(0.38_0_0)] mt-1">
-                Share your saved spots with anyone.
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+              My Map
+            </p>
             <Link
               href={`/map/${shareToken}`}
               target="_blank"
@@ -139,6 +136,14 @@ export default async function AccountPage({ searchParams }: PageProps) {
             >
               Preview →
             </Link>
+          </div>
+
+          {/* Display name */}
+          <div className="mb-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.4_0_0)] mb-2">
+              Display Name
+            </p>
+            <DisplayNameForm current={displayName} />
           </div>
           <div
             className="flex items-center gap-3 border px-4 py-3"

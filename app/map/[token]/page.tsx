@@ -17,16 +17,18 @@ export default async function SharedMapPage({
 
   const { data: profile } = await supabaseServer
     .from("profiles")
-    .select("user_id")
+    .select("user_id, display_name")
     .eq("share_token", token)
     .single();
 
   if (!profile) notFound();
 
-  // Get owner's display name from their email prefix
-  const { data: ownerAuth } = await supabaseServer.auth.admin.getUserById(profile.user_id);
-  const ownerEmail = ownerAuth?.user?.email ?? "";
-  const ownerName = ownerEmail.split("@")[0] ?? "";
+  // Use display_name if set, otherwise fall back to email prefix
+  let ownerName = profile.display_name ?? "";
+  if (!ownerName) {
+    const { data: ownerAuth } = await supabaseServer.auth.admin.getUserById(profile.user_id);
+    ownerName = (ownerAuth?.user?.email ?? "").split("@")[0];
+  }
 
   const { data: saves } = await supabaseServer
     .from("saved_restaurants")
