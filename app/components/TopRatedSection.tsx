@@ -14,9 +14,10 @@ type Chip = {
 const CHIPS: Chip[] = [
   { id: "dedicated_gf",  label: "Dedicated GF",  filter: (r) => r.isDedicatedGf },
   { id: "gf_fryer",      label: "GF Fryer",       filter: (r) => r.hasGfFryer },
-  { id: "gf_pizza",      label: "GF Pizza",       filter: (r) => r.isGfPizza },
-  { id: "gf_pasta",      label: "GF Pasta",       filter: (r) => r.isGfPasta },
-  { id: "gf_bakery",     label: "GF Bakery",      filter: (r) => r.isGfBakery },
+  // TODO: Re-enable GF food category chips once pipeline Tasks P5-P7 are complete
+  // { id: "gf_pizza",   label: "GF Pizza",       filter: (r) => r.isGfPizza },
+  // { id: "gf_pasta",   label: "GF Pasta",       filter: (r) => r.isGfPasta },
+  // { id: "gf_bakery",  label: "GF Bakery",      filter: (r) => r.isGfBakery },
 ];
 
 function RestaurantCard({ r }: { r: TopRestaurant }) {
