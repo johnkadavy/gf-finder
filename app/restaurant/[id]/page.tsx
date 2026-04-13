@@ -12,6 +12,7 @@ import {
 } from "@/lib/score";
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
+import { StickyInfoBar } from "@/app/components/StickyInfoBar";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -286,6 +287,7 @@ export default async function RestaurantPage({
 
   return (
     <main className="pt-16">
+      <StickyInfoBar name={r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
       {/* ── Hero ── */}
       <section
