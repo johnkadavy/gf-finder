@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
 import { SearchForm } from "./components/SearchForm";
-import { TopRatedCard } from "./components/TopRatedCard";
+import { TopRatedSection } from "./components/TopRatedSection";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 // getGaugeColor is also used in the search results section below
 
@@ -83,12 +83,17 @@ function SignalChip({ signal }: { signal: Signal }) {
   );
 }
 
-type TopRestaurant = {
+export type TopRestaurant = {
   id: number;
   name: string;
   neighborhood: string | null;
   cuisine: string | null;
   score: number | null;
+  hasGfFryer: boolean;
+  isDedicatedGf: boolean;
+  isGfPizza: boolean;
+  isGfPasta: boolean;
+  isGfBakery: boolean;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -103,19 +108,38 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .not("score", "is", null);
   const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
 
-  // Fetch top 6 restaurants for the homepage cards (only when not searching)
+  // Fetch top 50 restaurants for homepage cards + chip filtering
   // Default to New York when no city is selected
   const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
   let topRated: TopRestaurant[] = [];
   if (!query) {
     const { data: topData } = await supabase
       .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score")
+      .select("id, name, neighborhood, cuisine, score, dossier")
       .eq("city", topRatedCity)
       .not("score", "is", null)
       .order("score", { ascending: false })
-      .limit(6);
-    topRated = (topData ?? []) as TopRestaurant[];
+      .limit(50);
+
+    topRated = ((topData ?? []) as Array<{
+      id: number; name: string; neighborhood: string | null;
+      cuisine: string | null; score: number | null; dossier: Dossier | null;
+    }>).map((r) => {
+      const cuisine = (r.cuisine ?? "").toLowerCase();
+      const name = r.name.toLowerCase();
+      return {
+        id: r.id,
+        name: r.name,
+        neighborhood: r.neighborhood,
+        cuisine: r.cuisine,
+        score: r.score,
+        hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
+        isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
+        isGfPizza: cuisine.includes("pizza"),
+        isGfPasta: cuisine.includes("italian") || cuisine.includes("pasta"),
+        isGfBakery: cuisine.includes("bakery") || name.includes("bakery"),
+      };
+    });
   }
 
   let restaurants: Restaurant[] = [];
@@ -172,21 +196,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       </section>
 
-      {/* Top Rated in NYC */}
+      {/* Top Rated section with filter chips */}
       {!query && topRated.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 md:px-8 pt-10 md:pt-14 pb-10">
-          <h2
-            className="font-mono text-[11px] uppercase tracking-[0.25em] mb-6"
-            style={{ color: "oklch(0.5 0 0)" }}
-          >
-            Top Rated in {topRatedCity}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            {topRated.map((r) => (
-              <TopRatedCard key={r.id} r={r} />
-            ))}
-          </div>
-        </section>
+        <TopRatedSection restaurants={topRated} city={topRatedCity} />
       )}
 
       {/* Results */}
