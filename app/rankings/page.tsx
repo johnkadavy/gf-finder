@@ -5,7 +5,7 @@ import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { normalizeCuisine } from "@/lib/cuisine";
 
-const PAGE_SIZE = 25;
+const DEFAULT_LIMIT = 25;
 
 type Dossier = ScoringDossier & {
   summary?: { short_summary?: string };
@@ -30,7 +30,7 @@ type RankingsPageProps = {
     fryer?: string;
     labeled?: string;
     experience?: string;
-    page?: string;
+    limit?: string;
   }>;
 };
 
@@ -44,11 +44,10 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
     experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
-    page:         Math.max(1, parseInt(params.page ?? "1", 10) || 1),
+    limit:        Math.max(DEFAULT_LIMIT, parseInt(params.limit ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
   };
 
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
-  const pageStart = (filters.page - 1) * PAGE_SIZE;
 
   // Build query for cities/neighborhoods/cuisines (fetch all scored restaurants for filter options)
   const { data: allForFilters } = await supabase
@@ -91,14 +90,13 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
   if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");
 
-  query = query.range(pageStart, pageStart + PAGE_SIZE - 1);
+  query = query.range(0, filters.limit - 1);
 
   const { data, error, count } = await query;
 
   const restaurants = (data ?? []) as Restaurant[];
   const totalCount = count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const safePage = Math.min(filters.page, totalPages);
+  const hasMore = restaurants.length < totalCount;
 
   return (
     <main className="pt-16">
@@ -153,20 +151,17 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               style={{ borderColor: "oklch(0.22 0 0)" }}
             >
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.7_0_0)]">
-                {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
+                Showing {restaurants.length} of {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
                 {filters.city !== "all"
                   ? ` — ${filters.neighborhood !== "all" ? filters.neighborhood : filters.city}`
                   : ""}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)]">
-                Page {safePage} of {totalPages}
               </span>
             </div>
 
             {restaurants.map((restaurant, index) => {
               const color = getGaugeColor(restaurant.score);
               const { label } = getScoreLabel(restaurant.score);
-              const rank = pageStart + index + 1;
+              const rank = index + 1;
 
               return (
                 <div
@@ -261,57 +256,17 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               );
             })}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-8 pb-2">
-                {safePage > 1 ? (
-                  <Link
-                    href={rankingsUrl(filters, { page: safePage - 1 })}
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.7_0_0)] hover:text-white hover:border-[oklch(0.5_0_0)]"
-                    style={{ borderColor: "oklch(0.22 0 0)" }}
-                  >
-                    ← Prev
-                  </Link>
-                ) : <span />}
-
-                <div className="flex items-center gap-0">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-                    .reduce<(number | "…")[]>((acc, p, i, arr) => {
-                      if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("…");
-                      acc.push(p);
-                      return acc;
-                    }, [])
-                    .map((p, i) =>
-                      p === "…" ? (
-                        <span key={`ellipsis-${i}`} className="font-mono text-[10px] px-2 text-[oklch(0.55_0_0)]">…</span>
-                      ) : (
-                        <Link
-                          key={p}
-                          href={rankingsUrl(filters, { page: p })}
-                          className="font-mono text-[10px] uppercase tracking-[0.15em] w-9 h-9 flex items-center justify-center border-t border-b border-r transition-colors duration-150"
-                          style={{
-                            borderColor: "oklch(0.22 0 0)",
-                            borderLeft: p === 1 ? "1px solid oklch(0.22 0 0)" : undefined,
-                            backgroundColor: p === safePage ? "oklch(0.15 0 0)" : "transparent",
-                            color: p === safePage ? "oklch(0.9 0 0)" : "oklch(0.62 0 0)",
-                          }}
-                        >
-                          {p}
-                        </Link>
-                      )
-                    )}
-                </div>
-
-                {safePage < totalPages ? (
-                  <Link
-                    href={rankingsUrl(filters, { page: safePage + 1 })}
-                    className="font-mono text-[11px] uppercase tracking-[0.2em] px-5 py-3 border transition-colors duration-150 text-[oklch(0.7_0_0)] hover:text-white hover:border-[oklch(0.5_0_0)]"
-                    style={{ borderColor: "oklch(0.22 0 0)" }}
-                  >
-                    Next →
-                  </Link>
-                ) : <span />}
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center pt-10 pb-2">
+                <Link
+                  href={rankingsUrl(filters, { limit: filters.limit + DEFAULT_LIMIT })}
+                  scroll={false}
+                  className="font-mono text-[11px] uppercase tracking-[0.2em] px-8 py-3.5 border transition-colors duration-150 text-[oklch(0.7_0_0)] hover:text-white hover:border-[oklch(0.5_0_0)]"
+                  style={{ borderColor: "oklch(0.28 0 0)" }}
+                >
+                  Load More
+                </Link>
               </div>
             )}
           </div>

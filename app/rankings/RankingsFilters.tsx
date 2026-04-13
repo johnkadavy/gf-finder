@@ -52,7 +52,7 @@ export function RankingsLocationFilters({
             <span className="ml-2 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>
           </button>
           <button
-            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }), { scroll: false })}
+            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false })}
             className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.city === "all" ? "invisible" : ""}`}
             style={{ color: "oklch(0.55 0 0)" }}
           >
@@ -81,7 +81,7 @@ export function RankingsLocationFilters({
               <div className="max-h-[280px] overflow-y-auto">
                 {!citySearch && (
                   <button
-                    onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", page: 1 }), { scroll: false }); setCityOpen(false); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false }); setCityOpen(false); }}
                     onMouseEnter={() => setHoveredCity("all")}
                     onMouseLeave={() => setHoveredCity(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -97,7 +97,7 @@ export function RankingsLocationFilters({
                 {filteredCities.map((city) => (
                   <button
                     key={city}
-                    onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", page: 1 }), { scroll: false }); setCityOpen(false); setCitySearch(""); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", limit: 25 }), { scroll: false }); setCityOpen(false); setCitySearch(""); }}
                     onMouseEnter={() => setHoveredCity(city)}
                     onMouseLeave={() => setHoveredCity(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -135,7 +135,7 @@ export function RankingsLocationFilters({
               <span className="ml-2 text-[9px] opacity-40">{neighborhoodOpen ? "▲" : "▼"}</span>
             </button>
           <button
-            onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 }))}
+            onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }))}
             className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.neighborhood === "all" ? "invisible" : ""}`}
             style={{ color: "oklch(0.55 0 0)" }}
           >
@@ -164,7 +164,7 @@ export function RankingsLocationFilters({
                 <div className="max-h-[280px] overflow-y-auto">
                   {!neighborhoodSearch && (
                     <button
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", page: 1 }), { scroll: false }); setNeighborhoodOpen(false); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }), { scroll: false }); setNeighborhoodOpen(false); }}
                       onMouseEnter={() => setHoveredNeighborhood("all")}
                       onMouseLeave={() => setHoveredNeighborhood(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -180,7 +180,7 @@ export function RankingsLocationFilters({
                   {filteredNeighborhoods.map((n) => (
                     <button
                       key={n}
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, page: 1 }), { scroll: false }); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, limit: 25 }), { scroll: false }); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
                       onMouseEnter={() => setHoveredNeighborhood(n)}
                       onMouseLeave={() => setHoveredNeighborhood(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
@@ -223,19 +223,19 @@ export function RankingsSecondaryFilters({
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
 
   const activePills = [
-    filters.fryer   && { label: "GF Fryer",      clear: rankingsUrl(filters, { fryer: false,   page: 1 }) },
-    filters.labeled && { label: "GF Menu Labels", clear: rankingsUrl(filters, { labeled: false, page: 1 }) },
+    filters.fryer   && { label: "GF Fryer",      clear: rankingsUrl(filters, { fryer: false,   limit: 25 }) },
+    filters.labeled && { label: "GF Menu Labels", clear: rankingsUrl(filters, { labeled: false, limit: 25 }) },
     filters.cuisine !== "all" && {
       label: filters.cuisine,
-      clear: rankingsUrl(filters, { cuisine: "all", page: 1 }),
+      clear: rankingsUrl(filters, { cuisine: "all", limit: 25 }),
     },
     filters.experience !== "all" && {
       label: currentExp.label,
-      clear: rankingsUrl(filters, { experience: "all", page: 1 }),
+      clear: rankingsUrl(filters, { experience: "all", limit: 25 }),
     },
   ].filter(Boolean) as { label: string; clear: string }[];
 
-  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", experience: "all", page: 1 });
+  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", experience: "all", limit: 25 });
   const activeCount = activePills.length;
 
   return (
@@ -245,13 +245,13 @@ export function RankingsSecondaryFilters({
         <FilterToggle
           label="GF Fryer"
           active={filters.fryer}
-          href={rankingsUrl(filters, { fryer: !filters.fryer, page: 1 })}
+          href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
         />
 
         <FilterToggle
           label="GF Menu Labels"
           active={filters.labeled}
-          href={rankingsUrl(filters, { labeled: !filters.labeled, page: 1 })}
+          href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
 
         {/* Cuisine dropdown */}
@@ -291,7 +291,7 @@ export function RankingsSecondaryFilters({
                 <div className="max-h-[280px] overflow-y-auto">
                   {!cuisineSearch && (
                     <button
-                      onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", page: 1 }), { scroll: false }); setCuisineOpen(false); }}
+                      onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", limit: 25 }), { scroll: false }); setCuisineOpen(false); }}
                       onMouseEnter={() => setHoveredCuisine("all")}
                       onMouseLeave={() => setHoveredCuisine(null)}
                       className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -309,7 +309,7 @@ export function RankingsSecondaryFilters({
                     .map((c) => (
                       <button
                         key={c}
-                        onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, page: 1 }), { scroll: false }); setCuisineOpen(false); setCuisineSearch(""); }}
+                        onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, limit: 25 }), { scroll: false }); setCuisineOpen(false); setCuisineSearch(""); }}
                         onMouseEnter={() => setHoveredCuisine(c)}
                         onMouseLeave={() => setHoveredCuisine(null)}
                         className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -353,7 +353,7 @@ export function RankingsSecondaryFilters({
                 {EXPERIENCE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, page: 1 }), { scroll: false }); setExpOpen(false); }}
+                    onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, limit: 25 }), { scroll: false }); setExpOpen(false); }}
                     onMouseEnter={() => setHoveredExp(opt.value)}
                     onMouseLeave={() => setHoveredExp(null)}
                     className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
@@ -438,13 +438,13 @@ export function RankingsSecondaryFilters({
               <SheetToggle
                 label="GF Fryer"
                 active={filters.fryer}
-                href={rankingsUrl(filters, { fryer: !filters.fryer, page: 1 })}
+                href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
                 onNavigate={() => setSheetOpen(false)}
               />
               <SheetToggle
                 label="GF Menu Labels"
                 active={filters.labeled}
-                href={rankingsUrl(filters, { labeled: !filters.labeled, page: 1 })}
+                href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
                 onNavigate={() => setSheetOpen(false)}
               />
             </div>
@@ -454,7 +454,7 @@ export function RankingsSecondaryFilters({
             </p>
             <div className="flex flex-col gap-2 mb-7">
               <Link
-                href={rankingsUrl(filters, { cuisine: "all", page: 1 })}
+                href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
                 scroll={false}
                 onClick={() => setSheetOpen(false)}
                 className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
@@ -469,7 +469,7 @@ export function RankingsSecondaryFilters({
               {cuisines.map((c) => (
                 <Link
                   key={c}
-                  href={rankingsUrl(filters, { cuisine: c, page: 1 })}
+                  href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
                   className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
@@ -491,7 +491,7 @@ export function RankingsSecondaryFilters({
               {EXPERIENCE_OPTIONS.map((opt) => (
                 <Link
                   key={opt.value}
-                  href={rankingsUrl(filters, { experience: opt.value, page: 1 })}
+                  href={rankingsUrl(filters, { experience: opt.value, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
                   className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"

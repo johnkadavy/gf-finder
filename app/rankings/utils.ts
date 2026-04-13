@@ -7,7 +7,7 @@ export type Filters = {
   fryer: boolean;
   labeled: boolean;
   experience: Experience;
-  page: number;
+  limit: number;
 };
 
 export const EXPERIENCE_OPTIONS: { label: string; value: Experience; minScore: number }[] = [
@@ -26,7 +26,7 @@ export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   if (merged.fryer)                  params.set("fryer", "1");
   if (merged.labeled)                params.set("labeled", "1");
   if (merged.experience !== "all")   params.set("experience", merged.experience);
-  if (merged.page > 1)               params.set("page", String(merged.page));
+  if (merged.limit > 25)              params.set("limit", String(merged.limit));
   const qs = params.toString();
   return `/rankings${qs ? `?${qs}` : ""}`;
 }
