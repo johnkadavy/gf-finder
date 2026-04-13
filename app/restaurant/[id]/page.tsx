@@ -92,8 +92,7 @@ function signalBorder(level: SignalLevel): string {
 
 // ── Signal card ────────────────────────────────────────────────────────────
 
-function SignalCard({ icon, label, value, level }: {
-  icon: React.ReactNode;
+function SignalCard({ label, value, level }: {
   label: string;
   value: string;
   level: SignalLevel;
@@ -101,68 +100,23 @@ function SignalCard({ icon, label, value, level }: {
   const color = signalColor(level);
   return (
     <div
-      className="border p-6 flex flex-col gap-5"
+      className="border p-3 flex flex-col gap-2"
       style={{ borderColor: signalBorder(level), backgroundColor: signalBg(level) }}
     >
-      <div className="opacity-40" style={{ color }} aria-hidden="true">{icon}</div>
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[oklch(0.55_0_0)] leading-none">
           {label}
         </p>
-        <p className="font-mono text-[14px] uppercase tracking-[0.04em]" style={{ color }}>
-          {value}
-        </p>
       </div>
+      <p className="font-mono text-[12px] uppercase tracking-[0.04em] leading-snug" style={{ color }}>
+        {value}
+      </p>
     </div>
   );
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
-
-const IconTag = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-    <line x1="7" y1="7" x2="7.01" y2="7"/>
-  </svg>
-);
-
-const IconMenu = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="8" y1="6" x2="21" y2="6"/>
-    <line x1="8" y1="12" x2="21" y2="12"/>
-    <line x1="8" y1="18" x2="21" y2="18"/>
-    <line x1="3" y1="6" x2="3.01" y2="6"/>
-    <line x1="3" y1="12" x2="3.01" y2="12"/>
-    <line x1="3" y1="18" x2="3.01" y2="18"/>
-  </svg>
-);
-
-const IconShield = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
-
-const IconPerson = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-  </svg>
-);
-
-const IconChat = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-  </svg>
-);
-
-const IconAlert = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-    <line x1="12" y1="9" x2="12" y2="13"/>
-    <line x1="12" y1="17" x2="12.01" y2="17"/>
-  </svg>
-);
 
 const IconPin = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -518,14 +472,13 @@ export default async function RestaurantPage({
                   </p>
                   <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <SignalCard icon={<IconTag />} label="GF Labeling" value={labelingText} level={labelingLevel} />
-                  <SignalCard icon={<IconMenu />} label="GF Options" value={optionsText} level={optionsLevel} />
-                  <SignalCard icon={<IconShield />} label="Cross-Contamination" value={contamText} level={contamLevel} />
-                  <SignalCard icon={<IconPerson />} label="Staff Knowledge" value={staffText} level={staffLevel} />
-                  <SignalCard icon={<IconChat />} label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                  <SignalCard label="GF Labeling" value={labelingText} level={labelingLevel} />
+                  <SignalCard label="GF Options" value={optionsText} level={optionsLevel} />
+                  <SignalCard label="Cross-Contamination" value={contamText} level={contamLevel} />
+                  <SignalCard label="Staff Knowledge" value={staffText} level={staffLevel} />
+                  <SignalCard label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
                   <SignalCard
-                    icon={<IconAlert />}
                     label="Illness Reports"
                     value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
                     level={sickCount > 0 ? "negative" : "positive"}
