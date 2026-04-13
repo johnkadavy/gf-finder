@@ -2,20 +2,49 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 
 const linkClass =
   "font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200";
 
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+      <circle cx="11" cy="11" r="7.5" />
+      <path d="M17.5 17.5L22 22" />
+    </svg>
+  );
+}
+
+function RankingsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="12" width="6" height="9" />
+      <rect x="9" y="7" width="6" height="14" />
+      <rect x="16" y="10" width="6" height="11" />
+    </svg>
+  );
+}
+
+function MapIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z" />
+      <path d="M9 3v15M15 6v15" />
+    </svg>
+  );
+}
+
+const TABS = [
+  { href: "/",         label: "Search",   Icon: SearchIcon   },
+  { href: "/rankings", label: "Rankings", Icon: RankingsIcon },
+  { href: "/map",      label: "Map",      Icon: MapIcon      },
+];
+
 export function Nav() {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -41,74 +70,28 @@ export function Nav() {
         )}
       </nav>
 
-      {/* Mobile hamburger button */}
-      <button
-        className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-[5px]"
-        onClick={() => setMobileOpen((o) => !o)}
-        aria-label={mobileOpen ? "Close menu" : "Open menu"}
+      {/* Mobile bottom tab bar */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
+        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)" }}
       >
-        <span
-          className="block w-5 h-px bg-[oklch(0.65_0_0)] transition-all duration-200 origin-center"
-          style={mobileOpen ? { transform: "translateY(6px) rotate(45deg)" } : {}}
-        />
-        <span
-          className="block w-5 h-px bg-[oklch(0.65_0_0)] transition-all duration-200"
-          style={mobileOpen ? { opacity: 0 } : {}}
-        />
-        <span
-          className="block w-5 h-px bg-[oklch(0.65_0_0)] transition-all duration-200 origin-center"
-          style={mobileOpen ? { transform: "translateY(-6px) rotate(-45deg)" } : {}}
-        />
-      </button>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed top-16 left-0 right-0 z-40 border-b"
-          style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.22 0 0)" }}
-        >
-          <nav className="flex flex-col px-6 py-4">
-            {pathname !== "/" && (
-              <Link
-                href="/"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
-                style={{ borderColor: "oklch(0.18 0 0)" }}
-              >
-                Search
-              </Link>
-            )}
+        {TABS.map(({ href, label, Icon }) => {
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return (
             <Link
-              href="/rankings"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
-              style={{ borderColor: "oklch(0.18 0 0)" }}
+              key={href}
+              href={href}
+              className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
+              style={{ color: active ? "#FF7444" : "oklch(0.48 0 0)" }}
             >
-              Rankings
+              <Icon />
+              <span className="font-mono text-[9px] uppercase tracking-[0.15em] leading-none">
+                {label}
+              </span>
             </Link>
-            <Link
-              href="/map"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
-              style={{ borderColor: "oklch(0.18 0 0)" }}
-            >
-              Map
-            </Link>
-            <Link
-              href="/about"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 border-b hover:text-[#FF7444] transition-colors duration-150"
-              style={{ borderColor: "oklch(0.18 0 0)" }}
-            >
-              About
-            </Link>
-            {loggedIn && (
-              <Link
-                href="/account"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] py-4 hover:text-[#FF7444] transition-colors duration-150"
-              >
-                Account
-              </Link>
-            )}
-          </nav>
-        </div>
-      )}
+          );
+        })}
+      </nav>
     </>
   );
 }

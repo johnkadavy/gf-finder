@@ -75,7 +75,7 @@ export default function RootLayout({
           </div>
         </header>
 
-        <div className="min-h-screen">{children}</div>
+        <div className="min-h-screen pb-16 md:pb-0">{children}</div>
         <Analytics />
 
         {/* Footer */}
