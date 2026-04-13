@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 export function LocationBanner({ cities }: { cities: string[] }) {
   const [visible, setVisible] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "no_coverage">("idle");
   const router = useRouter();
 
   useEffect(() => {
@@ -23,7 +22,8 @@ export function LocationBanner({ cities }: { cities: string[] }) {
   }
 
   async function handleAllow() {
-    setStatus("loading");
+    // Dismiss immediately — don't make the user wait while we look up location
+    dismiss();
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
@@ -44,16 +44,11 @@ export function LocationBanner({ cities }: { cities: string[] }) {
         (c) => c.toLowerCase() === detected.toLowerCase()
       );
 
-      sessionStorage.setItem("location_dismissed", "1");
-
       if (matched) {
         router.push(`/?city=${encodeURIComponent(matched)}`);
-      } else {
-        setStatus("no_coverage");
-        setTimeout(() => setVisible(false), 2500);
       }
     } catch {
-      dismiss();
+      // Silently fail — banner is already gone
     }
   }
 
@@ -64,25 +59,16 @@ export function LocationBanner({ cities }: { cities: string[] }) {
       className="md:hidden fixed bottom-[4.5rem] left-3 right-3 z-40 border flex items-center gap-3 px-4 py-3 transition-all"
       style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.26 0 0)" }}
     >
-      {status === "no_coverage" ? (
-        <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
-          Your city isn&apos;t in our coverage yet
-        </p>
-      ) : (
-        <>
-          <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.78_0_0)] leading-snug">
-            Find GF restaurants near you
-          </p>
-          <button
-            onClick={handleAllow}
-            disabled={status === "loading"}
-            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors disabled:opacity-40"
-            style={{ borderColor: "#FF7444", color: "#FF7444" }}
-          >
-            {status === "loading" ? "···" : "Allow"}
-          </button>
-        </>
-      )}
+      <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.78_0_0)] leading-snug">
+        Find GF restaurants near you
+      </p>
+      <button
+        onClick={handleAllow}
+        className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+        style={{ borderColor: "#FF7444", color: "#FF7444" }}
+      >
+        Allow
+      </button>
       <button
         onClick={dismiss}
         className="shrink-0 font-mono text-[10px] text-[oklch(0.4_0_0)] hover:text-[oklch(0.65_0_0)] transition-colors"
