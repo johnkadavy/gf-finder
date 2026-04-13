@@ -102,24 +102,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const query = params.q?.trim() ?? "";
   const selectedCity = params.city ?? "all";
 
-  // Fetch distinct cities for the filter
-  const { data: cityRows } = await supabase
-    .from("restaurants")
-    .select("city")
-    .not("score", "is", null);
-  const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
+  const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
 
-  // NYC scored restaurant count for social proof
-  const { count: totalCount } = await supabase
-    .from("restaurants")
-    .select("*", { count: "exact", head: true })
-    .eq("city", "New York")
-    .not("score", "is", null);
+  // Start auth setup early — runs concurrently with all content queries below
+  const serverClientPromise = createClient();
+
+  // Metadata queries in parallel (cities filter + social proof count)
+  const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
+    supabase.from("restaurants").select("city").not("score", "is", null),
+    supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
+  ]);
+
+  const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
   const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
 
   // Fetch top 50 restaurants for homepage cards + chip filtering
-  // Default to New York when no city is selected
-  const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
   let topRated: TopRestaurant[] = [];
   if (!query) {
     const { data: topData } = await supabase
@@ -166,8 +163,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     if (!error) restaurants = (data ?? []) as Restaurant[];
   }
 
-  // Fetch saved restaurant IDs for the current user (if logged in)
-  const serverClient = await createClient();
+  // Auth: serverClientPromise has been running since before our queries
+  const serverClient = await serverClientPromise;
   const { data: { user } } = await serverClient.auth.getUser();
   let savedIds = new Set<number>();
   if (user && restaurants.length > 0) {

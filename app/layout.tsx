@@ -10,16 +10,19 @@ const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600"],
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
 });
 const bebasNeue = Bebas_Neue({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -59,6 +62,7 @@ export default function RootLayout({
                   alt="Guanaco logo"
                   width={32}
                   height={32}
+                  priority
                 />
                 <div className="absolute left-0 top-full mt-2 px-3 py-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
                   style={{ backgroundColor: "oklch(0.18 0 0)", border: "1px solid oklch(0.28 0 0)" }}>
