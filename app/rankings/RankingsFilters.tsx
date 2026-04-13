@@ -398,27 +398,63 @@ export function RankingsSecondaryFilters({
         )}
       </div>
 
-      {/* Mobile filter button */}
-      <button
-        onClick={() => setSheetOpen(true)}
-        className="md:hidden flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] px-0 py-2.5 border-b transition-colors duration-150 w-full"
-        style={{
-          borderColor: "oklch(0.2 0 0)",
-          backgroundColor: "transparent",
-          color: activeCount > 0 ? "#FF7444" : "oklch(0.7 0 0)",
-        }}
+      {/* Mobile filter chips row */}
+      <div
+        className="md:hidden flex items-center gap-2 overflow-x-auto py-2.5 border-b"
+        style={{ scrollbarWidth: "none", borderColor: "oklch(0.2 0 0)" }}
       >
-        Filters
+        {/* Boolean toggles — always visible */}
+        <MobileChip
+          label="GF Fryer"
+          active={filters.fryer}
+          href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
+        />
+        <MobileChip
+          label="GF Labels"
+          active={filters.labeled}
+          href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
+        />
+
+        {/* Cuisine pill → opens sheet */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          style={{
+            borderColor: filters.cuisine !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
+            backgroundColor: filters.cuisine !== "all" ? "#FF744415" : "transparent",
+            color: filters.cuisine !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+          }}
+        >
+          {filters.cuisine === "all" ? "Cuisine" : filters.cuisine}
+          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+        </button>
+
+        {/* Experience pill → opens sheet */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          style={{
+            borderColor: filters.experience !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
+            backgroundColor: filters.experience !== "all" ? "#FF744415" : "transparent",
+            color: filters.experience !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+          }}
+        >
+          {filters.experience === "all" ? "Experience" : currentExp.label}
+          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+        </button>
+
+        {/* Clear all */}
         {activeCount > 0 && (
-          <span
-            className="flex items-center justify-center w-4 h-4 text-[9px] font-mono"
-            style={{ backgroundColor: "#FF7444", color: "oklch(0.08 0 0)" }}
+          <Link
+            href={clearAll}
+            scroll={false}
+            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1.5 whitespace-nowrap transition-colors"
+            style={{ color: "oklch(0.52 0 0)" }}
           >
-            {activeCount}
-          </span>
+            Clear all
+          </Link>
         )}
-        <span className="text-[9px] ml-auto">▼</span>
-      </button>
+      </div>
 
       {/* Mobile bottom sheet */}
       {sheetOpen && (
@@ -506,6 +542,17 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
+            {activeCount > 0 && (
+              <Link
+                href={clearAll}
+                scroll={false}
+                onClick={() => setSheetOpen(false)}
+                className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.2em] py-3 border mb-3 transition-colors"
+                style={{ borderColor: "#FF744440", color: "#FF7444", backgroundColor: "#FF744408" }}
+              >
+                Clear all filters
+              </Link>
+            )}
             <button
               onClick={() => setSheetOpen(false)}
               className="w-full font-mono text-[11px] uppercase tracking-[0.2em] py-3 border transition-colors"
@@ -542,6 +589,31 @@ function FilterToggle({ label, active, href }: { label: string; active: boolean;
       >
         {active && <span className="text-[8px] leading-none" style={{ color: "oklch(0.08 0 0)", fontWeight: 700 }}>✓</span>}
       </span>
+      {label}
+    </Link>
+  );
+}
+
+function MobileChip({ label, active, href }: { label: string; active: boolean; href: string }) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="shrink-0 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+      style={{
+        borderColor: active ? "#FF744460" : "oklch(0.28 0 0)",
+        backgroundColor: active ? "#FF744415" : "transparent",
+        color: active ? "#FF7444" : "oklch(0.65 0 0)",
+      }}
+    >
+      {active && (
+        <span
+          className="w-2.5 h-2.5 border flex items-center justify-center shrink-0"
+          style={{ borderColor: "#FF7444", backgroundColor: "#FF7444" }}
+        >
+          <span className="text-[7px] leading-none font-bold" style={{ color: "oklch(0.08 0 0)" }}>✓</span>
+        </span>
+      )}
       {label}
     </Link>
   );
