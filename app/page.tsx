@@ -108,6 +108,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .not("score", "is", null);
   const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
 
+  // NYC scored restaurant count for social proof
+  const { count: totalCount } = await supabase
+    .from("restaurants")
+    .select("*", { count: "exact", head: true })
+    .eq("city", "New York")
+    .not("score", "is", null);
+  const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
+
   // Fetch top 50 restaurants for homepage cards + chip filtering
   // Default to New York when no city is selected
   const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
@@ -186,8 +194,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <br />
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
-            <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)] mt-5">
-              Gluten-free search made simple
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.42_0_0)] mt-5">
+              {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
             </p>
           </div>
 
