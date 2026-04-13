@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
 import { SearchForm } from "./components/SearchForm";
+import { TopRatedCard } from "./components/TopRatedCard";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
+// getGaugeColor is also used in the search results section below
 
 type Signal = {
   label: string;
@@ -81,6 +83,14 @@ function SignalChip({ signal }: { signal: Signal }) {
   );
 }
 
+type TopRestaurant = {
+  id: number;
+  name: string;
+  neighborhood: string | null;
+  cuisine: string | null;
+  score: number | null;
+};
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
@@ -92,6 +102,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .select("city")
     .not("score", "is", null);
   const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
+
+  // Fetch top 6 restaurants for the homepage cards (only when not searching)
+  // Default to New York when no city is selected
+  const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
+  let topRated: TopRestaurant[] = [];
+  if (!query) {
+    const { data: topData } = await supabase
+      .from("restaurants")
+      .select("id, name, neighborhood, cuisine, score")
+      .eq("city", topRatedCity)
+      .not("score", "is", null)
+      .order("score", { ascending: false })
+      .limit(6);
+    topRated = (topData ?? []) as TopRestaurant[];
+  }
 
   let restaurants: Restaurant[] = [];
 
@@ -146,6 +171,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
       </section>
+
+      {/* Top Rated in NYC */}
+      {!query && topRated.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 md:px-8 pt-10 md:pt-14 pb-10">
+          <h2
+            className="font-mono text-[11px] uppercase tracking-[0.25em] mb-6"
+            style={{ color: "oklch(0.5 0 0)" }}
+          >
+            Top Rated in {topRatedCity}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {topRated.map((r) => (
+              <TopRatedCard key={r.id} r={r} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Results */}
       <section className="max-w-4xl mx-auto px-4 md:px-8 pb-24 md:pb-32 mt-6 md:mt-8">
