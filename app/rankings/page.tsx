@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
+import { ExpandableText } from "./ExpandableText";
 import { normalizeCuisine } from "@/lib/cuisine";
 
 const DEFAULT_LIMIT = 25;
@@ -164,9 +165,10 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               const rank = index + 1;
 
               return (
-                <div
+                <Link
                   key={restaurant.id}
-                  className="grid grid-cols-[3.5rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)] cursor-pointer"
+                  href={`/restaurant/${restaurant.id}`}
+                  className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-3 md:gap-10 py-4 md:py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
                   style={{
                     borderColor: "oklch(0.18 0 0)",
                     borderLeft: `2px solid ${color}`,
@@ -175,9 +177,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                 >
                   {/* Rank */}
                   <span
-                    className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right"
+                    className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
                     style={{
-                      fontSize: "clamp(1.25rem, 2vw, 1.75rem)",
+                      fontSize: "clamp(1.1rem, 2vw, 1.75rem)",
                       color: rank <= 3 ? color : "oklch(0.5 0 0)",
                     }}
                   >
@@ -186,73 +188,49 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
                   {/* Name + location */}
                   <div className="min-w-0">
-                    <Link
-                      href={`/restaurant/${restaurant.id}`}
-                      className="group/name font-[family-name:var(--font-display)] leading-none truncate block hover:text-[#FF7444] transition-colors duration-150"
+                    <span
+                      className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate block group-hover:text-[#FF7444] transition-colors duration-150"
                       style={{
-                        fontSize: "clamp(1.4rem, 2.5vw, 2.1rem)",
+                        fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
                         letterSpacing: "0.02em",
                         color: "oklch(0.95 0 0)",
                       }}
                     >
-                      <span className="relative inline-block">
-                        {restaurant.name}
-                        <span
-                          className="absolute bottom-0 left-0 h-px w-0 group-hover/name:w-full transition-all duration-300"
-                          style={{ backgroundColor: color }}
-                        />
-                      </span>
-                    </Link>
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-2 truncate">
+                      {restaurant.name}
+                    </span>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-1 md:mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                     </p>
                     {restaurant.dossier?.summary?.short_summary && (
-                      <p className="text-[14px] leading-[1.7] text-[oklch(0.82_0_0)] mt-2 max-w-xl">
-                        {restaurant.dossier.summary.short_summary}
-                      </p>
-                    )}
-                    {(restaurant.website_url || restaurant.google_maps_url) && (
-                      <div className="flex items-center gap-4 mt-2">
-                        {restaurant.website_url && (
-                          <a
-                            href={restaurant.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                          >
-                            Website ↗
-                          </a>
-                        )}
-                        {restaurant.google_maps_url && (
-                          <a
-                            href={restaurant.google_maps_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
-                          >
-                            Google Maps ↗
-                          </a>
-                        )}
-                      </div>
+                      <>
+                        {/* Mobile: 1-line truncated with expand */}
+                        <p className="md:hidden text-[13px] leading-[1.65] text-[oklch(0.72_0_0)] mt-1">
+                          <ExpandableText text={restaurant.dossier.summary.short_summary} />
+                        </p>
+                        {/* Desktop: full */}
+                        <p className="hidden md:block text-[14px] leading-[1.7] text-[oklch(0.82_0_0)] mt-2 max-w-xl">
+                          {restaurant.dossier.summary.short_summary}
+                        </p>
+                      </>
                     )}
                   </div>
 
                   {/* Score */}
-                  <div className="flex flex-col items-end shrink-0">
+                  <div className="flex flex-col items-end shrink-0 pt-0.5">
                     <span
                       className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                      style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)", color }}
+                      style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.75rem)", color }}
                     >
                       {Math.round(restaurant.score)}
                     </span>
                     <span
-                      className="font-mono text-[10px] uppercase tracking-[0.15em] mt-1 text-right"
+                      className="hidden md:block font-mono text-[10px] uppercase tracking-[0.15em] mt-1 text-right"
                       style={{ color: `${color}cc` }}
                     >
                       {label}
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
 
