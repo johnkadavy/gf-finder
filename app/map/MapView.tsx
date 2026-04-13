@@ -844,12 +844,12 @@ const [mapReady, setMapReady] = useState(false);
           </button>}
         </div>}
 
-        {/* Near Me */}
+        {/* Near Me — desktop only; mobile uses the FAB */}
         <button
           onClick={flyToUserLocation}
           disabled={locating}
           title="Use my location"
-          className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150 disabled:opacity-40"
+          className="hidden md:flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150 disabled:opacity-40"
           style={{ borderColor: "oklch(0.28 0 0)", backgroundColor: "oklch(0.1 0 0)", color: "oklch(0.62 0 0)" }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -870,7 +870,7 @@ const [mapReady, setMapReady] = useState(false);
 
       {/* Search this area button — centered, below controls on mobile */}
       {showSearchArea && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-48" style={{ animation: "fadeIn 0.2s ease-out" }}>
+        <div className="absolute left-1/2 -translate-x-1/2 z-20 md:top-20 top-44" style={{ animation: "fadeIn 0.2s ease-out" }}>
           {isPreview && previewSearchesUsed >= PREVIEW_SEARCH_LIMIT ? (
             <Link
               href="/login?next=/map"
@@ -940,7 +940,7 @@ const [mapReady, setMapReady] = useState(false);
       <button
         onClick={locateUser}
         aria-label="Near me"
-        className="absolute bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] rounded-full"
+        className="absolute bottom-20 md:bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] rounded-full"
         style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
