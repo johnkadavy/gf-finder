@@ -5,6 +5,7 @@ import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
 import { SearchForm } from "./components/SearchForm";
 import { TopRatedSection } from "./components/TopRatedSection";
+import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 // getGaugeColor is also used in the search results section below
 
@@ -180,6 +181,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <main className="pt-16">
+      <LocationBanner cities={cities} />
       {/* Hero */}
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-16 md:pb-24">
         {/* Bottom fade — softens grid into results section */}
