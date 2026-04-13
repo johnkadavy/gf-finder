@@ -333,17 +333,18 @@ export default async function RestaurantPage({
   return (
     <main className="pt-16">
 
-      {/* ── Hero — centered ── */}
+      {/* ── Hero ── */}
       <section
-        className="grid-bg border-b px-6 pt-12 pb-14 md:pt-16 md:pb-20 relative text-center"
+        className="grid-bg border-b px-6 pt-8 pb-10 md:pt-12 md:pb-14 relative"
         style={{ borderColor: "oklch(0.2 0 0)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
         />
-        {/* Back breadcrumb — aligned with body left edge */}
-        <div className="max-w-6xl mx-auto mb-10 text-left">
+
+        {/* Back breadcrumb */}
+        <div className="max-w-6xl mx-auto mb-6 md:mb-10">
           <Link
             href="/rankings"
             className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.75_0_0)] hover:text-[oklch(0.95_0_0)] transition-colors"
@@ -352,8 +353,66 @@ export default async function RestaurantPage({
           </Link>
         </div>
 
-        <div className="max-w-4xl mx-auto relative">
+        {/* ── Mobile layout ── */}
+        <div className="md:hidden max-w-6xl mx-auto space-y-4">
+          {/* Name — full width */}
+          <h1
+            className="font-[family-name:var(--font-display)] leading-none"
+            style={{ fontSize: "clamp(2.2rem, 10vw, 3.5rem)", letterSpacing: "0.02em" }}
+          >
+            {r.name}
+          </h1>
 
+          {/* Gauge — centered */}
+          <div className="flex justify-center py-2">
+            <SafetyGauge score={score} size="sm" />
+          </div>
+
+          {/* Neighborhood + cuisine */}
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.5_0_0)]">
+            {[r.neighborhood, cuisine].filter(Boolean).join(" · ")}
+          </p>
+
+          {/* Illness warning */}
+          {sickCount > 0 && (
+            <div
+              className="inline-flex items-center gap-2.5 px-3 py-2 border"
+              style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+              {sickSourceUrl ? (
+                <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
+                  className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline">
+                  {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
+                </a>
+              ) : (
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+                  {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Summary */}
+          {d?.summary?.short_summary && (
+            <p className="text-[15px] leading-[1.7] text-[oklch(0.82_0_0)]">
+              {d.summary.short_summary}
+            </p>
+          )}
+
+          {/* Save button */}
+          <div>
+            <SaveButton
+              restaurantId={r.id}
+              initialSaved={initialSaved}
+              redirectPath={`/restaurant/${r.id}`}
+              showLabel
+            />
+          </div>
+        </div>
+
+        {/* ── Desktop layout (unchanged) ── */}
+        <div className="hidden md:block max-w-4xl mx-auto text-center">
           {/* Gauge */}
           <div className="flex justify-center mb-6">
             <SafetyGauge score={score} size="lg" />
@@ -368,12 +427,8 @@ export default async function RestaurantPage({
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
                 {sickSourceUrl ? (
-                  <a
-                    href={sickSourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
-                  >
+                  <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
+                    className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline">
                     {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
                   </a>
                 ) : (
@@ -410,20 +465,14 @@ export default async function RestaurantPage({
                 ★ {r.google_rating.toFixed(1)} Google
               </span>
             )}
+            {price && <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>}
             {price && (
-              <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
-            )}
-            {price && (
-              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
-                {price}
-              </span>
+              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{price}</span>
             )}
             {cuisine && (
               <>
                 <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
-                <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
-                  {cuisine}
-                </span>
+                <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{cuisine}</span>
               </>
             )}
             <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
@@ -431,8 +480,8 @@ export default async function RestaurantPage({
               {[r.neighborhood, r.city].filter(Boolean).join(", ")}
             </span>
           </div>
-
         </div>
+
       </section>
 
       {/* ── Body — two-column ── */}
@@ -442,9 +491,9 @@ export default async function RestaurantPage({
           {/* ── Left column ── */}
           <div className="space-y-10">
 
-            {/* Summary */}
+            {/* Summary — hidden on mobile (shown in hero) */}
             {d?.summary?.short_summary && (
-              <div>
+              <div className="hidden md:block">
                 <div className="flex items-center gap-4 mb-5">
                   <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
                     Overview
