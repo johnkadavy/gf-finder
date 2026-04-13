@@ -64,6 +64,22 @@ interface PlaceResult {
   nationalPhoneNumber?: string;
   rating?: number;
   userRatingCount?: number;
+  types?: string[];
+}
+
+function mapToPlaceType(types: string[]): string | null {
+  const t = new Set(types.map((x) => x.toLowerCase()));
+  if (t.has("bakery") || t.has("confectionery") || t.has("pastry_shop") || t.has("dessert_shop")) return "bakery";
+  if (t.has("fine_dining_restaurant")) return "fine_dining";
+  if (t.has("bar") || t.has("cocktail_bar") || t.has("wine_bar") || t.has("bar_and_grill") ||
+      t.has("sports_bar") || t.has("pub") || t.has("dive_bar") || t.has("lounge_bar") || t.has("night_club")) return "bar";
+  if (t.has("cafe") || t.has("coffee_shop") || t.has("tea_house")) return "cafe";
+  if (t.has("food_truck")) return "food_truck";
+  if (t.has("deli") || t.has("delicatessen") || t.has("sandwich_shop")) return "deli";
+  if (t.has("fast_food_restaurant")) return "fast_casual";
+  if ([...t].some((x) => x.endsWith("_restaurant"))) return "restaurant";
+  if (t.has("meal_takeaway") || t.has("meal_delivery")) return "fast_casual";
+  return null;
 }
 
 // ── Airtable helpers ──────────────────────────────────────────────────────────
@@ -194,6 +210,7 @@ async function lookupPlace(name: string, cityName: string): Promise<PlaceResult 
         "places.nationalPhoneNumber",
         "places.rating",
         "places.userRatingCount",
+        "places.types",
       ].join(","),
     },
     body: JSON.stringify({
@@ -299,6 +316,8 @@ async function main() {
       city,
       neighborhood: candidate.neighborhood ?? null,
       cuisine: candidate.cuisine ?? null,
+      cuisine_types: place.types ?? null,
+      place_type: place.types ? mapToPlaceType(place.types) : null,
       slug,
       ingested_at: new Date().toISOString(),
     }, { onConflict: "google_place_id" });
