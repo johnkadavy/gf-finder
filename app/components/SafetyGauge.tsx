@@ -66,12 +66,12 @@ export function SafetyGauge({ score, size = "md" }: { score: number | null; size
               >
                 {displayNumber}
               </span>
-              <span className={`font-mono ${s.labelSize} uppercase tracking-[0.2em] mt-1.5 text-[oklch(0.55_0_0)]`}>
+              <span className={`font-mono ${s.labelSize} uppercase tracking-[0.2em] mt-1.5 text-[oklch(0.68_0_0)]`}>
                 GF Score
               </span>
             </>
           ) : (
-            <span className="font-mono text-xs text-[oklch(0.4_0_0)]">No data</span>
+            <span className="font-mono text-xs text-[oklch(0.60_0_0)]">No data</span>
           )}
         </div>
       </div>

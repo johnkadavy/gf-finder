@@ -487,7 +487,7 @@ const [mapReady, setMapReady] = useState(false);
       <button
         onClick={() => setSelected(null)}
         className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-white"
-        style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.48 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
+        style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.65 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -528,7 +528,7 @@ const [mapReady, setMapReady] = useState(false);
                 />
               </div>
             </div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] mb-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-4">
               {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
             </p>
           </div>
@@ -536,7 +536,7 @@ const [mapReady, setMapReady] = useState(false);
           <button
             onClick={() => setSelected(null)}
             className="md:hidden shrink-0 mt-1 p-1"
-            style={{ color: "oklch(0.48 0 0)" }}
+            style={{ color: "oklch(0.65 0 0)" }}
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -553,7 +553,7 @@ const [mapReady, setMapReady] = useState(false);
             {selected.score ?? "—"}
           </span>
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)]">GF Score</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">GF Score</p>
             <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
               {selected.scoreLabel}
             </p>
@@ -564,7 +564,7 @@ const [mapReady, setMapReady] = useState(false);
       <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4">
         {selected.website && (
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">Website</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Website</p>
             <a
               href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
               target="_blank"
@@ -584,7 +584,7 @@ const [mapReady, setMapReady] = useState(false);
           const { label, value } = row as { label: string; value: string };
           return (
             <div key={label}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">{label}</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">{label}</p>
               <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
             </div>
           );
@@ -681,7 +681,7 @@ const [mapReady, setMapReady] = useState(false);
             <Link
               href="/login?next=/map"
               className="absolute inset-0 z-10 flex items-center justify-center gap-2 border font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
-              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)", color: "oklch(0.55 0 0)" }}
+              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)", color: "oklch(0.68 0 0)" }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -729,20 +729,20 @@ const [mapReady, setMapReady] = useState(false);
                 }}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 placeholder="Search restaurants…"
-                className="bg-transparent outline-none w-full font-mono text-[13px] placeholder:text-[oklch(0.38_0_0)] min-w-0"
+                className="bg-transparent outline-none w-full font-mono text-[13px] placeholder:text-[oklch(0.52_0_0)] min-w-0"
                 style={{ color: "oklch(0.88 0 0)" }}
               />
               {(search || committedSearch) && (
                 <button
                   onClick={() => { setSearch(""); setSuggestions([]); setShowSuggestions(false); commitSearch(""); }}
-                  className="text-[oklch(0.45_0_0)] hover:text-white transition-colors text-[11px] shrink-0"
+                  className="text-[oklch(0.65_0_0)] hover:text-white transition-colors text-[11px] shrink-0"
                 >✕</button>
               )}
             </div>
             <button
               onClick={() => { setShowSuggestions(false); commitSearch(search.trim()); }}
               className="font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-3 border-l shrink-0 transition-colors hover:text-[#FF7444]"
-              style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.55 0 0)" }}
+              style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.68 0 0)" }}
             >
               Go
             </button>
@@ -861,7 +861,7 @@ const [mapReady, setMapReady] = useState(false);
 
         {/* Result count — hidden in preview */}
         {!isPreview &&
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.42_0_0)] pl-0.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.62_0_0)] pl-0.5">
           {committedSearch
             ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
             : `${visibleCount} in view`}
@@ -922,7 +922,7 @@ const [mapReady, setMapReady] = useState(false);
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white text-center md:text-left">
                 Showing {PREVIEW_LIMIT} of 500+ restaurants
               </p>
-              <p className="font-mono text-[10px] text-[oklch(0.45_0_0)] mt-0.5 text-center md:text-left">
+              <p className="font-mono text-[10px] text-[oklch(0.65_0_0)] mt-0.5 text-center md:text-left">
                 Sign up for free to explore the full map.
               </p>
             </div>

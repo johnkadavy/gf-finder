@@ -69,7 +69,7 @@ function signalColor(level: SignalLevel): string {
     case "neutral":  return "oklch(0.72 0 0)";
     case "warning":  return "#D4AE62";
     case "negative": return "#FF8060";
-    default:         return "oklch(0.42 0 0)";
+    default:         return "oklch(0.62 0 0)";
   }
 }
 
@@ -106,7 +106,7 @@ function SignalCard({ label, value, level }: {
     >
       <div className="flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[oklch(0.55_0_0)] leading-none">
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[oklch(0.68_0_0)] leading-none">
           {label}
         </p>
       </div>
@@ -325,7 +325,7 @@ export default async function RestaurantPage({
           </div>
 
           {/* Neighborhood + cuisine */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.5_0_0)]">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)]">
             {[r.neighborhood, cuisine].filter(Boolean).join(" · ")}
           </p>
 
@@ -421,17 +421,17 @@ export default async function RestaurantPage({
                 ★ {r.google_rating.toFixed(1)} Google
               </span>
             )}
-            {price && <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>}
+            {price && <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>}
             {price && (
               <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{price}</span>
             )}
             {cuisine && (
               <>
-                <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
+                <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>
                 <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{cuisine}</span>
               </>
             )}
-            <span className="font-mono text-[13px] text-[oklch(0.45_0_0)]">·</span>
+            <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>
             <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
               {[r.neighborhood, r.city].filter(Boolean).join(", ")}
             </span>
@@ -581,7 +581,7 @@ export default async function RestaurantPage({
                   })()}
                 </div>
               ) : (
-                <p className="font-mono text-[11px] text-[oklch(0.38_0_0)]">
+                <p className="font-mono text-[11px] text-[oklch(0.58_0_0)]">
                   No verified reviews yet.
                 </p>
               )}
@@ -623,7 +623,7 @@ export default async function RestaurantPage({
             {/* Address */}
             {r.address && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPin /></span>
+                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconPin /></span>
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Location</p>
                   <p className="font-mono text-[13px] text-[oklch(0.82_0_0)] leading-relaxed">{r.address}</p>
@@ -634,7 +634,7 @@ export default async function RestaurantPage({
             {/* Phone */}
             {r.phone && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
+                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Phone</p>
                   <a
@@ -650,7 +650,7 @@ export default async function RestaurantPage({
             {/* Links */}
             {(r.website_url || r.google_maps_url) && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
+                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
                 <div className="space-y-1.5">
                   <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Links</p>
                   {r.website_url && (
@@ -680,7 +680,7 @@ export default async function RestaurantPage({
             {/* Hours */}
             {hours && hours.length > 0 && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.5_0_0)] mt-0.5 shrink-0"><IconClock /></span>
+                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconClock /></span>
                 <div className="w-full">
                   <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">Hours</p>
                   <div className="space-y-2">

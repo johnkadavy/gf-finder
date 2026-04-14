@@ -9,7 +9,7 @@ export function ExpandableText({ text }: { text: string }) {
       {!expanded && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(true); }}
-          className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.5_0_0)] hover:text-[oklch(0.75_0_0)] transition-colors"
+          className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.65_0_0)] hover:text-[oklch(0.85_0_0)] transition-colors"
         >
           more
         </button>

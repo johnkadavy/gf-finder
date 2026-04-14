@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 
 const linkClass =
-  "font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.55_0_0)] hover:text-white transition-colors duration-200";
+  "font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-white transition-colors duration-200";
 
 function SearchIcon() {
   return (
@@ -82,7 +82,7 @@ export function Nav() {
               key={href}
               href={href}
               className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
-              style={{ color: active ? "#FF7444" : "oklch(0.48 0 0)" }}
+              style={{ color: active ? "#FF7444" : "oklch(0.65 0 0)" }}
             >
               <Icon />
               <span className="font-mono text-[9px] uppercase tracking-[0.15em] leading-none">

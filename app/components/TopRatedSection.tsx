@@ -50,7 +50,7 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
         >
           {r.name}
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] leading-snug">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] leading-snug">
           {[r.neighborhood, r.cuisine].filter(Boolean).join(" · ")}
         </span>
       </div>
@@ -115,7 +115,7 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
           {filtered.map((r) => <RestaurantCard key={r.id} r={r} />)}
         </div>
       ) : (
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.38_0_0)] py-8 text-center">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.58_0_0)] py-8 text-center">
           No results for this filter
         </p>
       )}

@@ -22,7 +22,7 @@ function Preloader() {
           }}
         />
       ))}
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.38_0_0)] ml-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.58_0_0)] ml-3">
         Scanning
       </span>
       <style>{`
@@ -179,7 +179,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                 onFocus={() => suggestions.length > 0 && setIsOpen(true)}
                 placeholder="Search restaurants or neighborhoods…"
                 autoComplete="off"
-                className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.38_0_0)] text-white"
+                className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.52_0_0)] text-white"
               />
               <button
                 type="submit"
@@ -216,7 +216,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                   {/* Highlight matching portion */}
                   {highlightMatch(s.name, value)}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.4_0_0)] shrink-0">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.60_0_0)] shrink-0">
                   {[s.neighborhood, s.city].filter(Boolean).join(" · ")}
                 </span>
               </button>

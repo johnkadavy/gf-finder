@@ -54,7 +54,7 @@ export function RankingsLocationFilters({
           <button
             onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false })}
             className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.city === "all" ? "invisible" : ""}`}
-            style={{ color: "oklch(0.55 0 0)" }}
+            style={{ color: "oklch(0.68 0 0)" }}
           >
             ✕
           </button>
@@ -137,7 +137,7 @@ export function RankingsLocationFilters({
           <button
             onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }))}
             className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.neighborhood === "all" ? "invisible" : ""}`}
-            style={{ color: "oklch(0.55 0 0)" }}
+            style={{ color: "oklch(0.68 0 0)" }}
           >
             ✕
           </button>
@@ -514,7 +514,7 @@ export function RankingsSecondaryFilters({
             href={clearAll}
             scroll={false}
             className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1.5 whitespace-nowrap transition-colors"
-            style={{ color: "oklch(0.52 0 0)" }}
+            style={{ color: "oklch(0.65 0 0)" }}
           >
             Clear all
           </Link>

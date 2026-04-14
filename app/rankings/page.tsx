@@ -184,7 +184,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                     className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
                     style={{
                       fontSize: "clamp(1.1rem, 2vw, 1.75rem)",
-                      color: rank <= 3 ? color : "oklch(0.5 0 0)",
+                      color: rank <= 3 ? color : "oklch(0.65 0 0)",
                     }}
                   >
                     {String(rank).padStart(2, "0")}

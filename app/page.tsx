@@ -189,7 +189,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <br />
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.42_0_0)] mt-5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.62_0_0)] mt-5">
               {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
             </p>
           </div>
