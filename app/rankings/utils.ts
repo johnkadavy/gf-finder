@@ -4,11 +4,27 @@ export type Filters = {
   city: string;
   neighborhood: string;
   cuisine: string;
+  placeType: string;
   fryer: boolean;
   labeled: boolean;
   experience: Experience;
   limit: number;
 };
+
+export const PLACE_TYPE_OPTIONS: { label: string; value: string }[] = [
+  { label: "Restaurant",  value: "restaurant"  },
+  { label: "Bar",         value: "bar"         },
+  { label: "Fast Casual", value: "fast_casual" },
+  { label: "Brunch Spot", value: "brunch_spot" },
+  { label: "Pizzeria",    value: "pizzeria"    },
+  { label: "Fine Dining", value: "fine_dining" },
+  { label: "Café",        value: "cafe"        },
+  { label: "Bakery",      value: "bakery"      },
+  { label: "Deli",        value: "deli"        },
+  { label: "Food Truck",  value: "food_truck"  },
+  { label: "Juice Bar",   value: "juice_bar"   },
+  { label: "Dessert Shop",value: "dessert_shop"},
+];
 
 export const EXPERIENCE_OPTIONS: { label: string; value: Experience; minScore: number }[] = [
   { label: "All",       value: "all",       minScore: 0  },
@@ -23,10 +39,11 @@ export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   if (merged.city !== "all")         params.set("city", merged.city);
   if (merged.neighborhood !== "all") params.set("neighborhood", merged.neighborhood);
   if (merged.cuisine !== "all")      params.set("cuisine", merged.cuisine);
+  if (merged.placeType !== "all")    params.set("placeType", merged.placeType);
   if (merged.fryer)                  params.set("fryer", "1");
   if (merged.labeled)                params.set("labeled", "1");
   if (merged.experience !== "all")   params.set("experience", merged.experience);
-  if (merged.limit > 25)              params.set("limit", String(merged.limit));
+  if (merged.limit > 25)             params.set("limit", String(merged.limit));
   const qs = params.toString();
   return `/rankings${qs ? `?${qs}` : ""}`;
 }

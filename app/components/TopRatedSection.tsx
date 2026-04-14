@@ -11,14 +11,27 @@ type Chip = {
   filter: (r: TopRestaurant) => boolean;
 };
 
-const CHIPS: Chip[] = [
-  { id: "dedicated_gf",  label: "Dedicated GF",  filter: (r) => r.isDedicatedGf },
-  { id: "gf_fryer",      label: "GF Fryer",       filter: (r) => r.hasGfFryer },
-  // TODO: Re-enable GF food category chips once pipeline Tasks P5-P7 are complete
-  // { id: "gf_pizza",   label: "GF Pizza",       filter: (r) => r.isGfPizza },
-  // { id: "gf_pasta",   label: "GF Pasta",       filter: (r) => r.isGfPasta },
-  // { id: "gf_bakery",  label: "GF Bakery",      filter: (r) => r.isGfBakery },
+const GF_CHIPS: Chip[] = [
+  { id: "dedicated_gf",    label: "Dedicated GF",  filter: (r) => r.isDedicatedGf },
+  { id: "gf_fryer",        label: "GF Fryer",       filter: (r) => r.hasGfFryer },
+  { id: "gf_pizza",        label: "GF Pizza",       filter: (r) => r.gf_food_categories?.includes("gf_pizza") ?? false },
+  { id: "gf_pasta",        label: "GF Pasta",       filter: (r) => r.gf_food_categories?.includes("gf_pasta") ?? false },
+  { id: "gf_bread_bakery", label: "GF Bakery",      filter: (r) => r.gf_food_categories?.includes("gf_bread_bakery") ?? false },
+  { id: "gf_fried_items",  label: "GF Fried",       filter: (r) => r.gf_food_categories?.includes("gf_fried_items") ?? false },
+  { id: "gf_desserts",     label: "GF Desserts",    filter: (r) => r.gf_food_categories?.includes("gf_desserts") ?? false },
 ];
+
+const PLACE_TYPE_CHIPS: Chip[] = [
+  { id: "pt_bar",         label: "Bar",         filter: (r) => r.place_type?.includes("bar") ?? false },
+  { id: "pt_cafe",        label: "Café",         filter: (r) => r.place_type?.includes("cafe") ?? false },
+  { id: "pt_bakery",      label: "Bakery",       filter: (r) => r.place_type?.includes("bakery") ?? false },
+  { id: "pt_fast_casual", label: "Fast Casual",  filter: (r) => r.place_type?.includes("fast_casual") ?? false },
+  { id: "pt_fine_dining", label: "Fine Dining",  filter: (r) => r.place_type?.includes("fine_dining") ?? false },
+  { id: "pt_brunch",      label: "Brunch Spot",  filter: (r) => r.place_type?.includes("brunch_spot") ?? false },
+  { id: "pt_pizzeria",    label: "Pizzeria",      filter: (r) => r.place_type?.includes("pizzeria") ?? false },
+];
+
+const ALL_CHIPS = [...GF_CHIPS, ...PLACE_TYPE_CHIPS];
 
 function RestaurantCard({ r }: { r: TopRestaurant }) {
   const color = getGaugeColor(r.score);
@@ -54,7 +67,7 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
 export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaurant[]; city: string }) {
   const [activeChip, setActiveChip] = useState<string | null>(null);
 
-  const activeFilter = CHIPS.find((c) => c.id === activeChip);
+  const activeFilter = ALL_CHIPS.find((c) => c.id === activeChip);
   const filtered = activeFilter
     ? restaurants.filter(activeFilter.filter).slice(0, 6)
     : restaurants.slice(0, 6);
@@ -69,27 +82,31 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
       </h2>
 
       {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-6 scrollbar-none" style={{ scrollbarWidth: "none" }}>
-        {CHIPS.map((chip) => {
-          const isActive = activeChip === chip.id;
-          const hasResults = restaurants.some(chip.filter);
-          return (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => setActiveChip(isActive ? null : chip.id)}
-              disabled={!hasResults}
-              className="shrink-0 px-3.5 py-1.5 border font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{
-                borderColor: isActive ? "#FF7444" : "oklch(0.28 0 0)",
-                backgroundColor: isActive ? "#FF744415" : "oklch(0.1 0 0)",
-                color: isActive ? "#FF7444" : "oklch(0.55 0 0)",
-              }}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-2 mb-6">
+        {[GF_CHIPS, PLACE_TYPE_CHIPS].map((row, rowIdx) => (
+          <div key={rowIdx} className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
+            {row.map((chip) => {
+              const isActive = activeChip === chip.id;
+              const hasResults = restaurants.some(chip.filter);
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setActiveChip(isActive ? null : chip.id)}
+                  disabled={!hasResults}
+                  className="shrink-0 px-3.5 py-1.5 border font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    borderColor: isActive ? "#FF7444" : "oklch(0.28 0 0)",
+                    backgroundColor: isActive ? "#FF744415" : "oklch(0.1 0 0)",
+                    color: isActive ? "#FF7444" : "oklch(0.55 0 0)",
+                  }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Cards grid */}

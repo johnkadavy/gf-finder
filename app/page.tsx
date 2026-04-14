@@ -92,9 +92,8 @@ export type TopRestaurant = {
   score: number | null;
   hasGfFryer: boolean;
   isDedicatedGf: boolean;
-  isGfPizza: boolean;
-  isGfPasta: boolean;
-  isGfBakery: boolean;
+  gf_food_categories: string[] | null;
+  place_type: string[] | null;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -121,7 +120,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (!query) {
     const { data: topData } = await supabase
       .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score, dossier")
+      .select("id, name, neighborhood, cuisine, score, dossier, gf_food_categories, place_type")
       .eq("city", topRatedCity)
       .not("score", "is", null)
       .order("score", { ascending: false })
@@ -130,22 +129,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     topRated = ((topData ?? []) as Array<{
       id: number; name: string; neighborhood: string | null;
       cuisine: string | null; score: number | null; dossier: Dossier | null;
-    }>).map((r) => {
-      const cuisine = (r.cuisine ?? "").toLowerCase();
-      const name = r.name.toLowerCase();
-      return {
-        id: r.id,
-        name: r.name,
-        neighborhood: r.neighborhood,
-        cuisine: r.cuisine,
-        score: r.score,
-        hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
-        isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
-        isGfPizza: cuisine.includes("pizza"),
-        isGfPasta: cuisine.includes("italian") || cuisine.includes("pasta"),
-        isGfBakery: cuisine.includes("bakery") || name.includes("bakery"),
-      };
-    });
+      gf_food_categories: string[] | null;
+      place_type: string[] | null;
+    }>).map((r) => ({
+      id: r.id,
+      name: r.name,
+      neighborhood: r.neighborhood,
+      cuisine: r.cuisine,
+      score: r.score,
+      hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
+      isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
+      gf_food_categories: r.gf_food_categories ?? null,
+      place_type: r.place_type ?? null,
+    }));
   }
 
   let restaurants: Restaurant[] = [];

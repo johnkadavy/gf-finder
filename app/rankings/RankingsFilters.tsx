@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EXPERIENCE_OPTIONS, rankingsUrl, type Filters } from "./utils";
+import { EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, rankingsUrl, type Filters } from "./utils";
 
 // ── Location filters (rendered in hero) ────────────────────────────────────
 
@@ -216,11 +216,15 @@ export function RankingsSecondaryFilters({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
+  const [placeTypeOpen, setPlaceTypeOpen] = useState(false);
   const [cuisineSearch, setCuisineSearch] = useState("");
   const [hoveredCuisine, setHoveredCuisine] = useState<string | null>(null);
   const [hoveredExp, setHoveredExp] = useState<string | null>(null);
+  const [hoveredPlaceType, setHoveredPlaceType] = useState<string | null>(null);
 
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
+
+  const currentPlaceType = PLACE_TYPE_OPTIONS.find((o) => o.value === filters.placeType);
 
   const activePills = [
     filters.fryer   && { label: "GF Fryer",      clear: rankingsUrl(filters, { fryer: false,   limit: 25 }) },
@@ -229,13 +233,17 @@ export function RankingsSecondaryFilters({
       label: filters.cuisine,
       clear: rankingsUrl(filters, { cuisine: "all", limit: 25 }),
     },
+    filters.placeType !== "all" && {
+      label: currentPlaceType?.label ?? filters.placeType,
+      clear: rankingsUrl(filters, { placeType: "all", limit: 25 }),
+    },
     filters.experience !== "all" && {
       label: currentExp.label,
       clear: rankingsUrl(filters, { experience: "all", limit: 25 }),
     },
   ].filter(Boolean) as { label: string; clear: string }[];
 
-  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", experience: "all", limit: 25 });
+  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", experience: "all", limit: 25 });
   const activeCount = activePills.length;
 
   return (
@@ -328,10 +336,53 @@ export function RankingsSecondaryFilters({
           )}
         </div>
 
+        {/* Place Type dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setPlaceTypeOpen((o) => !o); setCuisineOpen(false); setExpOpen(false); }}
+            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            style={{
+              color: filters.placeType !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
+              backgroundColor: filters.placeType !== "all" ? "#FF744415" : "transparent",
+            }}
+          >
+            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">Type:</span>
+            {filters.placeType === "all" ? "All" : (currentPlaceType?.label ?? filters.placeType)}
+            <span className="text-[9px] opacity-50">{placeTypeOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {placeTypeOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setPlaceTypeOpen(false)} />
+              <div
+                className="absolute left-0 top-full z-20 min-w-[180px] border"
+                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+              >
+                {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { router.push(rankingsUrl(filters, { placeType: opt.value, limit: 25 }), { scroll: false }); setPlaceTypeOpen(false); }}
+                    onMouseEnter={() => setHoveredPlaceType(opt.value)}
+                    onMouseLeave={() => setHoveredPlaceType(null)}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                    style={{
+                      borderColor: "oklch(0.18 0 0)",
+                      color: filters.placeType === opt.value || hoveredPlaceType === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                      backgroundColor: filters.placeType === opt.value ? "#FF744410" : hoveredPlaceType === opt.value ? "#FF744408" : "transparent",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
         {/* Experience dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setExpOpen((o) => !o); setCuisineOpen(false); }}
+            onClick={() => { setExpOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); }}
             className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
             style={{
               color: filters.experience !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
@@ -415,6 +466,20 @@ export function RankingsSecondaryFilters({
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
 
+        {/* Place Type pill → opens sheet */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          style={{
+            borderColor: filters.placeType !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
+            backgroundColor: filters.placeType !== "all" ? "#FF744415" : "transparent",
+            color: filters.placeType !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+          }}
+        >
+          {filters.placeType === "all" ? "Type" : (currentPlaceType?.label ?? filters.placeType)}
+          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+        </button>
+
         {/* Cuisine pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
@@ -483,6 +548,28 @@ export function RankingsSecondaryFilters({
                 href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
                 onNavigate={() => setSheetOpen(false)}
               />
+            </div>
+
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+              Place Type
+            </p>
+            <div className="flex flex-col gap-2 mb-7">
+              {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
+                <Link
+                  key={opt.value}
+                  href={rankingsUrl(filters, { placeType: opt.value, limit: 25 })}
+                  scroll={false}
+                  onClick={() => setSheetOpen(false)}
+                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  style={{
+                    borderColor: filters.placeType === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
+                    backgroundColor: filters.placeType === opt.value ? "#FF744420" : "transparent",
+                    color: filters.placeType === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                  }}
+                >
+                  {opt.label}
+                </Link>
+              ))}
             </div>
 
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">

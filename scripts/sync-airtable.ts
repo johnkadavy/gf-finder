@@ -42,6 +42,8 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "google_place_id");
     url.searchParams.append("fields[]", "JSON dossier");
     url.searchParams.append("fields[]", "Sick reports JSON");
+    url.searchParams.append("fields[]", "place_type");
+    url.searchParams.append("fields[]", "gf_food_categories");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -119,9 +121,25 @@ async function sync() {
 
     const cuisine = dossier?.restaurant?.cuisine ?? null;
 
+    const parseCsv = (field: unknown): string[] | null => {
+      const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
+      if (!raw) return null;
+      const vals = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      return vals.length > 0 ? vals : null;
+    };
+
+    const placeTypes = parseCsv(record.fields["place_type"]);
+    const gfFoodCategories = parseCsv(record.fields["gf_food_categories"]);
+
     const { error } = await supabase
       .from("restaurants")
-      .update({ dossier, enriched_at: new Date().toISOString(), ...(cuisine ? { cuisine } : {}) })
+      .update({
+        dossier,
+        enriched_at: new Date().toISOString(),
+        ...(cuisine ? { cuisine } : {}),
+        ...(placeTypes ? { place_type: placeTypes } : {}),
+        ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
+      })
       .eq("google_place_id", googlePlaceId);
 
     if (error) {
