@@ -25,6 +25,9 @@ const limitIdx = process.argv.indexOf("--limit");
 const limitArg = limitIdx >= 0 ? process.argv[limitIdx + 1] : undefined;
 const LIMIT: number = limitArg === "all" ? Infinity : !limitArg ? 10 : parseInt(limitArg, 10);
 const FETCH_BATCH = Number.isFinite(LIMIT) ? Math.min(LIMIT * 5, 500) : 500;
+
+const cityIdx = process.argv.indexOf("--city");
+const CITY: string | null = cityIdx >= 0 ? process.argv[cityIdx + 1] ?? null : null;
 const FETCH_TIMEOUT_MS = 8000;
 
 // ── JSON-LD detection ───────────────────────────────────────────────────────
@@ -275,12 +278,15 @@ async function main() {
   }
 
   // Fetch a batch, filter to unscraped in JS
-  const { data, error } = await supabase
+  let query = supabase
     .from("restaurants")
     .select("id, name, website_url, dossier, verified_data")
     .not("website_url", "is", null)
-    .not("dossier", "is", null)
-    .limit(FETCH_BATCH);
+    .not("dossier", "is", null);
+
+  if (CITY) query = query.eq("city", CITY);
+
+  const { data, error } = await query.limit(FETCH_BATCH);
 
   if (error) {
     console.error("Fetch error:", error.message);

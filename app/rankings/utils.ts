@@ -5,11 +5,22 @@ export type Filters = {
   neighborhood: string;
   cuisine: string;
   placeType: string;
+  gfCategory: string;
   fryer: boolean;
   labeled: boolean;
   experience: Experience;
   limit: number;
 };
+
+export const GF_CATEGORY_OPTIONS: { label: string; value: string }[] = [
+  { label: "GF Pizza",      value: "gf_pizza"        },
+  { label: "GF Pasta",      value: "gf_pasta"        },
+  { label: "GF Bakery",     value: "gf_bread_bakery" },
+  { label: "GF Fried",      value: "gf_fried_items"  },
+  { label: "GF Desserts",   value: "gf_desserts"     },
+  { label: "GF Sandwiches", value: "gf_sandwiches"   },
+  { label: "GF Breakfast",  value: "gf_breakfast"    },
+];
 
 export const PLACE_TYPE_OPTIONS: { label: string; value: string }[] = [
   { label: "Restaurant",  value: "restaurant"  },
@@ -40,6 +51,7 @@ export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   if (merged.neighborhood !== "all") params.set("neighborhood", merged.neighborhood);
   if (merged.cuisine !== "all")      params.set("cuisine", merged.cuisine);
   if (merged.placeType !== "all")    params.set("placeType", merged.placeType);
+  if (merged.gfCategory !== "all")   params.set("gfCategory", merged.gfCategory);
   if (merged.fryer)                  params.set("fryer", "1");
   if (merged.labeled)                params.set("labeled", "1");
   if (merged.experience !== "all")   params.set("experience", merged.experience);

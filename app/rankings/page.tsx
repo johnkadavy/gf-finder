@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
-import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS } from "./utils";
+import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { ExpandableText } from "./ExpandableText";
 import { normalizeCuisine } from "@/lib/cuisine";
@@ -29,6 +29,7 @@ type RankingsPageProps = {
     neighborhood?: string;
     cuisine?: string;
     placeType?: string;
+    gfCategory?: string;
     fryer?: string;
     labeled?: string;
     experience?: string;
@@ -39,12 +40,14 @@ type RankingsPageProps = {
 export default async function RankingsPage({ searchParams }: RankingsPageProps) {
   const params = await searchParams;
 
-  const validPlaceTypes = new Set(PLACE_TYPE_OPTIONS.map((o) => o.value));
+  const validPlaceTypes   = new Set(PLACE_TYPE_OPTIONS.map((o) => o.value));
+  const validGfCategories = new Set(GF_CATEGORY_OPTIONS.map((o) => o.value));
   const filters: Filters = {
     city:         params.city         ?? "all",
     neighborhood: params.neighborhood ?? "all",
     cuisine:      params.cuisine      ?? "all",
-    placeType:    validPlaceTypes.has(params.placeType ?? "") ? (params.placeType ?? "all") : "all",
+    placeType:    validPlaceTypes.has(params.placeType ?? "")     ? (params.placeType   ?? "all") : "all",
+    gfCategory:   validGfCategories.has(params.gfCategory ?? "") ? (params.gfCategory  ?? "all") : "all",
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
     experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
@@ -92,6 +95,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   }
   if (minScore > 0)                   query = query.gte("score", minScore);
   if (filters.placeType !== "all")    query = query.contains("place_type", [filters.placeType]);
+  if (filters.gfCategory !== "all")   query = query.contains("gf_food_categories", [filters.gfCategory]);
   if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
   if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");
 

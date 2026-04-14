@@ -70,11 +70,24 @@ const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q     = searchParams.get("q")?.trim() ?? "";
-  const swLat = searchParams.get("swLat");
-  const swLng = searchParams.get("swLng");
-  const neLat = searchParams.get("neLat");
-  const neLng = searchParams.get("neLng");
+  const q          = searchParams.get("q")?.trim() ?? "";
+  const swLat      = searchParams.get("swLat");
+  const swLng      = searchParams.get("swLng");
+  const neLat      = searchParams.get("neLat");
+  const neLng      = searchParams.get("neLng");
+  const gfCategory = searchParams.get("gfCategory") ?? "";
+  const placeType  = searchParams.get("placeType")  ?? "";
+  const fryer      = searchParams.get("fryer") === "1";
+  const labeled    = searchParams.get("labeled") === "1";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function applyMapFilters(query: any) {
+    if (gfCategory) query = query.contains("gf_food_categories", [gfCategory]);
+    if (placeType)  query = query.contains("place_type", [placeType]);
+    if (fryer)      query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
+    if (labeled)    query = query.eq("dossier->menu->>gf_labeling", "clear");
+    return query;
+  }
 
   // ── Text search ────────────────────────────────────────────────────────────
   if (q) {
@@ -105,6 +118,8 @@ export async function GET(request: Request) {
         .gte("lng", parseFloat(swLng)).lte("lng", parseFloat(neLng));
     }
 
+    query = applyMapFilters(query);
+
     const { data } = await query.limit(300);
 
     const results = (data ?? [])
@@ -119,7 +134,7 @@ export async function GET(request: Request) {
 
   // ── Viewport: top 50 by GF score within bounding box ─────────────────────
   if (swLat && swLng && neLat && neLng) {
-    const { data } = await supabase
+    let query = supabase
       .from("restaurants")
       .select(SELECT)
       .not("lat", "is", null)
@@ -130,6 +145,9 @@ export async function GET(request: Request) {
       .order("score", { ascending: false })
       .limit(50);
 
+    query = applyMapFilters(query);
+
+    const { data } = await query;
     return Response.json((data ?? []).map(toMapRestaurant));
   }
 

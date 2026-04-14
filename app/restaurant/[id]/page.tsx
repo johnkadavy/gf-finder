@@ -178,10 +178,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function RestaurantPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
+  const fromMap = from === "map";
 
   const { data, error } = await supabase
     .from("restaurants")
@@ -302,26 +306,26 @@ export default async function RestaurantPage({
         {/* Back breadcrumb */}
         <div className="max-w-6xl mx-auto mb-6 md:mb-10">
           <Link
-            href="/rankings"
+            href={fromMap ? "/map" : "/rankings"}
             className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.75_0_0)] hover:text-[oklch(0.95_0_0)] transition-colors"
           >
-            ← Rankings
+            {fromMap ? "← Map" : "← Rankings"}
           </Link>
         </div>
 
         {/* ── Mobile layout ── */}
-        <div className="md:hidden max-w-6xl mx-auto space-y-4">
-          {/* Name — full width */}
-          <h1
-            className="font-[family-name:var(--font-display)] leading-none"
-            style={{ fontSize: "clamp(2.2rem, 10vw, 3.5rem)", letterSpacing: "0.02em" }}
-          >
-            {r.name}
-          </h1>
-
-          {/* Gauge — centered */}
-          <div className="flex justify-center py-2">
-            <SafetyGauge score={score} size="sm" />
+        <div className="md:hidden max-w-6xl mx-auto space-y-3">
+          {/* Name + gauge inline */}
+          <div className="flex items-start justify-between gap-3">
+            <h1
+              className="font-[family-name:var(--font-display)] leading-none"
+              style={{ fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "0.02em" }}
+            >
+              {r.name}
+            </h1>
+            <div className="shrink-0">
+              <SafetyGauge score={score} size="xs" showDescriptor={false} />
+            </div>
           </div>
 
           {/* Neighborhood + cuisine */}
@@ -351,7 +355,7 @@ export default async function RestaurantPage({
 
           {/* Summary */}
           {d?.summary?.short_summary && (
-            <p className="text-[15px] leading-[1.7] text-[oklch(0.82_0_0)]">
+            <p className="text-[14px] leading-[1.65] text-[oklch(0.82_0_0)]">
               {d.summary.short_summary}
             </p>
           )}

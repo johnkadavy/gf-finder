@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import Link from "next/link";
 import type { MapRestaurant } from "./types";
 import { isOpenNow } from "./types";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { SaveButton } from "@/app/components/SaveButton";
+import { GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS } from "@/app/rankings/utils";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -31,6 +33,7 @@ function priceStr(level: number | null) {
 const PREVIEW_LIMIT = 10;
 
 export function MapView({ initialSavedIds, isPreview = false }: { initialSavedIds: number[]; isPreview?: boolean }) {
+  const router = useRouter();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<number, mapboxgl.Marker>>(new Map());
@@ -68,6 +71,24 @@ const [mapReady, setMapReady] = useState(false);
   });
 
   const [locating, setLocating] = useState(false);
+
+  // ── Map filters ────────────────────────────────────────────────────────────
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mapGfCategory, setMapGfCategory] = useState("all");
+  const [mapPlaceType, setMapPlaceType] = useState("all");
+  const [mapFryer, setMapFryer] = useState(false);
+  const [mapLabeled, setMapLabeled] = useState(false);
+  const mapGfCategoryRef = useRef("all");
+  const mapPlaceTypeRef  = useRef("all");
+  const mapFryerRef      = useRef(false);
+  const mapLabeledRef    = useRef(false);
+  useEffect(() => {
+    mapGfCategoryRef.current = mapGfCategory;
+    mapPlaceTypeRef.current  = mapPlaceType;
+    mapFryerRef.current      = mapFryer;
+    mapLabeledRef.current    = mapLabeled;
+  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled]);
+  const hasActiveMapFilters = mapGfCategory !== "all" || mapPlaceType !== "all" || mapFryer || mapLabeled;
 
   function flyToUserLocation() {
     if (!map.current || locating) return;
@@ -159,6 +180,10 @@ const [mapReady, setMapReady] = useState(false);
       swLat: String(sw.lat), swLng: String(sw.lng),
       neLat: String(ne.lat), neLng: String(ne.lng),
     });
+    if (mapGfCategoryRef.current !== "all") params.set("gfCategory", mapGfCategoryRef.current);
+    if (mapPlaceTypeRef.current  !== "all") params.set("placeType",   mapPlaceTypeRef.current);
+    if (mapFryerRef.current)               params.set("fryer", "1");
+    if (mapLabeledRef.current)             params.set("labeled", "1");
     setShowSearchArea(false);
     setIsSearching(true);
     try {
@@ -181,6 +206,10 @@ const [mapReady, setMapReady] = useState(false);
       swLat: String(sw.lat), swLng: String(sw.lng),
       neLat: String(ne.lat), neLng: String(ne.lng),
     });
+    if (mapGfCategoryRef.current !== "all") params.set("gfCategory", mapGfCategoryRef.current);
+    if (mapPlaceTypeRef.current  !== "all") params.set("placeType",   mapPlaceTypeRef.current);
+    if (mapFryerRef.current)               params.set("fryer", "1");
+    if (mapLabeledRef.current)             params.set("labeled", "1");
     setShowSearchArea(false);
     setIsSearching(true);
     try {
@@ -243,6 +272,16 @@ const [mapReady, setMapReady] = useState(false);
   useEffect(() => {
     if (mapReady) fetchViewport();
   }, [mapReady, fetchViewport]);
+
+  // Re-fetch when map filters change (skip saved-only mode)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!mapReady || showSavedOnly) return;
+    if (searchMode.current) fetchSearch(committedSearchRef.current);
+    else fetchViewport();
+    // intentionally excludes mapReady/fetchViewport/fetchSearch — only fires on filter changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled]);
 
   const isVisible = useCallback((r: MapRestaurant) => {
     if (!meetsScoreFilter(r, scoreFilter)) return false;
@@ -344,8 +383,14 @@ const [mapReady, setMapReady] = useState(false);
         ? `&swLat=${bounds.getSouthWest().lat}&swLng=${bounds.getSouthWest().lng}` +
           `&neLat=${bounds.getNorthEast().lat}&neLng=${bounds.getNorthEast().lng}`
         : "";
+      const filterParams = [
+        mapGfCategoryRef.current !== "all" ? `&gfCategory=${encodeURIComponent(mapGfCategoryRef.current)}` : "",
+        mapPlaceTypeRef.current  !== "all" ? `&placeType=${encodeURIComponent(mapPlaceTypeRef.current)}`   : "",
+        mapFryerRef.current  ? "&fryer=1"   : "",
+        mapLabeledRef.current ? "&labeled=1" : "",
+      ].join("");
       const [searchRes, geoRes] = await Promise.all([
-        fetch(`/api/map-search?q=${encodeURIComponent(q)}${boundsParams}`),
+        fetch(`/api/map-search?q=${encodeURIComponent(q)}${boundsParams}${filterParams}`),
         fetch(`/api/geocode?q=${encodeURIComponent(q)}&token=${encodeURIComponent(process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "")}`),
       ]);
 
@@ -509,7 +554,7 @@ const [mapReady, setMapReady] = useState(false);
               >
                 {selected.name}
               </p>
-              <div className="shrink-0 mt-1">
+              <div className="shrink-0 mt-1" onClick={(e) => e.stopPropagation()}>
                 <SaveButton
                   restaurantId={selected.id}
                   initialSaved={savedIds.has(selected.id)}
@@ -534,7 +579,7 @@ const [mapReady, setMapReady] = useState(false);
           </div>
           {/* Close button — mobile only */}
           <button
-            onClick={() => setSelected(null)}
+            onClick={(e) => { e.stopPropagation(); setSelected(null); }}
             className="md:hidden shrink-0 mt-1 p-1"
             style={{ color: "oklch(0.65 0 0)" }}
             aria-label="Close"
@@ -563,7 +608,7 @@ const [mapReady, setMapReady] = useState(false);
 
       <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4">
         {selected.website && (
-          <div>
+          <div onClick={(e) => e.stopPropagation()}>
             <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Website</p>
             <a
               href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
@@ -592,16 +637,22 @@ const [mapReady, setMapReady] = useState(false);
       </div>
 
       <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "oklch(0.16 0 0)" }}>
+        {/* Desktop: explicit link; mobile: whole sheet is tappable */}
         <Link
-          href={`/restaurant/${selected.id}`}
-          className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
+          href={`/restaurant/${selected.id}?from=map`}
+          className="hidden md:block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
           style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
         >
           View Full Details →
         </Link>
+        {/* Mobile tap hint */}
+        <p className="md:hidden font-mono text-[10px] uppercase tracking-[0.15em] text-center text-[oklch(0.5_0_0)]">
+          Tap to view details →
+        </p>
         {isPreview && (
           <Link
             href="/login?next=/map"
+            onClick={(e) => e.stopPropagation()}
             className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
           >
             Sign up to save →
@@ -651,7 +702,7 @@ const [mapReady, setMapReady] = useState(false);
 
       {/* ── Mobile: bottom sheet ── */}
       <div
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col overflow-hidden rounded-t-2xl"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col overflow-hidden rounded-t-2xl cursor-pointer"
         style={{
           backgroundColor: "oklch(0.08 0 0)",
           height: "55vh",
@@ -660,6 +711,7 @@ const [mapReady, setMapReady] = useState(false);
           pointerEvents: selected ? "auto" : "none",
           boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
         }}
+        onClick={() => selected && router.push(`/restaurant/${selected.id}?from=map`)}
       >
         {panelContent}
       </div>
@@ -843,6 +895,109 @@ const [mapReady, setMapReady] = useState(false);
             Saved
           </button>}
         </div>}
+
+        {/* Filters toggle — authenticated only */}
+        {!isPreview && (
+          <>
+            <button
+              onClick={() => setFiltersOpen((v) => !v)}
+              className="flex items-center justify-between w-full font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150"
+              style={{
+                borderColor: hasActiveMapFilters ? "#FF744460" : "oklch(0.28 0 0)",
+                backgroundColor: hasActiveMapFilters ? "#FF744412" : "oklch(0.1 0 0)",
+                color: hasActiveMapFilters ? "#FF7444" : "oklch(0.62 0 0)",
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+                </svg>
+                Filters
+              </span>
+              <svg
+                width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: filtersOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            {filtersOpen && (
+              <div
+                className="border overflow-hidden"
+                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)" }}
+              >
+                {/* GF Food */}
+                <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">GF Food</p>
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                    {[{ label: "All", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMapGfCategory(opt.value)}
+                        className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-2 py-1 border transition-colors duration-150"
+                        style={{
+                          borderColor: mapGfCategory === opt.value ? "#FF744460" : "oklch(0.3 0 0)",
+                          backgroundColor: mapGfCategory === opt.value ? "#FF744420" : "transparent",
+                          color: mapGfCategory === opt.value ? "#FF7444" : "oklch(0.65 0 0)",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Place Type */}
+                <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Place Type</p>
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                    {[{ label: "All", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMapPlaceType(opt.value)}
+                        className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-2 py-1 border transition-colors duration-150"
+                        style={{
+                          borderColor: mapPlaceType === opt.value ? "#FF744460" : "oklch(0.3 0 0)",
+                          backgroundColor: mapPlaceType === opt.value ? "#FF744420" : "transparent",
+                          color: mapPlaceType === opt.value ? "#FF7444" : "oklch(0.65 0 0)",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* GF Safety toggles */}
+                <div className="px-3 pt-2 pb-2.5 flex gap-2">
+                  <button
+                    onClick={() => setMapFryer((v) => !v)}
+                    className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150"
+                    style={{
+                      borderColor: mapFryer ? "#FF744460" : "oklch(0.3 0 0)",
+                      backgroundColor: mapFryer ? "#FF744420" : "transparent",
+                      color: mapFryer ? "#FF7444" : "oklch(0.65 0 0)",
+                    }}
+                  >
+                    GF Fryer
+                  </button>
+                  <button
+                    onClick={() => setMapLabeled((v) => !v)}
+                    className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150"
+                    style={{
+                      borderColor: mapLabeled ? "#FF744460" : "oklch(0.3 0 0)",
+                      backgroundColor: mapLabeled ? "#FF744420" : "transparent",
+                      color: mapLabeled ? "#FF7444" : "oklch(0.65 0 0)",
+                    }}
+                  >
+                    GF Labels
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Near Me — desktop only; mobile uses the FAB */}
         <button

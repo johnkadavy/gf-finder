@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { getScoreLabel, getGaugeColor } from "@/lib/score";
 
 const sizes = {
+  xs: { ring: "w-20 h-20",  numSize: "text-2xl",  labelSize: "text-[5px]",  inset: "inset-[3px]"  },
   sm: { ring: "w-24 h-24",  numSize: "text-3xl",  labelSize: "text-[5px]",  inset: "inset-[4px]"  },
   md: { ring: "w-40 h-40",  numSize: "text-5xl",  labelSize: "text-[7px]",  inset: "inset-[6px]"  },
   lg: { ring: "w-56 h-56",  numSize: "text-7xl",  labelSize: "text-[9px]",  inset: "inset-[8px]"  },
 };
 
-export function SafetyGauge({ score, size = "md" }: { score: number | null; size?: "sm" | "md" | "lg" }) {
+export function SafetyGauge({ score, size = "md", showDescriptor = true }: { score: number | null; size?: "xs" | "sm" | "md" | "lg"; showDescriptor?: boolean }) {
   const { label } = getScoreLabel(score);
   const gaugeColor = getGaugeColor(score);
   const targetPct = score ?? 0;
@@ -77,17 +78,19 @@ export function SafetyGauge({ score, size = "md" }: { score: number | null; size
       </div>
 
       {/* Descriptor */}
-      <div
-        className="px-4 py-1.5 border"
-        style={{ borderColor: `${gaugeColor}40` }}
-      >
-        <span
-          className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]"
-          style={{ color: gaugeColor }}
+      {showDescriptor && (
+        <div
+          className="px-4 py-1.5 border"
+          style={{ borderColor: `${gaugeColor}40` }}
         >
-          {label}
-        </span>
-      </div>
+          <span
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]"
+            style={{ color: gaugeColor }}
+          >
+            {label}
+          </span>
+        </div>
+      )}
 
     </div>
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, rankingsUrl, type Filters } from "./utils";
+import { EXPERIENCE_OPTIONS, GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS, rankingsUrl, type Filters } from "./utils";
 
 // ── Location filters (rendered in hero) ────────────────────────────────────
 
@@ -224,7 +224,8 @@ export function RankingsSecondaryFilters({
 
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
 
-  const currentPlaceType = PLACE_TYPE_OPTIONS.find((o) => o.value === filters.placeType);
+  const currentPlaceType  = PLACE_TYPE_OPTIONS.find((o) => o.value === filters.placeType);
+  const currentGfCategory = GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory);
 
   const activePills = [
     filters.fryer   && { label: "GF Fryer",      clear: rankingsUrl(filters, { fryer: false,   limit: 25 }) },
@@ -237,13 +238,17 @@ export function RankingsSecondaryFilters({
       label: currentPlaceType?.label ?? filters.placeType,
       clear: rankingsUrl(filters, { placeType: "all", limit: 25 }),
     },
+    filters.gfCategory !== "all" && {
+      label: currentGfCategory?.label ?? filters.gfCategory,
+      clear: rankingsUrl(filters, { gfCategory: "all", limit: 25 }),
+    },
     filters.experience !== "all" && {
       label: currentExp.label,
       clear: rankingsUrl(filters, { experience: "all", limit: 25 }),
     },
   ].filter(Boolean) as { label: string; clear: string }[];
 
-  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", experience: "all", limit: 25 });
+  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", gfCategory: "all", experience: "all", limit: 25 });
   const activeCount = activePills.length;
 
   return (
@@ -261,6 +266,29 @@ export function RankingsSecondaryFilters({
           active={filters.labeled}
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
+
+        {/* GF category chips */}
+        <div className="flex items-center gap-px border-l ml-1 pl-2" style={{ borderColor: "oklch(0.22 0 0)" }}>
+          {GF_CATEGORY_OPTIONS.map((opt) => {
+            const isActive = filters.gfCategory === opt.value;
+            return (
+              <Link
+                key={opt.value}
+                href={rankingsUrl(filters, { gfCategory: isActive ? "all" : opt.value, limit: 25 })}
+                scroll={false}
+                className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-3 transition-colors duration-150"
+                style={{
+                  color: isActive ? "#FF7444" : "oklch(0.68 0 0)",
+                  backgroundColor: isActive ? "#FF744415" : "transparent",
+                  fontWeight: isActive ? 600 : 400,
+                }}
+              >
+                {opt.label}
+                {isActive && <span className="text-[9px] opacity-70">×</span>}
+              </Link>
+            );
+          })}
+        </div>
 
         {/* Cuisine dropdown */}
         <div className="relative">
@@ -480,6 +508,20 @@ export function RankingsSecondaryFilters({
           <span className="ml-1.5 text-[8px] opacity-40">▼</span>
         </button>
 
+        {/* GF Category pill → opens sheet */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          style={{
+            borderColor: filters.gfCategory !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
+            backgroundColor: filters.gfCategory !== "all" ? "#FF744415" : "transparent",
+            color: filters.gfCategory !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+          }}
+        >
+          {filters.gfCategory === "all" ? "GF Food" : (currentGfCategory?.label ?? filters.gfCategory)}
+          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+        </button>
+
         {/* Cuisine pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
@@ -565,6 +607,28 @@ export function RankingsSecondaryFilters({
                     borderColor: filters.placeType === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
                     backgroundColor: filters.placeType === opt.value ? "#FF744420" : "transparent",
                     color: filters.placeType === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                  }}
+                >
+                  {opt.label}
+                </Link>
+              ))}
+            </div>
+
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+              GF Food
+            </p>
+            <div className="flex flex-col gap-2 mb-7">
+              {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
+                <Link
+                  key={opt.value}
+                  href={rankingsUrl(filters, { gfCategory: opt.value, limit: 25 })}
+                  scroll={false}
+                  onClick={() => setSheetOpen(false)}
+                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  style={{
+                    borderColor: filters.gfCategory === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
+                    backgroundColor: filters.gfCategory === opt.value ? "#FF744420" : "transparent",
+                    color: filters.gfCategory === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
                   }}
                 >
                   {opt.label}
