@@ -19,7 +19,7 @@ const PLACE_TYPE_MAP: Record<string, string> = {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [restaurantsRes, landingRes] = await Promise.all([
     supabase.from("restaurants").select("id, updated_at").not("score", "is", null).order("id", { ascending: true }),
-    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type").not("score", "is", null).not("neighborhood", "is", null),
+    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score").not("score", "is", null).not("neighborhood", "is", null),
   ]);
 
   // ── Restaurant detail pages ──
@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // ── Programmatic landing pages ──
-  type Row = { city: string; neighborhood: string | null; gf_food_categories: string[] | null; place_type: string[] | null };
+  type Row = { city: string; neighborhood: string | null; gf_food_categories: string[] | null; place_type: string[] | null; score: number | null };
   const rows = (landingRes.data ?? []) as Row[];
 
   type Entry = { count: number; catCounts: Map<string, number> };
@@ -42,10 +42,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!map.has(key)) map.set(key, { count: 0, catCounts: new Map() });
     const entry = map.get(key)!;
     entry.count++;
-    for (const cat of r.gf_food_categories ?? []) entry.catCounts.set(cat, (entry.catCounts.get(cat) ?? 0) + 1);
-    for (const pt of r.place_type ?? []) {
-      const k = `pt:${pt}`;
-      entry.catCounts.set(k, (entry.catCounts.get(k) ?? 0) + 1);
+    // Category pages require score >= 75 — only count qualifying restaurants
+    if ((r.score ?? 0) >= 75) {
+      for (const cat of r.gf_food_categories ?? []) entry.catCounts.set(cat, (entry.catCounts.get(cat) ?? 0) + 1);
+      for (const pt of r.place_type ?? []) {
+        const k = `pt:${pt}`;
+        entry.catCounts.set(k, (entry.catCounts.get(k) ?? 0) + 1);
+      }
     }
   }
 
