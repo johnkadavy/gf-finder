@@ -16,7 +16,6 @@ export const GF_CATEGORY_OPTIONS: { label: string; value: string }[] = [
   { label: "GF Pizza",      value: "gf_pizza"        },
   { label: "GF Pasta",      value: "gf_pasta"        },
   { label: "GF Bakery",     value: "gf_bread_bakery" },
-  { label: "GF Fried",      value: "gf_fried_items"  },
   { label: "GF Desserts",   value: "gf_desserts"     },
   { label: "GF Sandwiches", value: "gf_sandwiches"   },
   { label: "GF Breakfast",  value: "gf_breakfast"    },

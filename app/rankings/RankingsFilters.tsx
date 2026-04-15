@@ -217,10 +217,12 @@ export function RankingsSecondaryFilters({
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
   const [placeTypeOpen, setPlaceTypeOpen] = useState(false);
+  const [gfCategoryOpen, setGfCategoryOpen] = useState(false);
   const [cuisineSearch, setCuisineSearch] = useState("");
   const [hoveredCuisine, setHoveredCuisine] = useState<string | null>(null);
   const [hoveredExp, setHoveredExp] = useState<string | null>(null);
   const [hoveredPlaceType, setHoveredPlaceType] = useState<string | null>(null);
+  const [hoveredGfCategory, setHoveredGfCategory] = useState<string | null>(null);
 
   const currentExp = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)!;
 
@@ -254,7 +256,9 @@ export function RankingsSecondaryFilters({
   return (
     <div>
       {/* Desktop filter bar */}
-      <div className="hidden md:flex items-center gap-1">
+      <div className="hidden md:flex items-center flex-wrap gap-x-0 gap-y-0 border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+
+        {/* Boolean toggles */}
         <FilterToggle
           label="GF Fryer"
           active={filters.fryer}
@@ -267,33 +271,55 @@ export function RankingsSecondaryFilters({
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
 
-        {/* GF category chips */}
-        <div className="flex items-center gap-px border-l ml-1 pl-2" style={{ borderColor: "oklch(0.22 0 0)" }}>
-          {GF_CATEGORY_OPTIONS.map((opt) => {
-            const isActive = filters.gfCategory === opt.value;
-            return (
-              <Link
-                key={opt.value}
-                href={rankingsUrl(filters, { gfCategory: isActive ? "all" : opt.value, limit: 25 })}
-                scroll={false}
-                className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-3 transition-colors duration-150"
-                style={{
-                  color: isActive ? "#FF7444" : "oklch(0.68 0 0)",
-                  backgroundColor: isActive ? "#FF744415" : "transparent",
-                  fontWeight: isActive ? 600 : 400,
-                }}
+        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "oklch(0.22 0 0)" }} />
+
+        {/* GF Food dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setGfCategoryOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); setExpOpen(false); }}
+            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            style={{
+              color: filters.gfCategory !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
+              backgroundColor: filters.gfCategory !== "all" ? "#FF744415" : "transparent",
+            }}
+          >
+            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">GF Food:</span>
+            {filters.gfCategory === "all" ? "All" : (currentGfCategory?.label ?? filters.gfCategory)}
+            <span className="text-[9px] opacity-50">{gfCategoryOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {gfCategoryOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setGfCategoryOpen(false)} />
+              <div
+                className="absolute left-0 top-full z-20 min-w-[180px] border"
+                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
               >
-                {opt.label}
-                {isActive && <span className="text-[9px] opacity-70">×</span>}
-              </Link>
-            );
-          })}
+                {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { router.push(rankingsUrl(filters, { gfCategory: opt.value, limit: 25 }), { scroll: false }); setGfCategoryOpen(false); }}
+                    onMouseEnter={() => setHoveredGfCategory(opt.value)}
+                    onMouseLeave={() => setHoveredGfCategory(null)}
+                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                    style={{
+                      borderColor: "oklch(0.18 0 0)",
+                      color: filters.gfCategory === opt.value || hoveredGfCategory === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                      backgroundColor: filters.gfCategory === opt.value ? "#FF744410" : hoveredGfCategory === opt.value ? "#FF744408" : "transparent",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Cuisine dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setCuisineOpen((o) => !o); setExpOpen(false); if (!cuisineOpen) setCuisineSearch(""); }}
+            onClick={() => { setCuisineOpen((o) => !o); setExpOpen(false); setGfCategoryOpen(false); setPlaceTypeOpen(false); if (!cuisineOpen) setCuisineSearch(""); }}
             className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
             style={{
               color: filters.cuisine !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
@@ -367,7 +393,7 @@ export function RankingsSecondaryFilters({
         {/* Place Type dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setPlaceTypeOpen((o) => !o); setCuisineOpen(false); setExpOpen(false); }}
+            onClick={() => { setPlaceTypeOpen((o) => !o); setCuisineOpen(false); setExpOpen(false); setGfCategoryOpen(false); }}
             className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
             style={{
               color: filters.placeType !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
@@ -410,7 +436,7 @@ export function RankingsSecondaryFilters({
         {/* Experience dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setExpOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); }}
+            onClick={() => { setExpOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); setGfCategoryOpen(false); }}
             className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
             style={{
               color: filters.experience !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
@@ -450,32 +476,33 @@ export function RankingsSecondaryFilters({
           )}
         </div>
 
-        {/* Active pills inline */}
-        {activePills.length > 0 && (
-          <div className="flex items-center gap-2 ml-auto px-4">
-            {activePills.map((pill) => (
-              <Link
-                key={pill.label}
-                href={pill.clear}
-                scroll={false}
-                className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
-                style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
-              >
-                {pill.label}
-                <span className="text-[9px] opacity-60">✕</span>
-              </Link>
-            ))}
-            <Link
-              href={clearAll}
-              scroll={false}
-              className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white ml-1"
-              style={{ color: "oklch(0.6 0 0)" }}
-            >
-              Clear all
-            </Link>
-          </div>
-        )}
       </div>
+
+      {/* Active filter pills — second row, desktop only */}
+      {activePills.length > 0 && (
+        <div className="hidden md:flex items-center gap-2 py-2.5 border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+          {activePills.map((pill) => (
+            <Link
+              key={pill.label}
+              href={pill.clear}
+              scroll={false}
+              className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
+              style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
+            >
+              {pill.label}
+              <span className="text-[9px] opacity-60">✕</span>
+            </Link>
+          ))}
+          <Link
+            href={clearAll}
+            scroll={false}
+            className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white ml-1"
+            style={{ color: "oklch(0.55 0 0)" }}
+          >
+            Clear all
+          </Link>
+        </div>
+      )}
 
       {/* Mobile filter chips row */}
       <div
