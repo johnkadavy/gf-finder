@@ -41,9 +41,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const key = `${r.city}||${r.neighborhood}`;
     if (!map.has(key)) map.set(key, { count: 0, catCounts: new Map() });
     const entry = map.get(key)!;
-    entry.count++;
-    // Category pages require score >= 75 — only count qualifying restaurants
+    // All pages require score >= 75
     if ((r.score ?? 0) >= 75) {
+      entry.count++;
       for (const cat of r.gf_food_categories ?? []) entry.catCounts.set(cat, (entry.catCounts.get(cat) ?? 0) + 1);
       for (const pt of r.place_type ?? []) {
         const k = `pt:${pt}`;

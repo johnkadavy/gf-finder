@@ -134,8 +134,8 @@ export default async function LandingPage({ params }: Props) {
 
   if (catDef?.type === "gf_food")    query = query.contains("gf_food_categories", [catDef.value]);
   if (catDef?.type === "place_type") query = query.contains("place_type",         [catDef.value]);
-  // Category pages only show well-rated restaurants — low scores shouldn't be recommended
-  if (catDef)                        query = query.gte("score", 75);
+  // Only show well-rated restaurants — don't recommend low-quality GF experiences
+  query = query.gte("score", 75);
 
   const { data } = await query;
   const restaurants = (data ?? []) as RestaurantRow[];
