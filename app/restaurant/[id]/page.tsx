@@ -13,6 +13,7 @@ import {
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
 import { StickyInfoBar } from "@/app/components/StickyInfoBar";
+import { isNewRestaurant } from "@/lib/utils";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -38,6 +39,8 @@ type Restaurant = {
   dossier: Dossier | null;
   verified_data: VerifiedData | null;
   google_place_id: string | null;
+  source: string | null;
+  ingested_at: string | null;
 };
 
 type VerifiedVisit = {
@@ -216,7 +219,7 @@ export default async function RestaurantPage({
   const { data, error } = await supabase
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id"
+      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at"
     )
     .eq("id", id)
     .single();
@@ -373,12 +376,19 @@ export default async function RestaurantPage({
         <div className="md:hidden max-w-6xl mx-auto space-y-3">
           {/* Name + gauge inline */}
           <div className="flex items-start justify-between gap-3">
-            <h1
-              className="font-[family-name:var(--font-display)] leading-none"
-              style={{ fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "0.02em" }}
-            >
-              {r.name}
-            </h1>
+            <div>
+              {isNewRestaurant(r.source, r.ingested_at) && (
+                <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-2" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                  New
+                </span>
+              )}
+              <h1
+                className="font-[family-name:var(--font-display)] leading-none"
+                style={{ fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "0.02em" }}
+              >
+                {r.name}
+              </h1>
+            </div>
             <div className="shrink-0">
               <SafetyGauge score={score} size="xs" showDescriptor={false} />
             </div>
@@ -458,13 +468,20 @@ export default async function RestaurantPage({
 
           {/* Name + save */}
           <div className="flex items-center justify-center gap-3 mb-5">
-            <p
-              aria-hidden="true"
-              className="font-[family-name:var(--font-display)] leading-none"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
-            >
-              {r.name}
-            </p>
+            <div className="text-center">
+              {isNewRestaurant(r.source, r.ingested_at) && (
+                <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-2" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                  New
+                </span>
+              )}
+              <p
+                aria-hidden="true"
+                className="font-[family-name:var(--font-display)] leading-none"
+                style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
+              >
+                {r.name}
+              </p>
+            </div>
             <div className="mt-2 shrink-0">
               <SaveButton
                 restaurantId={r.id}

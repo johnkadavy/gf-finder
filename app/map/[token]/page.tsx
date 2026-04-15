@@ -45,7 +45,7 @@ export default async function SharedMapPage({
   const { data: rows } = await supabaseServer
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, dossier"
+      "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, dossier, source, ingested_at"
     )
     .in("id", ids);
 
@@ -71,6 +71,8 @@ export default async function SharedMapPage({
       scoreLabel: getScoreLabel(r.score ?? null).label,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       periods: ((r.dossier as any)?.hours?.periods ?? null) as MapRestaurant["periods"],
+      source: r.source ?? null,
+      ingested_at: r.ingested_at ?? null,
     }));
 
   return <SharedMapView restaurants={restaurants} isLoggedIn={!!user} ownerName={ownerName} />;

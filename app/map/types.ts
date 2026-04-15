@@ -19,6 +19,8 @@ export type MapRestaurant = {
   color: string;
   scoreLabel: string;
   periods: OpeningPeriod[] | null;
+  source: string | null;
+  ingested_at: string | null;
 };
 
 /** Returns true if open, false if closed, null if no hours data. */

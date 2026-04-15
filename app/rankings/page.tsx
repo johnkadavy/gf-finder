@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
+import { isNewRestaurant } from "@/lib/utils";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { ExpandableText } from "./ExpandableText";
@@ -78,6 +79,8 @@ type Restaurant = {
   google_maps_url: string | null;
   score: number;
   dossier: Dossier | null;
+  source: string | null;
+  ingested_at: string | null;
 };
 
 type RankingsPageProps = {
@@ -140,7 +143,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   // Build paginated query with all filters applied DB-side
   let query = supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, website_url, google_maps_url, score, dossier", { count: "exact" })
+    .select("id, name, city, neighborhood, website_url, google_maps_url, score, dossier, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
@@ -259,16 +262,23 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
                   {/* Name + location */}
                   <div className="min-w-0">
-                    <span
-                      className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate block group-hover:text-[#FF7444] transition-colors duration-150"
-                      style={{
-                        fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
-                        letterSpacing: "0.02em",
-                        color: "oklch(0.95 0 0)",
-                      }}
-                    >
-                      {restaurant.name}
-                    </span>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span
+                        className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate group-hover:text-[#FF7444] transition-colors duration-150"
+                        style={{
+                          fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
+                          letterSpacing: "0.02em",
+                          color: "oklch(0.95 0 0)",
+                        }}
+                      >
+                        {restaurant.name}
+                      </span>
+                      {isNewRestaurant(restaurant.source, restaurant.ingested_at) && (
+                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                          New
+                        </span>
+                      )}
+                    </div>
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-1 md:mt-2 truncate">
                       {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                     </p>

@@ -191,6 +191,7 @@ async function main() {
     city,
     neighborhood,
     cuisine_types: place.types ?? null,
+    source: "neighborhood_ingest",
     slug: [place.displayName?.text ?? "", city, neighborhood, place.id.slice(-6)]
       .join("-")
       .toLowerCase()

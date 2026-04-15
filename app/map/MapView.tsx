@@ -9,6 +9,7 @@ import { isOpenNow } from "./types";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { SaveButton } from "@/app/components/SaveButton";
 import { GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS } from "@/app/rankings/utils";
+import { isNewRestaurant } from "@/lib/utils";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -495,6 +496,7 @@ const [mapReady, setMapReady] = useState(false);
       price_level: s.price_level, address: s.address, website: s.website_url,
       score: s.score, color: getGaugeColor(s.score), scoreLabel: getScoreLabel(s.score).label,
       periods: null,
+      source: null, ingested_at: null,
     };
 
     setRestaurants((prev) =>
@@ -548,12 +550,19 @@ const [mapReady, setMapReady] = useState(false);
         <div className="flex items-start justify-between gap-3 md:block">
           <div className="min-w-0">
             <div className="flex items-start gap-2 mb-1">
-              <p
-                className="font-[family-name:var(--font-display)] leading-tight"
-                style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
-              >
-                {selected.name}
-              </p>
+              <div className="min-w-0">
+                {isNewRestaurant(selected.source, selected.ingested_at) && (
+                  <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-1" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                    New
+                  </span>
+                )}
+                <p
+                  className="font-[family-name:var(--font-display)] leading-tight"
+                  style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
+                >
+                  {selected.name}
+                </p>
+              </div>
               <div className="shrink-0 mt-1" onClick={(e) => e.stopPropagation()}>
                 <SaveButton
                   restaurantId={selected.id}

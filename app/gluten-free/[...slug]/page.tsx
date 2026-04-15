@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
+import { isNewRestaurant } from "@/lib/utils";
 
 export const revalidate = 86400; // regenerate at most once per 24 hours
 
@@ -73,6 +74,8 @@ type RestaurantRow = {
   score: number;
   cuisine: string | null;
   dossier: { summary?: { short_summary?: string } } | null;
+  source: string | null;
+  ingested_at: string | null;
 };
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
@@ -125,7 +128,7 @@ export default async function LandingPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from("restaurants")
-    .select("id, name, score, cuisine, dossier")
+    .select("id, name, score, cuisine, dossier, source, ingested_at")
     .not("score", "is", null)
     .eq("city", city)
     .eq("neighborhood", neighborhood)
@@ -248,12 +251,19 @@ export default async function LandingPage({ params }: Props) {
 
                   {/* Name + meta */}
                   <div className="min-w-0">
-                    <span
-                      className="font-[family-name:var(--font-display)] leading-tight block"
-                      style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "oklch(0.95 0 0)", letterSpacing: "0.02em" }}
-                    >
-                      {r.name}
-                    </span>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span
+                        className="font-[family-name:var(--font-display)] leading-tight"
+                        style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "oklch(0.95 0 0)", letterSpacing: "0.02em" }}
+                      >
+                        {r.name}
+                      </span>
+                      {isNewRestaurant(r.source, r.ingested_at) && (
+                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                          New
+                        </span>
+                      )}
+                    </div>
                     {r.cuisine && (
                       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.58_0_0)] mt-1">
                         {r.cuisine}

@@ -304,6 +304,7 @@ async function main() {
       cuisine: candidate.cuisine ?? null,
       cuisine_types: place.types ?? null,
       slug,
+      source: "new_openings",
       ingested_at: new Date().toISOString(),
     }, { onConflict: "google_place_id" });
 

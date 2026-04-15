@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import type { MapRestaurant } from "@/app/map/types";
 
-const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, opening_hours";
+const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, opening_hours, source, ingested_at";
 
 type Row = {
   id: number;
@@ -19,6 +19,8 @@ type Row = {
   website_url: string | null;
   score: number | null;
   opening_hours: { periods?: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] } | null;
+  source: string | null;
+  ingested_at: string | null;
 };
 
 export async function GET() {
@@ -48,6 +50,7 @@ export async function GET() {
     price_level: r.price_level, address: r.address, website: r.website_url,
     score: r.score, color: getGaugeColor(r.score), scoreLabel: getScoreLabel(r.score).label,
     periods: r.opening_hours?.periods ?? null,
+    source: r.source, ingested_at: r.ingested_at,
   }));
 
   return Response.json(results);
