@@ -149,6 +149,22 @@ const IconClock = () => (
 
 // ── Metadata ───────────────────────────────────────────────────────────────
 
+function buildSignalSummary(d: ScoringDossier | null): string {
+  if (!d) return "";
+  const signals: string[] = [];
+  if (d.operations?.dedicated_equipment?.prep_area === "dedicated") signals.push("dedicated GF prep area");
+  if (d.operations?.dedicated_equipment?.fryer)                     signals.push("dedicated GF fryer");
+  if (d.menu?.gf_labeling === "clear")                              signals.push("clearly labeled menu");
+  if (d.operations?.cross_contamination_risk === "low")             signals.push("low cross-contamination risk");
+  if (d.operations?.staff_knowledge === "high")                     signals.push("knowledgeable staff");
+  const top = signals.slice(0, 3);
+  if (top.length === 0) return "";
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  if (top.length === 1) return ` ${cap(top[0])}.`;
+  if (top.length === 2) return ` ${cap(top[0])} and ${top[1]}.`;
+  return ` ${cap(top[0])}, ${top[1]}, and ${top[2]}.`;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { data } = await supabase
@@ -162,15 +178,25 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const score = data.dossier
     ? calculateScore(data.dossier as ScoringDossier, (data.verified_data ?? undefined) as VerifiedData | undefined)
     : null;
-  const { label } = getScoreLabel(score);
+  const d = data.dossier as ScoringDossier | null;
   const location = [data.neighborhood, data.city].filter(Boolean).join(", ");
+  const canonicalUrl = `/restaurant/${id}`;
+
+  const title = `${data.name} — Gluten-Free Safety Rating | CleanPlate`;
+  const description = score !== null
+    ? `${data.name}${location ? ` in ${location}` : ""} scores ${Math.round(score)}/100 for gluten-free safety.${buildSignalSummary(d)} See the full GF breakdown on CleanPlate.`
+    : `Find gluten-free details for ${data.name}${location ? ` in ${location}` : ""} — menu labeling, cross-contamination risk, and GF safety signals on CleanPlate.`;
 
   return {
-    title: `${data.name} — CleanPlate`,
-    description: score !== null
-      ? `${data.name} scores ${Math.round(score)} (${label}) for gluten-free safety${location ? ` in ${location}` : ""}.`
-      : `Gluten-free details for ${data.name}${location ? ` in ${location}` : ""}.`,
-    openGraph: { title: data.name },
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: canonicalUrl,
+    },
   };
 }
 
@@ -289,8 +315,38 @@ export default async function RestaurantPage({
     d?.reviews?.recent_sentiment === "mixed"           ? "Mixed" :
     d?.reviews?.recent_sentiment === "mostly_negative" ? "Mostly negative" : "Unknown";
 
+  // ── JSON-LD structured data ──────────────────────────────────────────────
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": r.name,
+    ...(r.address ? {
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": r.address,
+        "addressLocality": r.city,
+      },
+    } : {}),
+    ...(r.phone        ? { "telephone": r.phone }                                               : {}),
+    ...(r.website_url  ? { "url": r.website_url }                                               : {}),
+    ...(r.cuisine      ? { "servesCuisine": r.cuisine }                                         : {}),
+    ...(score !== null ? {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": Math.round(score),
+        "bestRating": 100,
+        "worstRating": 0,
+        "ratingCount": 1,
+      },
+    } : {}),
+  };
+
   return (
     <main className="pt-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <StickyInfoBar name={r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
       {/* ── Hero ── */}
@@ -402,12 +458,13 @@ export default async function RestaurantPage({
 
           {/* Name + save */}
           <div className="flex items-center justify-center gap-3 mb-5">
-            <h1
+            <p
+              aria-hidden="true"
               className="font-[family-name:var(--font-display)] leading-none"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
             >
               {r.name}
-            </h1>
+            </p>
             <div className="mt-2 shrink-0">
               <SaveButton
                 restaurantId={r.id}
@@ -473,9 +530,9 @@ export default async function RestaurantPage({
             {d && (
               <div>
                 <div className="flex items-center gap-4 mb-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                  <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
                     Signal Breakdown
-                  </p>
+                  </h2>
                   <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
@@ -496,9 +553,9 @@ export default async function RestaurantPage({
             {/* Reviews section */}
             <div className="space-y-5">
               <div className="flex items-center gap-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
                   Reviews
-                </p>
+                </h2>
                 <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
               </div>
 
@@ -620,9 +677,9 @@ export default async function RestaurantPage({
             className="border p-6 space-y-6 md:sticky md:top-24"
             style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
           >
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+            <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
               Info
-            </p>
+            </h2>
 
             {/* Address */}
             {r.address && (
@@ -686,7 +743,7 @@ export default async function RestaurantPage({
               <div className="flex gap-3">
                 <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconClock /></span>
                 <div className="w-full">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">Hours</p>
+                  <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">Hours</h3>
                   <div className="space-y-2">
                     {hours.map((line) => {
                       const [day, ...rest] = line.split(": ");

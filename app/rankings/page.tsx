@@ -1,10 +1,67 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { ExpandableText } from "./ExpandableText";
 import { normalizeCuisine } from "@/lib/cuisine";
+
+type SearchParams = {
+  city?: string;
+  neighborhood?: string;
+  cuisine?: string;
+  placeType?: string;
+  gfCategory?: string;
+  fryer?: string;
+  labeled?: string;
+  experience?: string;
+  limit?: string;
+};
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const city          = params.city          ?? "all";
+  const neighborhood  = params.neighborhood  ?? "all";
+  const gfCategory    = params.gfCategory    ?? "all";
+  const placeType     = params.placeType     ?? "all";
+
+  const cityLabel        = city        !== "all" ? city : "NYC";
+  const neighborhoodLabel = neighborhood !== "all" ? neighborhood : null;
+  const gfCategoryLabel  = GF_CATEGORY_OPTIONS.find((o) => o.value === gfCategory)?.label ?? null;
+  const placeTypeLabel   = PLACE_TYPE_OPTIONS.find((o) => o.value === placeType)?.label    ?? null;
+
+  let title: string;
+  let description: string;
+
+  if (neighborhoodLabel) {
+    title = `Best Gluten-Free Restaurants in ${neighborhoodLabel}, ${cityLabel} | CleanPlate`;
+    description = `Gluten-free restaurants in ${neighborhoodLabel}, ${cityLabel} ranked by GF safety score. Filter by dedicated fryer, menu labeling, cuisine, and more.`;
+  } else if (gfCategoryLabel) {
+    title = `Best ${gfCategoryLabel} in ${cityLabel} | CleanPlate`;
+    description = `Top ${gfCategoryLabel.toLowerCase()} spots in ${cityLabel} ranked by gluten-free safety. Find places with dedicated fryers, clear menu labeling, and low cross-contamination risk.`;
+  } else if (placeTypeLabel) {
+    title = `Best Gluten-Free ${placeTypeLabel}s in ${cityLabel} | CleanPlate`;
+    description = `Gluten-free ${placeTypeLabel.toLowerCase()}s in ${cityLabel} ranked by GF safety score. Find the safest spots for celiacs and gluten-free diners.`;
+  } else if (city !== "all") {
+    title = `Top Gluten-Free Restaurants in ${cityLabel} — Ranked by Safety | CleanPlate`;
+    description = `Browse gluten-free restaurants in ${cityLabel} ranked by safety score. Filter by dedicated GF kitchen, fryer, menu labeling, neighborhood, and more.`;
+  } else {
+    title = "Top Gluten-Free Restaurants in NYC — Ranked by Safety | CleanPlate";
+    description = "Browse 3,500+ NYC restaurants ranked by gluten-free safety. Filter by dedicated GF kitchen, GF fryer, GF pizza, neighborhood, and more.";
+  }
+
+  return {
+    title,
+    description,
+    alternates: { canonical: "/rankings" },
+    openGraph: { title, description, type: "website", url: "/rankings" },
+  };
+}
 
 const DEFAULT_LIMIT = 25;
 
@@ -126,9 +183,15 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             className="font-[family-name:var(--font-display)] leading-none mb-10"
             style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
           >
-            Top Gluten-Free
-            <br />
-            <span style={{ color: "#FF7444" }}>Restaurants</span>
+            {filters.neighborhood !== "all" ? (
+              <>Best Gluten-Free Restaurants<br /><span style={{ color: "#FF7444" }}>in {filters.neighborhood}</span></>
+            ) : filters.gfCategory !== "all" ? (
+              <>{GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory)?.label ?? "GF Food"}<br /><span style={{ color: "#FF7444" }}>in {filters.city !== "all" ? filters.city : "NYC"}</span></>
+            ) : filters.city !== "all" ? (
+              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants in {filters.city}</span></>
+            ) : (
+              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants</span></>
+            )}
           </h1>
 
           <RankingsLocationFilters
