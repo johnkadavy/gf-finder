@@ -70,8 +70,8 @@ interface PlaceResult {
 
 // ── Airtable helpers ──────────────────────────────────────────────────────────
 
-async function fetchSourceRecords(): Promise<{ city: string; restaurants: ExtractedRestaurant[] }[]> {
-  const results: { city: string; restaurants: ExtractedRestaurant[] }[] = [];
+async function fetchSourceRecords(): Promise<{ id: string; city: string; restaurants: ExtractedRestaurant[] }[]> {
+  const results: { id: string; city: string; restaurants: ExtractedRestaurant[] }[] = [];
   let offset: string | undefined;
 
   do {
@@ -112,7 +112,7 @@ async function fetchSourceRecords(): Promise<{ city: string; restaurants: Extrac
       try {
         const parsed = JSON.parse(jsonStr);
         if (Array.isArray(parsed)) {
-          results.push({ city: recordCity, restaurants: parsed });
+          results.push({ id: record.id, city: recordCity, restaurants: parsed });
         }
       } catch {
         console.warn(`  Could not parse JSON for a source record — skipping`);
@@ -123,6 +123,26 @@ async function fetchSourceRecords(): Promise<{ city: string; restaurants: Extrac
   } while (offset);
 
   return results;
+}
+
+async function markSourceRecordsIngested(recordIds: string[]) {
+  // Airtable batch update supports up to 10 records at a time
+  const BATCH = 10;
+  for (let i = 0; i < recordIds.length; i += BATCH) {
+    const batch = recordIds.slice(i, i + BATCH);
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(SOURCES_TABLE_NAME)}`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        records: batch.map((id) => ({ id, fields: { "ingested?": true } })),
+      }),
+    });
+    if (!res.ok) throw new Error(`Airtable update error: ${res.status} ${await res.text()}`);
+  }
 }
 
 async function fetchExistingPlaceIds(): Promise<Set<string>> {
@@ -225,6 +245,7 @@ async function main() {
   // 1. Load source records from Airtable
   console.log(`Loading sources from Airtable ("${SOURCES_TABLE_NAME}")...`);
   const sources = await fetchSourceRecords();
+  const sourceRecordIds = sources.map((s) => s.id);
   const raw = sources.flatMap((s) => s.restaurants);
   // Dedupe by normalized name (keep first occurrence)
   const seen = new Set<string>();
@@ -317,7 +338,14 @@ async function main() {
   console.log(`  New restaurants added : ${newCount}`);
   console.log(`  Already existed       : ${alreadyExists}`);
   console.log(`  Not found on Google   : ${notFound}`);
-  if (dryRun) console.log(`\n  (dry run — nothing written)`);
+
+  if (dryRun) {
+    console.log(`\n  (dry run — nothing written)`);
+  } else if (sourceRecordIds.length > 0) {
+    console.log(`\nMarking ${sourceRecordIds.length} source record(s) as ingested in Airtable...`);
+    await markSourceRecordsIngested(sourceRecordIds);
+    console.log(`  ✓ Done`);
+  }
 }
 
 main();
