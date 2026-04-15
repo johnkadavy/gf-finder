@@ -766,6 +766,28 @@ export default async function RestaurantPage({
 
         </div>
       </section>
+
+      {/* ── Neighborhood links (S6b) ── */}
+      {r.neighborhood && (
+        <section className="px-6 py-8 border-t" style={{ borderColor: "oklch(0.18 0 0)" }}>
+          <div className="max-w-6xl mx-auto flex flex-wrap gap-3">
+            <Link
+              href={`/gluten-free/${r.city.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}/${r.neighborhood.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`}
+              className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
+              style={{ borderColor: "oklch(0.26 0 0)", color: "oklch(0.65 0 0)" }}
+            >
+              More GF restaurants in {r.neighborhood} →
+            </Link>
+            <Link
+              href={`/rankings?city=${encodeURIComponent(r.city)}`}
+              className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
+              style={{ borderColor: "oklch(0.26 0 0)", color: "oklch(0.65 0 0)" }}
+            >
+              All GF restaurants in {r.city} →
+            </Link>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
