@@ -243,6 +243,15 @@ const [mapReady, setMapReady] = useState(false);
     if (window.innerWidth >= 768) {
       map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     }
+    // Geolocate control — shows blue dot on tap, works on all screen sizes
+    map.current.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showUserHeading: false,
+      }),
+      "bottom-right"
+    );
     map.current.on("load", () => setMapReady(true));
 
     map.current.on("movestart", () => {
