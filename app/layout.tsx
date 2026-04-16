@@ -54,7 +54,7 @@ export default function RootLayout({
           className="fixed top-0 w-full z-50 border-b"
           style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.08 0 0)" }}
         >
-          <div className="flex justify-between items-center px-8 h-16">
+          <div className="flex justify-between items-center px-4 md:px-8 h-16">
             <Link href="/" className="flex items-center gap-1.5">
               <div className="relative group">
                 <Image

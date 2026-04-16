@@ -71,6 +71,8 @@ export default async function SharedMapPage({
       scoreLabel: getScoreLabel(r.score ?? null).label,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       periods: ((r.dossier as any)?.hours?.periods ?? null) as MapRestaurant["periods"],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      short_summary: (r.dossier as any)?.summary?.short_summary ?? null,
       source: r.source ?? null,
       ingested_at: r.ingested_at ?? null,
     }));

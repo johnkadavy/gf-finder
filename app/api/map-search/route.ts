@@ -14,8 +14,11 @@ type Row = {
   price_level: number | null;
   address: string | null;
   website_url: string | null;
+  google_maps_url: string | null;
   score: number | null;
   opening_hours: { periods?: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dossier: Record<string, any> | null;
   source: string | null;
   ingested_at: string | null;
 };
@@ -25,8 +28,10 @@ function toMapRestaurant(r: Row): MapRestaurant {
     id: r.id, name: r.name, city: r.city, neighborhood: r.neighborhood,
     lat: r.lat, lng: r.lng, cuisine: r.cuisine, google_rating: r.google_rating,
     price_level: r.price_level, address: r.address, website: r.website_url,
+    google_maps_url: r.google_maps_url,
     score: r.score, color: getGaugeColor(r.score), scoreLabel: getScoreLabel(r.score).label,
     periods: r.opening_hours?.periods ?? null,
+    short_summary: r.dossier?.summary?.short_summary ?? null,
     source: r.source, ingested_at: r.ingested_at,
   };
 }
@@ -68,7 +73,7 @@ function scoreMatch(name: string, cuisine: string | null, query: string): number
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, opening_hours, source, ingested_at";
+const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, source, ingested_at";
 const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {

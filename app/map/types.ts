@@ -15,10 +15,12 @@ export type MapRestaurant = {
   price_level: number | null;
   address: string | null;
   website: string | null;
+  google_maps_url: string | null;
   score: number | null;
   color: string;
   scoreLabel: string;
   periods: OpeningPeriod[] | null;
+  short_summary: string | null;
   source: string | null;
   ingested_at: string | null;
 };
