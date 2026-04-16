@@ -842,7 +842,7 @@ const [mapReady, setMapReady] = useState(false);
                 }}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 placeholder="Search restaurants…"
-                className="bg-transparent outline-none w-full font-mono text-[13px] placeholder:text-[oklch(0.52_0_0)] min-w-0"
+                className="bg-transparent outline-none w-full font-mono text-[16px] md:text-[13px] placeholder:text-[oklch(0.52_0_0)] min-w-0"
                 style={{ color: "oklch(0.88 0 0)" }}
               />
               {(search || committedSearch) && (
