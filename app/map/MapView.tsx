@@ -82,7 +82,8 @@ const [mapReady, setMapReady] = useState(false);
   const mapGfCategoryRef = useRef("all");
   const mapPlaceTypeRef  = useRef("all");
   const mapFryerRef      = useRef(false);
-  const mapLabeledRef    = useRef(false);
+  const mapLabeledRef       = useRef(false);
+  const userLocationMarker  = useRef<mapboxgl.Marker | null>(null);
   useEffect(() => {
     mapGfCategoryRef.current = mapGfCategory;
     mapPlaceTypeRef.current  = mapPlaceType;
@@ -91,11 +92,26 @@ const [mapReady, setMapReady] = useState(false);
   }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled]);
   const hasActiveMapFilters = mapGfCategory !== "all" || mapPlaceType !== "all" || mapFryer || mapLabeled;
 
+  function placeUserDot(lng: number, lat: number) {
+    if (!map.current) return;
+    const el = document.createElement("div");
+    el.style.cssText = `
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #4A90E2; border: 3px solid white;
+      box-shadow: 0 0 0 2px rgba(74,144,226,0.35), 0 2px 6px rgba(0,0,0,0.4);
+    `;
+    userLocationMarker.current?.remove();
+    userLocationMarker.current = new mapboxgl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .addTo(map.current);
+  }
+
   function flyToUserLocation() {
     if (!map.current || locating) return;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        placeUserDot(pos.coords.longitude, pos.coords.latitude);
         map.current!.flyTo({
           center: [pos.coords.longitude, pos.coords.latitude],
           zoom: 13,
@@ -243,15 +259,6 @@ const [mapReady, setMapReady] = useState(false);
     if (window.innerWidth >= 768) {
       map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     }
-    // Geolocate control — shows blue dot on tap, works on all screen sizes
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: false,
-        showUserHeading: false,
-      }),
-      "bottom-right"
-    );
     map.current.on("load", () => setMapReady(true));
 
     map.current.on("movestart", () => {
@@ -520,6 +527,7 @@ const [mapReady, setMapReady] = useState(false);
   const locateUser = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        placeUserDot(pos.coords.longitude, pos.coords.latitude);
         autoFetchOnMoveEnd.current = true;
         map.current?.flyTo({
           center: [pos.coords.longitude, pos.coords.latitude],
