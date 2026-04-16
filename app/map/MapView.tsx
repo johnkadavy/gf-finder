@@ -562,6 +562,9 @@ const [mapReady, setMapReady] = useState(false);
 
   const panelContent = selected && (
     <>
+      {/* Top scrollable area — flex-1 so CTAs are always anchored at bottom */}
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+
       {/* Drag handle — mobile only (swipe down to dismiss) */}
       <div
         className="md:hidden flex justify-center pt-3 pb-3 shrink-0 touch-none"
@@ -660,47 +663,16 @@ const [mapReady, setMapReady] = useState(false);
 
         {/* Short summary */}
         {selected.short_summary && (
-          <p className="font-mono text-[11px] leading-relaxed text-[oklch(0.72_0_0)]">
+          <p className="font-mono text-[13px] leading-relaxed text-[oklch(0.72_0_0)]">
             {selected.short_summary}
           </p>
         )}
       </div>
 
-      {/* Spacer — pushes CTAs to the bottom on mobile */}
-      <div className="flex-1 md:hidden" />
-
-      {/* CTA buttons */}
-      <div className="px-5 py-3 flex gap-2.5 shrink-0 border-t md:border-t-0 md:border-b" style={{ borderColor: "oklch(0.16 0 0)" }}>
-        <a
-          href={directionsUrl ?? "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 transition-colors"
-          style={{ backgroundColor: "#FF7444", color: "#000", border: "1px solid #FF7444" }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e8643a")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FF7444")}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-          </svg>
-          Directions
-        </a>
-        <Link
-          href={`/restaurant/${selected.id}?from=map`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
-          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
-        >
-          Details →
-        </Link>
-      </div>
-
-      {/* Scrollable details — desktop only */}
+      {/* Scrollable details — desktop only, inside the top area */}
       <div
         className="hidden md:flex flex-col flex-1 overflow-y-auto p-5 space-y-3.5"
         onClick={(e) => e.stopPropagation()}
-        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
         {selected.address && (
           <div>
@@ -739,6 +711,35 @@ const [mapReady, setMapReady] = useState(false);
             }}
           />
         </div>
+      </div>
+
+      </div>{/* end top scrollable area */}
+
+      {/* CTA buttons — shrink-0, always visible at bottom */}
+      <div className="px-5 py-3 flex gap-2.5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)", backgroundColor: "oklch(0.08 0 0)" }}>
+        <a
+          href={directionsUrl ?? "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 transition-colors"
+          style={{ backgroundColor: "#FF7444", color: "#000", border: "1px solid #FF7444" }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e8643a")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FF7444")}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+          Directions
+        </a>
+        <Link
+          href={`/restaurant/${selected.id}?from=map`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
+          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+        >
+          Details →
+        </Link>
       </div>
 
       {isPreview && (
