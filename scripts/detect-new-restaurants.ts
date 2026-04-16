@@ -138,7 +138,7 @@ async function markSourceRecordsIngested(recordIds: string[]) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        records: batch.map((id) => ({ id, fields: { "ingested?": true } })),
+        records: batch.map((id) => ({ id, fields: { "Ingested? ": true } })),
       }),
     });
     if (!res.ok) throw new Error(`Airtable update error: ${res.status} ${await res.text()}`);
