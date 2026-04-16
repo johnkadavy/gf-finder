@@ -73,6 +73,21 @@ const [mapReady, setMapReady] = useState(false);
 
   const [locating, setLocating] = useState(false);
 
+  // Swipe-to-dismiss for mobile bottom sheet
+  const [sheetDrag, setSheetDrag] = useState(0);
+  const dragStartY = useRef(0);
+  const onHandleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+  const onHandleTouchMove = (e: React.TouchEvent) => {
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0) setSheetDrag(delta);
+  };
+  const onHandleTouchEnd = () => {
+    if (sheetDrag > 80) setSelected(null);
+    setSheetDrag(0);
+  };
+
   // ── Map filters ────────────────────────────────────────────────────────────
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapGfCategory, setMapGfCategory] = useState("all");
@@ -547,9 +562,14 @@ const [mapReady, setMapReady] = useState(false);
 
   const panelContent = selected && (
     <>
-      {/* Drag handle — mobile only */}
-      <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "oklch(0.3 0 0)" }} />
+      {/* Drag handle — mobile only (swipe down to dismiss) */}
+      <div
+        className="md:hidden flex justify-center pt-3 pb-3 shrink-0 touch-none"
+        onTouchStart={onHandleTouchStart}
+        onTouchMove={onHandleTouchMove}
+        onTouchEnd={onHandleTouchEnd}
+      >
+        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "oklch(0.35 0 0)" }} />
       </div>
 
       {/* Close bar — desktop only */}
@@ -587,11 +607,11 @@ const [mapReady, setMapReady] = useState(false);
           {/* Close button — mobile only */}
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
-            className="md:hidden shrink-0 mt-1 p-1"
-            style={{ color: "oklch(0.65 0 0)" }}
+            className="md:hidden shrink-0 p-2 -mr-1"
+            style={{ color: "oklch(0.55 0 0)" }}
             aria-label="Close"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
@@ -625,6 +645,18 @@ const [mapReady, setMapReady] = useState(false);
             </span>
           )}
         </div>
+
+        {/* Rating + Price */}
+        {(selected.google_rating || priceStr(selected.price_level)) && (
+          <div className="flex items-center gap-3 mb-3">
+            {selected.google_rating && (
+              <span className="font-mono text-[10px] text-[oklch(0.65_0_0)]">★ {selected.google_rating}</span>
+            )}
+            {priceStr(selected.price_level) && (
+              <span className="font-mono text-[10px] text-[oklch(0.65_0_0)]">{priceStr(selected.price_level)}</span>
+            )}
+          </div>
+        )}
 
         {/* Short summary */}
         {selected.short_summary && (
@@ -662,20 +694,17 @@ const [mapReady, setMapReady] = useState(false);
       </div>
 
       {/* Scrollable details */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
-        {[
-          selected.google_rating && { label: "Rating",  value: `★ ${selected.google_rating}` },
-          priceStr(selected.price_level) && { label: "Price",   value: priceStr(selected.price_level)! },
-          selected.address       && { label: "Address", value: selected.address },
-        ].filter(Boolean).map((row) => {
-          const { label, value } = row as { label: string; value: string };
-          return (
-            <div key={label}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">{label}</p>
-              <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
-            </div>
-          );
-        })}
+      <div
+        className="flex-1 overflow-y-auto p-5 space-y-3.5"
+        onClick={(e) => e.stopPropagation()}
+        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
+        {selected.address && (
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Address</p>
+            <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{selected.address}</p>
+          </div>
+        )}
         {selected.website && (
           <div onClick={(e) => e.stopPropagation()}>
             <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Website</p>
@@ -767,8 +796,8 @@ const [mapReady, setMapReady] = useState(false);
         style={{
           backgroundColor: "oklch(0.08 0 0)",
           height: "55vh",
-          transform: selected ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.3s ease",
+          transform: selected ? `translateY(${sheetDrag}px)` : "translateY(100%)",
+          transition: sheetDrag > 0 ? "none" : "transform 0.3s ease",
           pointerEvents: selected ? "auto" : "none",
           boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
         }}
