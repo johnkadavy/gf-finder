@@ -102,7 +102,7 @@ export default function RootLayout({
               </p>
             </div>
             <div className="flex gap-8 font-mono text-[10px] uppercase tracking-[0.2em]">
-              <Link href="/blog" className="text-[oklch(0.62_0_0)] hover:text-white transition-colors duration-200">Blog</Link>
+              {/* <Link href="/blog" className="text-[oklch(0.62_0_0)] hover:text-white transition-colors duration-200">Blog</Link> */}
               <a href="#" className="text-[oklch(0.62_0_0)] hover:text-white transition-colors duration-200">Privacy</a>
               <a href="#" className="text-[oklch(0.62_0_0)] hover:text-white transition-colors duration-200">Terms</a>
               <a href="#" className="text-[oklch(0.62_0_0)] hover:text-white transition-colors duration-200">Contact</a>

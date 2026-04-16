@@ -65,7 +65,8 @@ export function Nav() {
         <Link href="/rankings" className={linkClass}>Rankings</Link>
         <Link href="/map" className={linkClass}>Map</Link>
         <Link href="/about" className={linkClass}>About</Link>
-        <Link href="/blog" className={linkClass}>Blog</Link>
+        {/* Blog link hidden until posts exist */}
+        {/* <Link href="/blog" className={linkClass}>Blog</Link> */}
         {loggedIn && (
           <Link href="/account" className={linkClass}>Account</Link>
         )}
