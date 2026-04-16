@@ -666,8 +666,11 @@ const [mapReady, setMapReady] = useState(false);
         )}
       </div>
 
+      {/* Spacer — pushes CTAs to the bottom on mobile */}
+      <div className="flex-1 md:hidden" />
+
       {/* CTA buttons */}
-      <div className="px-5 py-3 flex gap-2.5 border-b shrink-0" style={{ borderColor: "oklch(0.16 0 0)" }}>
+      <div className="px-5 py-3 flex gap-2.5 shrink-0 border-t md:border-t-0 md:border-b" style={{ borderColor: "oklch(0.16 0 0)" }}>
         <a
           href={directionsUrl ?? "#"}
           target="_blank"
@@ -693,9 +696,9 @@ const [mapReady, setMapReady] = useState(false);
         </Link>
       </div>
 
-      {/* Scrollable details */}
+      {/* Scrollable details — desktop only */}
       <div
-        className="flex-1 overflow-y-auto p-5 space-y-3.5"
+        className="hidden md:flex flex-col flex-1 overflow-y-auto p-5 space-y-3.5"
         onClick={(e) => e.stopPropagation()}
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
