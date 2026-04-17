@@ -34,8 +34,8 @@ export function RankingsLocationFilters({
   return (
     <div className="flex flex-wrap gap-3 items-start">
 
-      {/* City typeahead */}
-      <div className="relative">
+      {/* City typeahead — hidden for single-city users */}
+      {cities.length > 0 && <div className="relative">
         <div
           className="flex items-center border"
           style={{
@@ -114,7 +114,7 @@ export function RankingsLocationFilters({
             </div>
           </>
         )}
-      </div>
+      </div>}
 
       {/* Neighborhood typeahead — only when a city is selected and neighborhoods exist */}
       {filters.city !== "all" && neighborhoods.length > 0 && (
