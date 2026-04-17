@@ -10,6 +10,7 @@ interface PlaceDetails {
   id: string;
   displayName?: { text: string };
   formattedAddress?: string;
+  addressComponents?: { longText: string; shortText: string; types: string[] }[];
   location?: { latitude: number; longitude: number };
   websiteUri?: string;
   googleMapsUri?: string;
@@ -43,6 +44,7 @@ const DETAILS_FIELD_MASK = [
   "id",
   "displayName",
   "formattedAddress",
+  "addressComponents",
   "location",
   "websiteUri",
   "googleMapsUri",
@@ -154,12 +156,20 @@ async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails | null> 
   return res.json();
 }
 
+/** Extracts city from Google Places addressComponents (locality type). */
+function extractCity(details: PlaceDetails): string {
+  const components = details.addressComponents ?? [];
+  const locality = components.find((c) => c.types.includes("locality"));
+  return locality?.longText ?? "";
+}
+
 function buildSupabaseRow(
   placeId: string,
   details: PlaceDetails,
-  city: string,
+  cityOverride: string,
   neighborhood: string | null,
 ) {
+  const city = cityOverride.trim() || extractCity(details);
   const exclude = new Set(["establishment", "point_of_interest", "food", "restaurant", "store"]);
   return {
     google_place_id: placeId,
@@ -361,7 +371,7 @@ export async function POST(req: Request) {
         // ── Step 4: Upsert to Supabase ────────────────────────────────────────
         send({ step: "supabase", status: "running" });
 
-        const row = buildSupabaseRow(placeId, details, city.trim(), neighborhood.trim() || null);
+        const row = buildSupabaseRow(placeId, details, city, neighborhood.trim() || null);
         const { data: inserted, error: upsertError } = await supabaseServer
           .from("restaurants")
           .upsert(row, { onConflict: "google_place_id" })
