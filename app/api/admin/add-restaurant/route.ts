@@ -59,9 +59,8 @@ function sleep(ms: number) {
 
 /**
  * Extracts a Google Place ID from a Google Maps URL.
- * Handles:
- *   - data=!...!1s<placeId>!  (standard desktop/share URLs)
- *   - query_place_id=<placeId>  (search result URLs)
+ * Returns null if the URL only contains a CID (hex format) — those need
+ * a text-search fallback since they are not valid Place API identifiers.
  */
 function extractPlaceId(url: string): string | null {
   try {
@@ -69,11 +68,14 @@ function extractPlaceId(url: string): string | null {
 
     // query_place_id param
     const qpi = parsed.searchParams.get("query_place_id");
-    if (qpi) return qpi;
+    if (qpi && isValidPlaceId(qpi)) return qpi;
 
-    // !1s<placeId>! pattern in data param
-    const match = url.match(/[!&?]1s([A-Za-z0-9_:-]+)/);
-    if (match?.[1] && match[1].length > 10) return match[1];
+    // !1s<id>! pattern — modern Maps URLs embed a hex CID here, not a Place ID
+    const match = url.match(/!1s([^!]+)/);
+    if (match?.[1]) {
+      const candidate = decodeURIComponent(match[1]);
+      if (isValidPlaceId(candidate)) return candidate;
+    }
 
     return null;
   } catch {
@@ -81,10 +83,60 @@ function extractPlaceId(url: string): string | null {
   }
 }
 
+/** Place IDs are alphanumeric (often start with ChIJ). CIDs look like 0x…:0x… */
+function isValidPlaceId(id: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(id) && id.length > 10 && !id.startsWith("0x");
+}
+
+/** Extracts the restaurant name from a /maps/place/<name>/ URL. */
+function extractNameFromUrl(url: string): string | null {
+  const match = url.match(/\/maps\/place\/([^/@]+)/);
+  if (!match) return null;
+  return decodeURIComponent(match[1].replace(/\+/g, " "));
+}
+
+/** Extracts lat/lng from the @lat,lng,zoom portion of a Maps URL. */
+function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
+  const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (!match) return null;
+  return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+}
+
+/**
+ * Falls back to Places Text Search when the URL only contains a CID.
+ * Uses the name + coordinates extracted from the URL to find the real Place ID.
+ */
+async function searchPlaceIdByText(
+  name: string,
+  coords: { lat: number; lng: number },
+): Promise<string | null> {
+  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY!,
+      "X-Goog-FieldMask": "places.id,places.displayName",
+    },
+    body: JSON.stringify({
+      textQuery: name,
+      maxResultCount: 1,
+      locationBias: {
+        circle: {
+          center: { latitude: coords.lat, longitude: coords.lng },
+          radius: 300,
+        },
+      },
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.places?.[0]?.id ?? null;
+}
+
 /** Follows redirects (e.g. maps.app.goo.gl) and returns the final URL. */
 async function resolveUrl(url: string): Promise<string> {
   try {
-    const res = await fetch(url, { method: "HEAD", redirect: "follow" });
+    const res = await fetch(url, { redirect: "follow" });
     return res.url || url;
   } catch {
     return url;
@@ -255,11 +307,24 @@ export async function POST(req: Request) {
         // ── Step 1: Resolve URL + extract place ID ───────────────────────────
         send({ step: "parse_url", status: "running" });
 
-        const resolved = url.includes("goo.gl") ? await resolveUrl(url) : url;
-        const placeId = extractPlaceId(resolved);
+        const resolved = url.includes("goo.gl") || url.includes("maps.app")
+          ? await resolveUrl(url)
+          : url;
+
+        let placeId = extractPlaceId(resolved);
+
+        // Fallback: modern Maps URLs embed a hex CID, not a Place ID.
+        // Use name + coordinates from the URL to text-search for the real ID.
+        if (!placeId) {
+          const name = extractNameFromUrl(resolved);
+          const coords = extractCoordsFromUrl(resolved);
+          if (name && coords) {
+            placeId = await searchPlaceIdByText(name, coords);
+          }
+        }
 
         if (!placeId) {
-          send({ step: "parse_url", status: "error", message: "Could not extract a Place ID from this URL. Try copying the full URL from a desktop browser." });
+          send({ step: "parse_url", status: "error", message: "Could not resolve a Place ID from this URL. Try sharing directly from the Google Maps app." });
           return;
         }
         send({ step: "parse_url", status: "done", placeId });
