@@ -1097,22 +1097,7 @@ const [mapReady, setMapReady] = useState(false);
           </div>
         )}
 
-        {/* Near Me — desktop only; mobile uses the FAB */}
-        <button
-          onClick={flyToUserLocation}
-          disabled={locating}
-          title="Use my location"
-          className="hidden md:flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 border transition-colors duration-150 disabled:opacity-40"
-          style={{ borderColor: "oklch(0.28 0 0)", backgroundColor: "oklch(0.1 0 0)", color: "oklch(0.62 0 0)" }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
-          {locating ? "···" : "Near Me"}
-        </button>
-
-        {/* Result count — hidden in preview */}
+{/* Result count — hidden in preview */}
         {!isPreview &&
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.62_0_0)] pl-0.5">
           {committedSearch
