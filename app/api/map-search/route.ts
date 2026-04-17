@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
+import { getCityAccess } from "@/lib/cities";
 import type { MapRestaurant } from "@/app/map/types";
 
 type Row = {
@@ -88,8 +90,14 @@ export async function GET(request: Request) {
   const fryer      = searchParams.get("fryer") === "1";
   const labeled    = searchParams.get("labeled") === "1";
 
+  // Resolve city access
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  const cityAccess = await getCityAccess(user?.id, serverClient);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function applyMapFilters(query: any) {
+    if (!cityAccess.isAdmin) query = query.in("city", cityAccess.allowedCities);
     if (gfCategory) query = query.contains("gf_food_categories", [gfCategory]);
     if (placeType)  query = query.contains("place_type", [placeType]);
     if (fryer)      query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");

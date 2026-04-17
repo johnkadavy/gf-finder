@@ -7,6 +7,7 @@ import { SearchForm } from "./components/SearchForm";
 import { TopRatedSection } from "./components/TopRatedSection";
 import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
 // getGaugeColor is also used in the search results section below
 
 type Signal = {
@@ -99,12 +100,13 @@ export type TopRestaurant = {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
-  const selectedCity = params.city ?? "all";
 
-  const topRatedCity = selectedCity !== "all" ? selectedCity : "New York";
-
-  // Start auth setup early — runs concurrently with all content queries below
-  const serverClientPromise = createClient();
+  // Resolve city access first — gates everything below
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  const cityAccess = await getCityAccess(user?.id, serverClient);
+  const selectedCity = resolveCity(params.city, cityAccess);
+  const topRatedCity = selectedCity !== "all" ? selectedCity : cityAccess.defaultCity;
 
   // Metadata queries in parallel (cities filter + social proof count)
   const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
@@ -112,7 +114,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
   ]);
 
-  const cities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
+  const allDbCities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
+  // City selector shows only allowed cities (empty = hidden for single-city users)
+  const selectableCities = getSelectableCities(cityAccess, allDbCities);
   const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
 
   // Fetch top 50 restaurants for homepage cards + chip filtering
@@ -153,15 +157,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       .ilike("name", `%${query}%`)
       .order("name");
 
-    if (selectedCity !== "all") q = q.eq("city", selectedCity);
+    if (selectedCity !== "all") {
+      q = q.eq("city", selectedCity);
+    } else if (!cityAccess.isAdmin) {
+      q = q.in("city", cityAccess.allowedCities);
+    }
 
     const { data, error } = await q;
     if (!error) restaurants = (data ?? []) as Restaurant[];
   }
 
-  // Auth: serverClientPromise has been running since before our queries
-  const serverClient = await serverClientPromise;
-  const { data: { user } } = await serverClient.auth.getUser();
   let savedIds = new Set<number>();
   if (user && restaurants.length > 0) {
     const { data: saves } = await serverClient
@@ -174,7 +179,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <main className="pt-16">
-      <LocationBanner cities={cities} />
+      <LocationBanner cities={selectableCities} />
       {/* Hero */}
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
         {/* Bottom fade — softens grid into results section */}
@@ -194,7 +199,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </p>
           </div>
 
-          <SearchForm initialQuery={query} cities={cities} selectedCity={selectedCity} />
+          <SearchForm initialQuery={query} cities={selectableCities} selectedCity={selectedCity} />
         </div>
 
       </section>

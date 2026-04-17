@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { isNewRestaurant } from "@/lib/utils";
 import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { ExpandableText } from "./ExpandableText";
 import { normalizeCuisine } from "@/lib/cuisine";
+import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
 
 type SearchParams = {
   city?: string;
@@ -100,10 +102,16 @@ type RankingsPageProps = {
 export default async function RankingsPage({ searchParams }: RankingsPageProps) {
   const params = await searchParams;
 
+  // Resolve city access before building filters
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  const cityAccess = await getCityAccess(user?.id, serverClient);
+  const resolvedCity = resolveCity(params.city, cityAccess);
+
   const validPlaceTypes   = new Set(PLACE_TYPE_OPTIONS.map((o) => o.value));
   const validGfCategories = new Set(GF_CATEGORY_OPTIONS.map((o) => o.value));
   const filters: Filters = {
-    city:         params.city         ?? "all",
+    city:         resolvedCity,
     neighborhood: params.neighborhood ?? "all",
     cuisine:      params.cuisine      ?? "all",
     placeType:    validPlaceTypes.has(params.placeType ?? "")     ? (params.placeType   ?? "all") : "all",
@@ -116,14 +124,17 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
 
-  // Build query for cities/neighborhoods/cuisines (fetch all scored restaurants for filter options)
-  const { data: allForFilters } = await supabase
+  // Build query for cities/neighborhoods/cuisines — scoped to user's allowed cities
+  let filterMeta = supabase
     .from("restaurants")
     .select("city, neighborhood, cuisine")
     .not("score", "is", null);
+  if (!cityAccess.isAdmin) filterMeta = filterMeta.in("city", cityAccess.allowedCities);
+  const { data: allForFilters } = await filterMeta;
 
   const allRows = (allForFilters ?? []) as { city: string; neighborhood: string | null; cuisine: string | null }[];
-  const cities = Array.from(new Set(allRows.map((r) => r.city))).sort();
+  const allDbCities = Array.from(new Set(allRows.map((r) => r.city))).sort();
+  const selectableCities = getSelectableCities(cityAccess, allDbCities);
   const neighborhoods =
     filters.city === "all"
       ? []
@@ -147,7 +158,11 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     .not("score", "is", null)
     .order("score", { ascending: false });
 
-  if (filters.city !== "all")         query = query.eq("city", filters.city);
+  if (filters.city !== "all") {
+    query = query.eq("city", filters.city);
+  } else if (!cityAccess.isAdmin) {
+    query = query.in("city", cityAccess.allowedCities);
+  }
   if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
   if (filters.cuisine !== "all") {
     const matchingRaw = Array.from(new Set(rawCuisines.filter((c) => normalizeCuisine(c) === filters.cuisine)));
@@ -198,7 +213,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           </h1>
 
           <RankingsLocationFilters
-            cities={cities}
+            cities={selectableCities}
             neighborhoods={neighborhoods}
             filters={filters}
           />

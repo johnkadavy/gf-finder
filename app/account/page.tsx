@@ -34,15 +34,16 @@ export default async function AccountPage({ searchParams }: PageProps) {
   const cityFilter = params.city ?? "all";
   const cuisineFilter = params.cuisine ?? "all";
 
-  // Fetch profile (share token + display name + admin flag)
+  // Fetch profile (share token + display name + admin flag + city access)
   const { data: profile } = await serverClient
     .from("profiles")
-    .select("share_token, display_name, is_admin")
+    .select("share_token, display_name, is_admin, allowed_cities, default_city")
     .eq("user_id", user.id)
     .single();
   const shareToken = profile?.share_token ?? null;
   const displayName = profile?.display_name ?? null;
   const isAdmin = profile?.is_admin ?? false;
+  const allowedCities: string[] = profile?.allowed_cities ?? ["New York"];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trycleanplate.com";
   const shareUrl = shareToken ? `${siteUrl}/map/${shareToken}` : null;
 
@@ -110,6 +111,11 @@ export default async function AccountPage({ searchParams }: PageProps) {
             Account
           </p>
           <p className="font-mono text-[13px] text-[oklch(0.72_0_0)]">{user.email}</p>
+          <p className="font-mono text-[10px] text-[oklch(0.4_0_0)] mt-1">
+            {isAdmin
+              ? "Access: All cities"
+              : `Access: ${allowedCities.join(" · ")}`}
+          </p>
         </div>
         <form action="/auth/signout" method="post">
           <button
