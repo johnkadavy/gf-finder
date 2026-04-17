@@ -7,6 +7,7 @@ import { normalizeCuisine } from "@/lib/cuisine";
 import { AccountFilters } from "./AccountFilters";
 import { CopyButton } from "@/app/components/CopyButton";
 import { DisplayNameForm } from "./DisplayNameForm";
+import { AddRestaurantForm } from "./AddRestaurantForm";
 
 type SavedRestaurant = {
   id: number;
@@ -33,14 +34,15 @@ export default async function AccountPage({ searchParams }: PageProps) {
   const cityFilter = params.city ?? "all";
   const cuisineFilter = params.cuisine ?? "all";
 
-  // Fetch profile (share token + display name)
+  // Fetch profile (share token + display name + admin flag)
   const { data: profile } = await serverClient
     .from("profiles")
-    .select("share_token, display_name")
+    .select("share_token, display_name, is_admin")
     .eq("user_id", user.id)
     .single();
   const shareToken = profile?.share_token ?? null;
   const displayName = profile?.display_name ?? null;
+  const isAdmin = profile?.is_admin ?? false;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trycleanplate.com";
   const shareUrl = shareToken ? `${siteUrl}/map/${shareToken}` : null;
 
@@ -118,6 +120,9 @@ export default async function AccountPage({ searchParams }: PageProps) {
           </button>
         </form>
       </div>
+
+      {/* Add Restaurant — admin only */}
+      {isAdmin && <AddRestaurantForm />}
 
       {/* My Map */}
       {shareUrl && (
