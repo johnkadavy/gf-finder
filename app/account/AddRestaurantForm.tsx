@@ -30,6 +30,9 @@ export function AddRestaurantForm() {
   const [running, setRunning]       = useState(false);
   const [result, setResult]         = useState<{ name: string; id: number; score: number | null } | null>(null);
   const [fatalError, setFatalError] = useState<string | null>(null);
+  const [timedOutPlaceId, setTimedOutPlaceId] = useState<string | null>(null);
+  const [retrying, setRetrying]     = useState(false);
+  const [retryResult, setRetryResult] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   function updateStep(key: string, patch: Partial<Step>) {
@@ -44,6 +47,8 @@ export function AddRestaurantForm() {
     setSteps(INITIAL_STEPS);
     setResult(null);
     setFatalError(null);
+    setTimedOutPlaceId(null);
+    setRetryResult(null);
     setRunning(true);
 
     const abort = new AbortController();
@@ -84,7 +89,10 @@ export function AddRestaurantForm() {
           switch (event.step) {
             case "parse_url":
               if (event.status === "running") updateStep("parse_url", { status: "running" });
-              if (event.status === "done") updateStep("parse_url", { status: "done", detail: event.placeId });
+              if (event.status === "done") {
+                updateStep("parse_url", { status: "done", detail: event.placeId });
+                setTimedOutPlaceId(event.placeId); // keep for retry if enrichment times out
+              }
               if (event.status === "error") updateStep("parse_url", { status: "error", detail: event.message });
               break;
 
@@ -117,7 +125,7 @@ export function AddRestaurantForm() {
             case "enrichment":
               if (event.status === "pending") updateStep("enrichment", { status: "running", detail: `Attempt ${event.attempt}/${event.max}…` });
               if (event.status === "done") updateStep("enrichment", { status: "done", detail: `Ready after attempt ${event.attempt}` });
-              if (event.status === "timeout") updateStep("enrichment", { status: "timeout", detail: "Timed out — run sync manually later" });
+              if (event.status === "timeout") updateStep("enrichment", { status: "timeout", detail: "Timed out — use Retry Sync below" });
               break;
 
             case "sync":
@@ -149,6 +157,35 @@ export function AddRestaurantForm() {
   function handleCancel() {
     abortRef.current?.abort();
     setRunning(false);
+  }
+
+  async function handleRetrySync() {
+    if (!timedOutPlaceId || retrying) return;
+    setRetrying(true);
+    setRetryResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-restaurant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ placeId: timedOutPlaceId }),
+      });
+      const data = await res.json();
+      if (data.status === "synced") {
+        setRetryResult(`Synced${data.score != null ? ` — Score: ${Math.round(data.score)}` : ""}`);
+        updateStep("enrichment", { status: "done", detail: "Ready (retry)" });
+        updateStep("sync", { status: "done", detail: data.score != null ? `Score: ${Math.round(data.score)}` : undefined });
+      } else if (data.status === "not_ready") {
+        setRetryResult("Still not ready — try again in a moment.");
+      } else if (data.status === "not_found") {
+        setRetryResult("Record not found in Airtable.");
+      } else {
+        setRetryResult(data.message ?? "Unknown error.");
+      }
+    } catch {
+      setRetryResult("Request failed.");
+    } finally {
+      setRetrying(false);
+    }
   }
 
   const anyStarted = steps.some((s) => s.status !== "idle");
@@ -257,11 +294,27 @@ export function AddRestaurantForm() {
             </p>
           )}
 
-          {/* Timeout notice */}
+          {/* Timeout — retry button */}
           {steps.find((s) => s.key === "enrichment" && s.status === "timeout") && (
-            <p className="font-mono text-[11px] text-[oklch(0.55_0_0)] pt-1">
-              Enrichment took too long. Run <code className="text-[oklch(0.65_0_0)]">sync-airtable.ts</code> manually once Airtable finishes.
-            </p>
+            <div className="pt-2 flex items-center gap-3 flex-wrap">
+              <p className="font-mono text-[11px] text-[oklch(0.5_0_0)]">
+                Airtable enrichment is still in progress.
+              </p>
+              <button
+                type="button"
+                onClick={handleRetrySync}
+                disabled={retrying}
+                className="font-mono text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors disabled:opacity-40"
+                style={{ borderColor: "oklch(0.35 0 0)", color: "oklch(0.75 0 0)" }}
+              >
+                {retrying ? "Checking…" : "Retry Sync"}
+              </button>
+              {retryResult && (
+                <span className="font-mono text-[11px]" style={{ color: retryResult.startsWith("Synced") ? "#7ECF9A" : "oklch(0.55 0 0)" }}>
+                  {retryResult}
+                </span>
+              )}
+            </div>
           )}
 
           {/* Fatal error */}

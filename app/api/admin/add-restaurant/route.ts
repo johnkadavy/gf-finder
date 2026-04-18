@@ -163,13 +163,21 @@ function extractCity(details: PlaceDetails): string {
   return locality?.longText ?? "";
 }
 
+/** Extracts neighborhood from Google Places addressComponents. */
+function extractNeighborhood(details: PlaceDetails): string | null {
+  const components = details.addressComponents ?? [];
+  const hood = components.find((c) => c.types.includes("neighborhood"));
+  return hood?.longText ?? null;
+}
+
 function buildSupabaseRow(
   placeId: string,
   details: PlaceDetails,
   cityOverride: string,
-  neighborhood: string | null,
+  neighborhoodOverride: string | null,
 ) {
   const city = cityOverride.trim() || extractCity(details);
+  const neighborhood = neighborhoodOverride ?? extractNeighborhood(details);
   const exclude = new Set(["establishment", "point_of_interest", "food", "restaurant", "store"]);
   return {
     google_place_id: placeId,
@@ -206,7 +214,7 @@ const AT_HEADERS = () => ({
 });
 
 /** Returns the existing Airtable record ID for a place, or null if not found. */
-async function findAirtableRecord(placeId: string): Promise<string | null> {
+export async function findAirtableRecord(placeId: string): Promise<string | null> {
   const url = new URL(`https://api.airtable.com/v0/${AT_BASE()}/${AT_TABLE()}`);
   url.searchParams.set("filterByFormula", `({google_place_id}='${placeId}')`);
   url.searchParams.append("fields[]", "google_place_id");
@@ -252,7 +260,7 @@ async function createAirtableRecord(
 }
 
 /** Fetches a single Airtable record by its record ID. */
-async function fetchAirtableRecord(
+export async function fetchAirtableRecord(
   recordId: string,
 ): Promise<Record<string, string | AirtableAIField> | null> {
   const res = await fetch(
@@ -270,7 +278,7 @@ function getAIFieldValue(field: string | AirtableAIField | undefined): string | 
   return field.state === "generated" ? (field.value ?? null) : null;
 }
 
-function isEnriched(fields: Record<string, string | AirtableAIField>): boolean {
+export function isEnriched(fields: Record<string, string | AirtableAIField>): boolean {
   const dossier = fields["JSON dossier"];
   if (!dossier || typeof dossier === "string") return !!dossier;
   return dossier.state === "generated" && dossier.value != null;
@@ -281,6 +289,72 @@ function parseCsv(field: string | AirtableAIField | undefined): string[] | null 
   if (!raw) return null;
   const vals = raw.split(",").map((s) => s.trim()).filter(Boolean);
   return vals.length > 0 ? vals : null;
+}
+
+// ── Shared sync helper ────────────────────────────────────────────────────────
+
+/**
+ * Pulls the enriched dossier from an Airtable record and writes it to Supabase.
+ * Returns the score on success, or throws on error.
+ * Used by both the main add flow and the retry endpoint.
+ */
+export async function syncAirtableRecordToSupabase(
+  placeId: string,
+  fields: Record<string, string | AirtableAIField>,
+): Promise<number | null> {
+  const dossierText = getAIFieldValue(fields["JSON dossier"]);
+  if (!dossierText) throw new Error("Dossier field is empty.");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let dossier: any;
+  try {
+    dossier = JSON.parse(dossierText);
+  } catch {
+    throw new Error("Dossier JSON is invalid.");
+  }
+
+  const sickText = getAIFieldValue(fields["Sick reports JSON"]);
+  if (sickText) {
+    try {
+      const sickData = JSON.parse(sickText);
+      dossier.reviews = {
+        ...dossier.reviews,
+        sick_reports_recent: sickData.sick_reports_recent ?? 0,
+        sick_reports_details: sickData.sick_reports_details ?? [],
+      };
+    } catch { /* skip */ }
+  }
+
+  const cuisine = dossier?.restaurant?.cuisine ?? null;
+  const placeTypes = parseCsv(fields["place_type"]);
+  const gfFoodCategories = parseCsv(fields["gf_food_categories"]);
+
+  const { error: syncError } = await supabaseServer
+    .from("restaurants")
+    .update({
+      dossier,
+      enriched_at: new Date().toISOString(),
+      ...(cuisine ? { cuisine } : {}),
+      ...(placeTypes ? { place_type: placeTypes } : {}),
+      ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
+    })
+    .eq("google_place_id", placeId);
+
+  if (syncError) throw new Error(syncError.message);
+
+  const { data: forScore } = await supabaseServer
+    .from("restaurants")
+    .select("id, dossier, verified_data")
+    .eq("google_place_id", placeId)
+    .single();
+
+  if (!forScore) return null;
+
+  const score = calculateScore(forScore.dossier, forScore.verified_data as VerifiedData | undefined);
+  if (score !== null) {
+    await supabaseServer.from("restaurants").update({ score }).eq("id", forScore.id);
+  }
+  return score;
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -429,73 +503,18 @@ export async function POST(req: Request) {
         // ── Step 7: Sync enriched data back to Supabase ───────────────────────
         send({ step: "sync", status: "running" });
 
-        const fields = await fetchAirtableRecord(airtableRecordId);
-        if (!fields) {
+        const syncFields = await fetchAirtableRecord(airtableRecordId);
+        if (!syncFields) {
           send({ step: "sync", status: "error", message: "Could not re-fetch Airtable record for sync." });
           return;
         }
 
-        const dossierText = getAIFieldValue(fields["JSON dossier"]);
-        if (!dossierText) {
-          send({ step: "sync", status: "error", message: "Dossier field is empty after enrichment." });
-          return;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let dossier: any;
-        try {
-          dossier = JSON.parse(dossierText);
-        } catch {
-          send({ step: "sync", status: "error", message: "Dossier JSON is invalid." });
-          return;
-        }
-
-        // Merge sick reports if present
-        const sickText = getAIFieldValue(fields["Sick reports JSON"]);
-        if (sickText) {
-          try {
-            const sickData = JSON.parse(sickText);
-            dossier.reviews = {
-              ...dossier.reviews,
-              sick_reports_recent: sickData.sick_reports_recent ?? 0,
-              sick_reports_details: sickData.sick_reports_details ?? [],
-            };
-          } catch { /* skip */ }
-        }
-
-        const cuisine = dossier?.restaurant?.cuisine ?? null;
-        const placeTypes = parseCsv(fields["place_type"]);
-        const gfFoodCategories = parseCsv(fields["gf_food_categories"]);
-
-        const { error: syncError } = await supabaseServer
-          .from("restaurants")
-          .update({
-            dossier,
-            enriched_at: new Date().toISOString(),
-            ...(cuisine ? { cuisine } : {}),
-            ...(placeTypes ? { place_type: placeTypes } : {}),
-            ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
-          })
-          .eq("google_place_id", placeId);
-
-        if (syncError) {
-          send({ step: "sync", status: "error", message: syncError.message });
-          return;
-        }
-
-        // Calculate and write score
-        const { data: forScore } = await supabaseServer
-          .from("restaurants")
-          .select("id, dossier, verified_data")
-          .eq("google_place_id", placeId)
-          .single();
-
         let score: number | null = null;
-        if (forScore) {
-          score = calculateScore(forScore.dossier, forScore.verified_data as VerifiedData | undefined);
-          if (score !== null) {
-            await supabaseServer.from("restaurants").update({ score }).eq("id", forScore.id);
-          }
+        try {
+          score = await syncAirtableRecordToSupabase(placeId, syncFields);
+        } catch (err) {
+          send({ step: "sync", status: "error", message: err instanceof Error ? err.message : "Sync failed." });
+          return;
         }
 
         send({ step: "sync", status: "done", score });
