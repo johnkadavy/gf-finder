@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, type VerifiedData } from "@/lib/score";
+import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 
 export const maxDuration = 60;
 
@@ -177,7 +178,13 @@ function buildSupabaseRow(
   neighborhoodOverride: string | null,
 ) {
   const city = cityOverride.trim() || extractCity(details);
-  const neighborhood = neighborhoodOverride ?? extractNeighborhood(details);
+  // Priority: manual form input → Google addressComponents → NTA polygon lookup
+  const neighborhood =
+    neighborhoodOverride ??
+    extractNeighborhood(details) ??
+    (details.location
+      ? lookupNycNeighborhood(details.location.latitude, details.location.longitude)
+      : null);
   const exclude = new Set(["establishment", "point_of_interest", "food", "restaurant", "store"]);
   return {
     google_place_id: placeId,

@@ -29,7 +29,7 @@ type CategoryDef = {
 const CATEGORIES: Record<string, CategoryDef> = {
   "pizza":       { type: "gf_food",    value: "gf_pizza",        label: "GF Pizza",     labelPlural: "GF Pizza Spots"           },
   "pasta":       { type: "gf_food",    value: "gf_pasta",        label: "GF Pasta",     labelPlural: "GF Pasta Restaurants"     },
-  "bakery":      { type: "gf_food",    value: "gf_bread_bakery", label: "GF Bakery",    labelPlural: "GF Bakeries"              },
+  "bakery":      { type: "gf_food",    value: "gf_baked_goods",  label: "GF Baked Goods", labelPlural: "GF Baked Goods Spots"   },
   "breakfast":   { type: "gf_food",    value: "gf_breakfast",    label: "GF Breakfast", labelPlural: "GF Breakfast Spots"       },
   "cafe":        { type: "place_type", value: "cafe",            label: "Café",         labelPlural: "Cafés"                    },
   "bar":         { type: "place_type", value: "bar",             label: "Bar",          labelPlural: "Bars"                     },

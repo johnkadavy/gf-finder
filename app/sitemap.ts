@@ -10,7 +10,7 @@ function toSlug(s: string): string {
 const CATEGORY_SLUGS = ["pizza", "pasta", "bakery", "breakfast", "cafe", "bar", "fine-dining"];
 
 const GF_FOOD_MAP: Record<string, string> = {
-  pizza: "gf_pizza", pasta: "gf_pasta", bakery: "gf_bread_bakery", breakfast: "gf_breakfast",
+  pizza: "gf_pizza", pasta: "gf_pasta", bakery: "gf_baked_goods", breakfast: "gf_breakfast",
 };
 const PLACE_TYPE_MAP: Record<string, string> = {
   cafe: "cafe", bar: "bar", "fine-dining": "fine_dining",

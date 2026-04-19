@@ -238,7 +238,7 @@ export function AddRestaurantForm() {
               type="text"
               value={neighborhood}
               onChange={(e) => setNeighborhood(e.target.value)}
-              placeholder="West Village"
+              placeholder="West Village (required)"
               disabled={running}
               className="w-full font-mono text-[13px] px-3 py-2 border bg-transparent outline-none disabled:opacity-40"
               style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.85 0 0)" }}

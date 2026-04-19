@@ -16,7 +16,7 @@ const GF_CHIPS: Chip[] = [
   { id: "gf_fryer",        label: "GF Fryer",       filter: (r) => r.hasGfFryer },
   { id: "gf_pizza",        label: "GF Pizza",       filter: (r) => r.gf_food_categories?.includes("gf_pizza") ?? false },
   { id: "gf_pasta",        label: "GF Pasta",       filter: (r) => r.gf_food_categories?.includes("gf_pasta") ?? false },
-  { id: "gf_bread_bakery", label: "GF Bakery",      filter: (r) => r.gf_food_categories?.includes("gf_bread_bakery") ?? false },
+  { id: "gf_baked_goods",  label: "GF Baked Goods", filter: (r) => r.gf_food_categories?.includes("gf_baked_goods") ?? false },
   { id: "gf_fried_items",  label: "GF Fried",       filter: (r) => r.gf_food_categories?.includes("gf_fried_items") ?? false },
   { id: "gf_desserts",     label: "GF Desserts",    filter: (r) => r.gf_food_categories?.includes("gf_desserts") ?? false },
 ];
