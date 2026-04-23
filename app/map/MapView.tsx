@@ -94,18 +94,21 @@ const [mapReady, setMapReady] = useState(false);
   const [mapPlaceType, setMapPlaceType] = useState("all");
   const [mapFryer, setMapFryer] = useState(false);
   const [mapLabeled, setMapLabeled] = useState(false);
+  const [mapCuisine, setMapCuisine] = useState("");
   const mapGfCategoryRef = useRef("all");
   const mapPlaceTypeRef  = useRef("all");
   const mapFryerRef      = useRef(false);
-  const mapLabeledRef       = useRef(false);
+  const mapLabeledRef    = useRef(false);
+  const mapCuisineRef    = useRef("");
   const userLocationMarker  = useRef<mapboxgl.Marker | null>(null);
   useEffect(() => {
     mapGfCategoryRef.current = mapGfCategory;
     mapPlaceTypeRef.current  = mapPlaceType;
     mapFryerRef.current      = mapFryer;
     mapLabeledRef.current    = mapLabeled;
-  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled]);
-  const hasActiveMapFilters = scoreFilter !== "all" || mapGfCategory !== "all" || mapPlaceType !== "all" || mapFryer || mapLabeled;
+    mapCuisineRef.current    = mapCuisine;
+  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled, mapCuisine]);
+  const hasActiveMapFilters = scoreFilter !== "all" || mapGfCategory !== "all" || mapPlaceType !== "all" || mapFryer || mapLabeled || !!mapCuisine;
 
   function placeUserDot(lng: number, lat: number) {
     if (!map.current) return;
@@ -151,6 +154,7 @@ const [mapReady, setMapReady] = useState(false);
   // Autocomplete
   type Suggestion = { id: number; name: string; city: string; neighborhood: string | null; lat: number; lng: number; cuisine: string | null; google_rating: number | null; price_level: number | null; address: string | null; website_url: string | null; score: number | null };
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [cuisineSuggestions, setCuisineSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -216,6 +220,7 @@ const [mapReady, setMapReady] = useState(false);
     if (mapPlaceTypeRef.current  !== "all") params.set("placeType",   mapPlaceTypeRef.current);
     if (mapFryerRef.current)               params.set("fryer", "1");
     if (mapLabeledRef.current)             params.set("labeled", "1");
+    if (mapCuisineRef.current)             params.set("cuisine",  mapCuisineRef.current);
     setShowSearchArea(false);
     setIsSearching(true);
     try {
@@ -242,6 +247,7 @@ const [mapReady, setMapReady] = useState(false);
     if (mapPlaceTypeRef.current  !== "all") params.set("placeType",   mapPlaceTypeRef.current);
     if (mapFryerRef.current)               params.set("fryer", "1");
     if (mapLabeledRef.current)             params.set("labeled", "1");
+    if (mapCuisineRef.current)             params.set("cuisine",  mapCuisineRef.current);
     setShowSearchArea(false);
     setIsSearching(true);
     try {
@@ -309,7 +315,7 @@ const [mapReady, setMapReady] = useState(false);
     else fetchViewport();
     // intentionally excludes mapReady/fetchViewport/fetchSearch — only fires on filter changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled]);
+  }, [mapGfCategory, mapPlaceType, mapFryer, mapLabeled, mapCuisine]);
 
   const isVisible = useCallback((r: MapRestaurant) => {
     if (!meetsScoreFilter(r, scoreFilter)) return false;
@@ -416,6 +422,7 @@ const [mapReady, setMapReady] = useState(false);
         mapPlaceTypeRef.current  !== "all" ? `&placeType=${encodeURIComponent(mapPlaceTypeRef.current)}`   : "",
         mapFryerRef.current  ? "&fryer=1"   : "",
         mapLabeledRef.current ? "&labeled=1" : "",
+        mapCuisineRef.current ? `&cuisine=${encodeURIComponent(mapCuisineRef.current)}` : "",
       ].join("");
       const [searchRes, geoRes] = await Promise.all([
         fetch(`/api/map-search?q=${encodeURIComponent(q)}${boundsParams}${filterParams}`),
@@ -468,7 +475,7 @@ const [mapReady, setMapReady] = useState(false);
   // Fetch autocomplete suggestions as user types, scoped to a 3x-expanded viewport
   const fetchSuggestions = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!q) { setSuggestions([]); setShowSuggestions(false); return; }
+    if (!q) { setSuggestions([]); setCuisineSuggestions([]); setShowSuggestions(false); return; }
     debounceRef.current = setTimeout(async () => {
       try {
         const params = new URLSearchParams({ q });
@@ -487,11 +494,15 @@ const [mapReady, setMapReady] = useState(false);
         }
         const res = await fetch(`/api/suggestions?${params}`);
         const data = await res.json();
-        setSuggestions(data);
-        setShowSuggestions(data.length > 0);
+        const restaurants: Suggestion[] = data.restaurants ?? [];
+        const cuisines: string[] = data.cuisines ?? [];
+        setSuggestions(restaurants);
+        setCuisineSuggestions(cuisines);
+        setShowSuggestions(restaurants.length > 0 || cuisines.length > 0);
         setActiveIndex(-1);
       } catch {
         setSuggestions([]);
+        setCuisineSuggestions([]);
         setShowSuggestions(false);
       }
     }, 200);
@@ -533,6 +544,35 @@ const [mapReady, setMapReady] = useState(false);
     setSelected(restaurant);
     map.current?.flyTo({ center: [restaurant.lng, restaurant.lat], zoom: 15, duration: 900 });
   }, []);
+
+  const selectCuisineSuggestion = useCallback((cuisine: string) => {
+    setSuggestions([]);
+    setCuisineSuggestions([]);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    setSearch("");
+    setCommittedSearch("");
+    searchMode.current = false;
+    setShowSearchArea(false);
+    setSelected(null);
+
+    // Reset all other filters (sync refs immediately so fetchViewport sees correct values)
+    setMapGfCategory("all");
+    setMapPlaceType("all");
+    setMapFryer(false);
+    setMapLabeled(false);
+    mapGfCategoryRef.current = "all";
+    mapPlaceTypeRef.current  = "all";
+    mapFryerRef.current      = false;
+    mapLabeledRef.current    = false;
+
+    // Set cuisine filter (ref + state)
+    setMapCuisine(cuisine);
+    mapCuisineRef.current = cuisine;
+
+    // Fetch immediately (refs are up to date)
+    fetchViewport();
+  }, [fetchViewport]);
 
   const visibleCount = restaurants.filter(isVisible).length;
 
@@ -854,16 +894,19 @@ const [mapReady, setMapReady] = useState(false);
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); fetchSuggestions(e.target.value); }}
                 onKeyDown={(e) => {
+                  const totalSuggestions = cuisineSuggestions.length + suggestions.length;
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+                    setActiveIndex((i) => Math.min(i + 1, totalSuggestions - 1));
                   } else if (e.key === "ArrowUp") {
                     e.preventDefault();
                     setActiveIndex((i) => Math.max(i - 1, -1));
                   } else if (e.key === "Enter") {
                     e.preventDefault();
-                    if (activeIndex >= 0 && suggestions[activeIndex]) {
-                      selectSuggestion(suggestions[activeIndex]);
+                    if (activeIndex >= 0 && activeIndex < cuisineSuggestions.length) {
+                      selectCuisineSuggestion(cuisineSuggestions[activeIndex]);
+                    } else if (activeIndex >= cuisineSuggestions.length && suggestions[activeIndex - cuisineSuggestions.length]) {
+                      selectSuggestion(suggestions[activeIndex - cuisineSuggestions.length]);
                     } else {
                       setShowSuggestions(false);
                       commitSearch(search.trim());
@@ -873,14 +916,14 @@ const [mapReady, setMapReady] = useState(false);
                     if (!committedSearch) { setSearch(""); commitSearch(""); }
                   }
                 }}
-                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                placeholder="Search restaurants…"
+                onFocus={() => (suggestions.length > 0 || cuisineSuggestions.length > 0) && setShowSuggestions(true)}
+                placeholder={mapCuisine ? `Filtering: ${mapCuisine}` : "Search restaurants…"}
                 className="bg-transparent outline-none w-full font-mono text-[16px] md:text-[13px] placeholder:text-[oklch(0.52_0_0)] min-w-0"
                 style={{ color: "oklch(0.88 0 0)" }}
               />
-              {(search || committedSearch) && (
+              {(search || committedSearch || mapCuisine) && (
                 <button
-                  onClick={() => { setSearch(""); setSuggestions([]); setShowSuggestions(false); commitSearch(""); }}
+                  onClick={() => { setSearch(""); setSuggestions([]); setCuisineSuggestions([]); setShowSuggestions(false); setMapCuisine(""); mapCuisineRef.current = ""; commitSearch(""); }}
                   className="text-[oklch(0.65_0_0)] hover:text-white transition-colors text-[11px] shrink-0"
                 >✕</button>
               )}
@@ -895,21 +938,39 @@ const [mapReady, setMapReady] = useState(false);
           </div>
 
           {/* Suggestions dropdown */}
-          {showSuggestions && (
+          {showSuggestions && (cuisineSuggestions.length > 0 || suggestions.length > 0) && (
             <div
               className="absolute top-full left-0 right-0 z-50 border border-t-0 overflow-hidden"
               style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
             >
+              {cuisineSuggestions.map((c, i) => (
+                <button
+                  key={c}
+                  type="button"
+                  onMouseDown={() => selectCuisineSuggestion(c)}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 border-b transition-colors duration-100"
+                  style={{
+                    borderColor: "oklch(0.18 0 0)",
+                    backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                  }}
+                >
+                  <span className="font-mono text-[9px] uppercase tracking-[0.15em] shrink-0" style={{ color: "oklch(0.5 0 0)" }}>Cuisine</span>
+                  <span className="font-mono text-[12px] text-white truncate">
+                    {highlightMatch(c, search)}
+                  </span>
+                </button>
+              ))}
               {suggestions.map((s, i) => (
                 <button
                   key={s.id}
                   type="button"
                   onMouseDown={() => selectSuggestion(s)}
-                  onMouseEnter={() => setActiveIndex(i)}
+                  onMouseEnter={() => setActiveIndex(cuisineSuggestions.length + i)}
                   className="w-full text-left px-3 py-2.5 flex items-baseline justify-between gap-3 border-b transition-colors duration-100"
                   style={{
                     borderColor: "oklch(0.18 0 0)",
-                    backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                    backgroundColor: cuisineSuggestions.length + i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
                   }}
                 >
                   <span className="font-mono text-[12px] text-white truncate">
@@ -1006,6 +1067,19 @@ const [mapReady, setMapReady] = useState(false);
             className="border overflow-hidden"
             style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)" }}
           >
+            {/* Active cuisine */}
+            {mapCuisine && (
+              <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Cuisine</p>
+                <button
+                  onClick={() => { setMapCuisine(""); mapCuisineRef.current = ""; fetchViewport(); }}
+                  className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150 flex items-center gap-1.5"
+                  style={{ borderColor: "#FF744460", backgroundColor: "#FF744420", color: "#FF7444" }}
+                >
+                  {mapCuisine} <span className="opacity-70">×</span>
+                </button>
+              </div>
+            )}
             {/* Score */}
             <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
               <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Score</p>

@@ -89,6 +89,7 @@ export async function GET(request: Request) {
   const placeType  = searchParams.get("placeType")  ?? "";
   const fryer      = searchParams.get("fryer") === "1";
   const labeled    = searchParams.get("labeled") === "1";
+  const cuisine    = searchParams.get("cuisine") ?? "";
 
   // Resolve city access
   const serverClient = await createClient();
@@ -102,6 +103,7 @@ export async function GET(request: Request) {
     if (placeType)  query = query.contains("place_type", [placeType]);
     if (fryer)      query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
     if (labeled)    query = query.eq("dossier->menu->>gf_labeling", "clear");
+    if (cuisine)    query = query.ilike("cuisine", cuisine);
     return query;
   }
 
