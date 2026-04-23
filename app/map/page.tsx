@@ -1,9 +1,5 @@
-import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase-server";
-
-const MapView = dynamic(() => import("./MapView").then((m) => ({ default: m.MapView })), {
-  ssr: false,
-});
+import { MapViewLoader } from "./MapViewLoader";
 
 export default async function MapPage() {
   const supabase = await createClient();
@@ -17,5 +13,5 @@ export default async function MapPage() {
         .then(({ data }) => (data ?? []).map((r) => r.restaurant_id))
     : [];
 
-  return <MapView initialSavedIds={savedIds} isPreview={!user} />;
+  return <MapViewLoader initialSavedIds={savedIds} isPreview={!user} />;
 }
