@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { getCityAccess } from "@/lib/cities";
+import { normalizeCuisine } from "@/lib/cuisine";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -67,9 +68,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ restaurants: [], cuisines: [] }, { status: 500 });
   }
 
-  // Deduplicate cuisines and sort alphabetically
+  // Normalize to canonical categories, deduplicate, filter "Other", sort
   const cuisines = [...new Set(
-    (cuisineData ?? []).map((r: { cuisine: string }) => r.cuisine).filter(Boolean)
+    (cuisineData ?? [])
+      .map((r: { cuisine: string }) => r.cuisine)
+      .filter(Boolean)
+      .map((c: string) => normalizeCuisine(c))
+      .filter((c: string) => c !== "Other")
   )].sort().slice(0, 4) as string[];
 
   return NextResponse.json({ restaurants: restaurantData ?? [], cuisines });

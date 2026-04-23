@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { getCityAccess } from "@/lib/cities";
+import { normalizeCuisine } from "@/lib/cuisine";
 import type { MapRestaurant } from "@/app/map/types";
 
 type Row = {
@@ -96,6 +97,19 @@ export async function GET(request: Request) {
   const { data: { user } } = await serverClient.auth.getUser();
   const cityAccess = await getCityAccess(user?.id, serverClient);
 
+  // Resolve raw cuisine values that map to the requested canonical category
+  let cuisineRawValues: string[] = [];
+  if (cuisine) {
+    let cq = supabase.from("restaurants").select("cuisine").not("cuisine", "is", null);
+    if (!cityAccess.isAdmin) cq = cq.in("city", cityAccess.allowedCities);
+    const { data: cData } = await cq;
+    cuisineRawValues = [...new Set(
+      (cData ?? [])
+        .map((r: { cuisine: string }) => r.cuisine)
+        .filter((c: string) => normalizeCuisine(c) === cuisine)
+    )];
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function applyMapFilters(query: any) {
     if (!cityAccess.isAdmin) query = query.in("city", cityAccess.allowedCities);
@@ -103,7 +117,7 @@ export async function GET(request: Request) {
     if (placeType)  query = query.contains("place_type", [placeType]);
     if (fryer)      query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
     if (labeled)    query = query.eq("dossier->menu->>gf_labeling", "clear");
-    if (cuisine)    query = query.ilike("cuisine", cuisine);
+    if (cuisine && cuisineRawValues.length > 0) query = query.in("cuisine", cuisineRawValues);
     return query;
   }
 
