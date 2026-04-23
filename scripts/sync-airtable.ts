@@ -119,7 +119,10 @@ async function sync() {
       }
     }
 
-    const cuisine = dossier?.restaurant?.cuisine ?? null;
+    const cuisineField = record.fields["cuisine"];
+    const cuisine = typeof cuisineField === "string" && cuisineField.trim()
+      ? cuisineField.trim()
+      : null;
 
     const parseCsv = (field: unknown): string[] | null => {
       const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
