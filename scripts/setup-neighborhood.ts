@@ -39,7 +39,7 @@ if (!neighborhood || !city || !state) {
   process.exit(1);
 }
 
-async function suggestStreets(neighborhood: string, city: string): Promise<string[]> {
+async function suggestStreets(neighborhood: string, city: string, stateArg: string): Promise<string[]> {
   console.log("  Asking Claude for street suggestions...");
   const response = await anthropic.messages.create({
     model: "claude-opus-4-6",
@@ -47,7 +47,7 @@ async function suggestStreets(neighborhood: string, city: string): Promise<strin
     messages: [
       {
         role: "user",
-        content: `List the major streets and corridors in ${neighborhood}, ${city} that have a high concentration of restaurants.
+        content: `List the major streets and corridors in ${neighborhood}, ${city}, ${stateArg}, USA that have a high concentration of restaurants.
 
 Return only a JSON array of street name strings, ordered from most to least restaurant-dense. Include 8-15 streets. Do not include any explanation or markdown — just the raw JSON array.
 
@@ -121,7 +121,7 @@ async function main() {
   }
 
   // 3. Get street suggestions from Claude
-  const streets = await suggestStreets(neighborhood!, city!);
+  const streets = await suggestStreets(neighborhood!, city!, state!);
   console.log(`  Claude suggested ${streets.length} streets:\n`);
   streets.forEach((s, i) => console.log(`    ${String(i + 1).padStart(2)}. ${s}`));
 
