@@ -32,15 +32,37 @@ Never use `SUPABASE_SERVICE_ROLE_KEY` in app code — scripts only.
 ## Geographic hierarchy
 
 ```
-region ("New York City", "Long Island")
-  └─ city ("New York", "Huntington")
+region ("New York City", "Long Island", "Hamptons")
+  └─ city ("New York", "Huntington", "Southampton", ...)
        └─ neighborhood ("West Village", "Chelsea", ...)
 ```
 
 - **NYC**: single-city region → show neighborhood selector
-- **Long Island**: multi-city region → show town (city) selector, no neighborhood
+- **Long Island / Hamptons**: multi-city region → show town (city) selector, no neighborhood
 - Logic lives in `app/rankings/page.tsx`: `isMultiCityRegion = regionCities.length > 1`
-- `REGION_MAP` in `scripts/backfill-regions.ts` maps city → region
+
+### Region lookup priority (admin add form)
+When a restaurant is added via the admin form, region is resolved in this order:
+1. `city_region_map` table — city + state overrides (e.g. Southampton → Hamptons)
+2. `county_region_map` table — county + state fallback (e.g. Suffolk County → Long Island)
+3. Claude Haiku — for unknown counties; result is persisted to `county_region_map`
+
+City-level overrides exist because some cities share a county with a different region
+(Southampton and Huntington are both Suffolk County, but belong to different regions).
+
+For pipeline ingestion (`ingest-neighborhood.ts`), pass `--region` explicitly.
+
+## Database tables
+
+| Table | Purpose |
+|---|---|
+| `restaurants` | Core table — one row per restaurant. Key columns: `google_place_id`, `name`, `city`, `neighborhood`, `region`, `lat`, `lng`, `score`, `dossier` (JSONB), `cuisine`, `place_type`, `gf_food_categories`, `verified_data` |
+| `profiles` | User profiles — `allowed_cities`, `default_city`, `is_admin` |
+| `neighborhoods` | Neighborhood registry for the ingest pipeline |
+| `neighborhood_streets` | Streets per neighborhood used by `ingest-neighborhood.ts` to query Google Places |
+| `county_region_map` | Maps county + state → region (e.g. Suffolk County/NY → Long Island). Claude adds unknown counties automatically |
+| `city_region_map` | City-level overrides that take precedence over county map (e.g. Southampton/NY → Hamptons) |
+| `saved_restaurants` | User-saved restaurants (auth-gated) |
 
 ## Access control
 - All city access gates through `getCityAccess()` in `lib/cities.ts`

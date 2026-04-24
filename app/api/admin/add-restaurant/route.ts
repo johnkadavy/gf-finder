@@ -187,15 +187,29 @@ function extractState(details: PlaceDetails): string | null {
 }
 
 /**
- * Resolves a region name for a given county + state.
- * 1. Checks county_region_map table in Supabase.
- * 2. If unknown, asks Claude and persists the result for future lookups.
+ * Resolves a region name for a given city + county + state.
+ * Priority:
+ *   1. city_region_map (city-level override — e.g. Southampton → Hamptons)
+ *   2. county_region_map (county-level fallback — e.g. Suffolk County → Long Island)
+ *   3. Claude Haiku for unknown counties — result persisted to county_region_map
  */
 async function lookupOrCreateRegion(
   city: string,
   county: string,
   state: string,
 ): Promise<string | null> {
+  // 1. City-level override
+  if (city) {
+    const { data: cityData } = await supabaseServer
+      .from("city_region_map")
+      .select("region")
+      .eq("city", city)
+      .eq("state", state)
+      .maybeSingle();
+    if (cityData?.region) return cityData.region;
+  }
+
+  // 2. County-level fallback
   const { data } = await supabaseServer
     .from("county_region_map")
     .select("region")
