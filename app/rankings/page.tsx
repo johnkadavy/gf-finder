@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
@@ -127,15 +128,23 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
 
-  // Build query for regions/cities/neighborhoods/cuisines — scoped to user's allowed cities
-  let filterMeta = supabase
-    .from("restaurants")
-    .select("region, city, neighborhood, cuisine")
-    .not("score", "is", null);
-  if (!cityAccess.isAdmin) filterMeta = filterMeta.in("city", cityAccess.allowedCities);
-  const { data: allForFilters } = await filterMeta;
+  // Cached filter metadata — regions/cities/neighborhoods/cuisines, keyed by access scope
+  // Revalidates every hour; eliminates the heavy full-table scan on repeat page loads
+  const getFilterMeta = unstable_cache(
+    async (isAdmin: boolean, allowedCities: string[]) => {
+      let q = supabase
+        .from("restaurants")
+        .select("region, city, neighborhood, cuisine")
+        .not("score", "is", null);
+      if (!isAdmin) q = q.in("city", allowedCities);
+      const { data } = await q;
+      return (data ?? []) as { region: string | null; city: string; neighborhood: string | null; cuisine: string | null }[];
+    },
+    ["rankings-filter-meta"],
+    { revalidate: 3600 }
+  );
 
-  const allRows = (allForFilters ?? []) as { region: string | null; city: string; neighborhood: string | null; cuisine: string | null }[];
+  const allRows = await getFilterMeta(cityAccess.isAdmin, [...cityAccess.allowedCities].sort());
 
   // Derive selectable regions
   const regions = Array.from(new Set(allRows.map((r) => r.region).filter((r): r is string => !!r))).sort();
