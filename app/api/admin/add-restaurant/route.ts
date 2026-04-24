@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase-server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, type VerifiedData } from "@/lib/score";
@@ -171,11 +172,68 @@ function extractNeighborhood(details: PlaceDetails): string | null {
   return hood?.longText ?? null;
 }
 
+/** Extracts county (administrative_area_level_2) from Google Places addressComponents. */
+function extractCounty(details: PlaceDetails): string | null {
+  const components = details.addressComponents ?? [];
+  const county = components.find((c) => c.types.includes("administrative_area_level_2"));
+  return county?.longText ?? null;
+}
+
+/** Extracts state abbreviation (administrative_area_level_1 shortText) from Google Places. */
+function extractState(details: PlaceDetails): string | null {
+  const components = details.addressComponents ?? [];
+  const state = components.find((c) => c.types.includes("administrative_area_level_1"));
+  return state?.shortText ?? null;
+}
+
+/**
+ * Resolves a region name for a given county + state.
+ * 1. Checks county_region_map table in Supabase.
+ * 2. If unknown, asks Claude and persists the result for future lookups.
+ */
+async function lookupOrCreateRegion(
+  city: string,
+  county: string,
+  state: string,
+): Promise<string | null> {
+  const { data } = await supabaseServer
+    .from("county_region_map")
+    .select("region")
+    .eq("county", county)
+    .eq("state", state)
+    .maybeSingle();
+
+  if (data?.region) return data.region;
+
+  // Unknown county — ask Claude
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 32,
+    messages: [{
+      role: "user",
+      content: `What is the colloquial metro area or region name for ${city}, ${county}, ${state}? Reply with only the region name (e.g. "New York City", "Long Island", "Los Angeles", "Chicago"). Use a short recognizable name a local would use.`,
+    }],
+  });
+
+  const region = (response.content.find((b) => b.type === "text") as { type: "text"; text: string } | undefined)?.text?.trim() ?? null;
+  if (!region) return null;
+
+  // Persist so future adds in the same county are instant
+  await supabaseServer
+    .from("county_region_map")
+    .insert({ county, state, region })
+    .throwOnError();
+
+  return region;
+}
+
 function buildSupabaseRow(
   placeId: string,
   details: PlaceDetails,
   cityOverride: string,
   neighborhoodOverride: string | null,
+  region: string | null = null,
 ) {
   const city = cityOverride.trim() || extractCity(details);
   // Priority: manual form input → Google addressComponents → NTA polygon lookup
@@ -201,6 +259,7 @@ function buildSupabaseRow(
     opening_hours: details.regularOpeningHours ?? null,
     city,
     neighborhood,
+    region,
     source: "manual_add",
     slug: [details.displayName?.text ?? "", city, placeId.slice(-6)]
       .join("-")
@@ -452,7 +511,15 @@ export async function POST(req: Request) {
         // ── Step 4: Upsert to Supabase ────────────────────────────────────────
         send({ step: "supabase", status: "running" });
 
-        const row = buildSupabaseRow(placeId, details, city, neighborhood.trim() || null);
+        // Resolve region from county → DB map, falling back to Claude for unknown counties
+        const resolvedCity = city.trim() || extractCity(details);
+        const county = extractCounty(details);
+        const state = extractState(details);
+        const region = county && state
+          ? await lookupOrCreateRegion(resolvedCity, county, state).catch(() => null)
+          : null;
+
+        const row = buildSupabaseRow(placeId, details, city, neighborhood.trim() || null, region);
         const { data: inserted, error: upsertError } = await supabaseServer
           .from("restaurants")
           .upsert(row, { onConflict: "google_place_id" })
