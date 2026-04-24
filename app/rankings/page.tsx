@@ -11,6 +11,7 @@ import { normalizeCuisine } from "@/lib/cuisine";
 import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
 
 type SearchParams = {
+  region?: string;
   city?: string;
   neighborhood?: string;
   cuisine?: string;
@@ -87,6 +88,7 @@ type Restaurant = {
 
 type RankingsPageProps = {
   searchParams: Promise<{
+    region?: string;
     city?: string;
     neighborhood?: string;
     cuisine?: string;
@@ -111,6 +113,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   const validPlaceTypes   = new Set(PLACE_TYPE_OPTIONS.map((o) => o.value));
   const validGfCategories = new Set(GF_CATEGORY_OPTIONS.map((o) => o.value));
   const filters: Filters = {
+    region:       params.region       ?? "all",
     city:         resolvedCity,
     neighborhood: params.neighborhood ?? "all",
     cuisine:      params.cuisine      ?? "all",
@@ -124,27 +127,43 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
 
-  // Build query for cities/neighborhoods/cuisines — scoped to user's allowed cities
+  // Build query for regions/cities/neighborhoods/cuisines — scoped to user's allowed cities
   let filterMeta = supabase
     .from("restaurants")
-    .select("city, neighborhood, cuisine")
+    .select("region, city, neighborhood, cuisine")
     .not("score", "is", null);
   if (!cityAccess.isAdmin) filterMeta = filterMeta.in("city", cityAccess.allowedCities);
   const { data: allForFilters } = await filterMeta;
 
-  const allRows = (allForFilters ?? []) as { city: string; neighborhood: string | null; cuisine: string | null }[];
-  const allDbCities = Array.from(new Set(allRows.map((r) => r.city))).sort();
-  const selectableCities = getSelectableCities(cityAccess, allDbCities);
-  const neighborhoods =
-    filters.city === "all"
-      ? []
-      : Array.from(
-          new Set(
-            allRows
-              .filter((r) => r.city === filters.city && r.neighborhood)
-              .map((r) => r.neighborhood as string)
-          )
-        ).sort();
+  const allRows = (allForFilters ?? []) as { region: string | null; city: string; neighborhood: string | null; cuisine: string | null }[];
+
+  // Derive selectable regions
+  const regions = Array.from(new Set(allRows.map((r) => r.region).filter((r): r is string => !!r))).sort();
+
+  // Rows scoped to the selected region
+  const regionRows = filters.region === "all"
+    ? allRows
+    : allRows.filter((r) => r.region === filters.region);
+
+  // Unique cities within the selected region
+  const regionCities = Array.from(new Set(regionRows.map((r) => r.city))).sort();
+
+  // Multi-city region → show town selector; single-city → show neighborhood selector
+  const isMultiCityRegion = regionCities.length > 1;
+  const towns = isMultiCityRegion ? regionCities : [];
+
+  // Neighborhoods: only for single-city regions, scoped to selected city
+  const effectiveCity = filters.city !== "all" ? filters.city : (!isMultiCityRegion && regionCities[0]) || null;
+  const neighborhoods = (!isMultiCityRegion && effectiveCity)
+    ? Array.from(
+        new Set(
+          regionRows
+            .filter((r) => r.city === effectiveCity && r.neighborhood && r.neighborhood !== effectiveCity)
+            .map((r) => r.neighborhood as string)
+        )
+      ).sort()
+    : [];
+
   // Build normalized cuisine list for the filter UI
   const rawCuisines = allRows.map((r) => r.cuisine).filter((c): c is string => !!c && c.toLowerCase() !== "unknown");
   const cuisines = Array.from(new Set(rawCuisines.map(normalizeCuisine)))
@@ -158,6 +177,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     .not("score", "is", null)
     .order("score", { ascending: false });
 
+  if (filters.region !== "all") {
+    query = query.eq("region", filters.region);
+  }
   if (filters.city !== "all") {
     query = query.eq("city", filters.city);
   } else if (!cityAccess.isAdmin) {
@@ -203,17 +225,20 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           >
             {filters.neighborhood !== "all" ? (
               <>Best Gluten-Free Restaurants<br /><span style={{ color: "#FF7444" }}>in {filters.neighborhood}</span></>
-            ) : filters.gfCategory !== "all" ? (
-              <>{GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory)?.label ?? "GF Food"}<br /><span style={{ color: "#FF7444" }}>in {filters.city !== "all" ? filters.city : "NYC"}</span></>
             ) : filters.city !== "all" ? (
               <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants in {filters.city}</span></>
+            ) : filters.region !== "all" ? (
+              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants in {filters.region}</span></>
+            ) : filters.gfCategory !== "all" ? (
+              <>{GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory)?.label ?? "GF Food"}<br /><span style={{ color: "#FF7444" }}>in NYC</span></>
             ) : (
               <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants</span></>
             )}
           </h1>
 
           <RankingsLocationFilters
-            cities={selectableCities}
+            regions={regions}
+            towns={towns}
             neighborhoods={neighborhoods}
             filters={filters}
           />
@@ -242,8 +267,12 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             >
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.7_0_0)]">
                 Showing {restaurants.length} of {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
-                {filters.city !== "all"
-                  ? ` — ${filters.neighborhood !== "all" ? filters.neighborhood : filters.city}`
+                {filters.neighborhood !== "all"
+                  ? ` — ${filters.neighborhood}`
+                  : filters.city !== "all"
+                  ? ` — ${filters.city}`
+                  : filters.region !== "all"
+                  ? ` — ${filters.region}`
                   : ""}
               </span>
             </div>

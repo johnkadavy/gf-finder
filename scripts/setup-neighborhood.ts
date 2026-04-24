@@ -30,10 +30,11 @@ function getArg(flag: string): string | null {
 const neighborhood = getArg("--neighborhood");
 const city = getArg("--city");
 const state = getArg("--state");
+const region = getArg("--region");
 
 if (!neighborhood || !city || !state) {
   console.error(
-    "Usage: npx tsx scripts/setup-neighborhood.ts --neighborhood <name> --city <name> --state <abbr>"
+    "Usage: npx tsx scripts/setup-neighborhood.ts --neighborhood <name> --city <name> --state <abbr> [--region <name>]"
   );
   process.exit(1);
 }
@@ -76,7 +77,8 @@ async function main() {
   console.log(`\nGF Finder — Neighborhood Setup`);
   console.log(`  Neighborhood : ${neighborhood}`);
   console.log(`  City         : ${city}`);
-  console.log(`  State        : ${state}\n`);
+  console.log(`  State        : ${state}`);
+  console.log(`  Region       : ${region ?? "(not set)"}\n`);
 
   // 1. Upsert neighborhood row
   const { data: existing } = await supabase

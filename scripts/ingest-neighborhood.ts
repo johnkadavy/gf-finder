@@ -27,11 +27,12 @@ function getArg(flag: string): string | null {
 
 const neighborhood = getArg("--neighborhood");
 const city = getArg("--city");
+const region = getArg("--region");
 const count = parseInt(getArg("--count") ?? "9999", 10);
 
 if (!neighborhood || !city) {
   console.error(
-    "Usage: npx tsx scripts/ingest-neighborhood.ts --neighborhood <name> --city <name> [--count <n>]"
+    "Usage: npx tsx scripts/ingest-neighborhood.ts --neighborhood <name> --city <name> --region <name> [--count <n>]"
   );
   process.exit(1);
 }
@@ -109,6 +110,7 @@ async function main() {
   console.log(`\nGF Finder — Neighborhood Ingest`);
   console.log(`  Neighborhood : ${neighborhood}`);
   console.log(`  City         : ${city}`);
+  console.log(`  Region       : ${region ?? "(not set)"}`);
   console.log(`  Count cap    : ${count === 9999 ? "none" : count}\n`);
 
   // Load neighborhood
@@ -190,6 +192,7 @@ async function main() {
     phone: place.nationalPhoneNumber ?? null,
     city,
     neighborhood,
+    region: region ?? null,
     cuisine_types: place.types ?? null,
     source: "neighborhood_ingest",
     slug: [place.displayName?.text ?? "", city, neighborhood, place.id.slice(-6)]

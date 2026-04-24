@@ -5,199 +5,188 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EXPERIENCE_OPTIONS, GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS, rankingsUrl, type Filters } from "./utils";
 
+// ── Reusable typeahead dropdown ─────────────────────────────────────────────
+
+function LocationDropdown({
+  label,
+  value,
+  options,
+  allLabel,
+  searchPlaceholder,
+  isActive,
+  onSelect,
+  onClear,
+}: {
+  label?: string;
+  value: string;
+  options: string[];
+  allLabel: string;
+  searchPlaceholder: string;
+  isActive: boolean;
+  onSelect: (v: string) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const filtered = options.filter((o) => o.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="relative">
+      {label && (
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1" style={{ color: "oklch(0.5 0 0)" }}>
+          {label}
+        </p>
+      )}
+      <div
+        className="flex items-center border"
+        style={{
+          borderColor: isActive ? "#FF744460" : "oklch(0.28 0 0)",
+          backgroundColor: isActive ? "#FF744410" : "oklch(0.1 0 0)",
+        }}
+      >
+        <button
+          onClick={() => { setOpen((o) => !o); if (!open) setSearch(""); }}
+          className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 transition-colors"
+          style={{ color: isActive ? "#FF7444" : "oklch(0.72 0 0)" }}
+        >
+          {value === "all" ? allLabel : value}
+          <span className="ml-2 text-[9px] opacity-40">{open ? "▲" : "▼"}</span>
+        </button>
+        <button
+          onClick={onClear}
+          className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${!isActive ? "invisible" : ""}`}
+          style={{ color: "oklch(0.68 0 0)" }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-full z-20 min-w-[200px] border"
+            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+          >
+            <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+              <input
+                autoFocus
+                type="text"
+                placeholder={searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
+                style={{ color: "oklch(0.85 0 0)" }}
+              />
+            </div>
+            <div className="max-h-[280px] overflow-y-auto">
+              {!search && (
+                <button
+                  onClick={() => { onSelect("all"); setOpen(false); }}
+                  onMouseEnter={() => setHovered("all")}
+                  onMouseLeave={() => setHovered(null)}
+                  className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                  style={{
+                    borderColor: "oklch(0.18 0 0)",
+                    color: value === "all" || hovered === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                    backgroundColor: value === "all" ? "#FF744410" : hovered === "all" ? "#FF744408" : "transparent",
+                  }}
+                >
+                  {allLabel}
+                </button>
+              )}
+              {filtered.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => { onSelect(opt); setOpen(false); setSearch(""); }}
+                  onMouseEnter={() => setHovered(opt)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                  style={{
+                    borderColor: "oklch(0.18 0 0)",
+                    color: value === opt || hovered === opt ? "#FF7444" : "oklch(0.72 0 0)",
+                    backgroundColor: value === opt ? "#FF744410" : hovered === opt ? "#FF744408" : "transparent",
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Location filters (rendered in hero) ────────────────────────────────────
 
 export function RankingsLocationFilters({
-  cities,
+  regions,
+  towns,
   neighborhoods,
   filters,
 }: {
-  cities: string[];
-  neighborhoods: string[];
+  regions: string[];
+  towns: string[];        // second-level for multi-city regions (Long Island)
+  neighborhoods: string[]; // second-level for single-city regions (NYC)
   filters: Filters;
 }) {
   const router = useRouter();
-  const [cityOpen, setCityOpen] = useState(false);
-  const [citySearch, setCitySearch] = useState("");
-  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
-  const [neighborhoodSearch, setNeighborhoodSearch] = useState("");
-  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
-  const [hoveredNeighborhood, setHoveredNeighborhood] = useState<string | null>(null);
 
-  const filteredCities = cities.filter((c) =>
-    c.toLowerCase().includes(citySearch.toLowerCase())
-  );
-  const filteredNeighborhoods = neighborhoods.filter((n) =>
-    n.toLowerCase().includes(neighborhoodSearch.toLowerCase())
-  );
+  if (regions.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-3 items-start">
+    <div className="flex flex-wrap gap-3 items-end">
+      {/* Region selector */}
+      <LocationDropdown
+        value={filters.region}
+        options={regions}
+        allLabel="All Regions"
+        searchPlaceholder="Search regions…"
+        isActive={filters.region !== "all"}
+        onSelect={(region) =>
+          router.push(rankingsUrl(filters, { region, city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
+        }
+        onClear={() =>
+          router.push(rankingsUrl(filters, { region: "all", city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
+        }
+      />
 
-      {/* City typeahead — hidden for single-city users */}
-      {cities.length > 0 && <div className="relative">
-        <div
-          className="flex items-center border"
-          style={{
-            borderColor: filters.city !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.city !== "all" ? "#FF744410" : "oklch(0.1 0 0)",
-          }}
-        >
-          <button
-            onClick={() => { setCityOpen((o) => !o); setNeighborhoodOpen(false); if (!cityOpen) setCitySearch(""); }}
-            className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 transition-colors"
-            style={{ color: filters.city !== "all" ? "#FF7444" : "oklch(0.72 0 0)" }}
-          >
-            {filters.city === "all" ? "All Cities" : filters.city}
-            <span className="ml-2 text-[9px] opacity-40">{cityOpen ? "▲" : "▼"}</span>
-          </button>
-          <button
-            onClick={() => router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false })}
-            className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.city === "all" ? "invisible" : ""}`}
-            style={{ color: "oklch(0.68 0 0)" }}
-          >
-            ✕
-          </button>
-        </div>
+      {/* Town selector — multi-city regions (e.g. Long Island) */}
+      {filters.region !== "all" && towns.length > 0 && (
+        <LocationDropdown
+          value={filters.city}
+          options={towns}
+          allLabel="All Towns"
+          searchPlaceholder="Search towns…"
+          isActive={filters.city !== "all"}
+          onSelect={(city) =>
+            router.push(rankingsUrl(filters, { city, neighborhood: "all", limit: 25 }), { scroll: false })
+          }
+          onClear={() =>
+            router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
+          }
+        />
+      )}
 
-        {cityOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setCityOpen(false)} />
-            <div
-              className="absolute left-0 top-full z-20 min-w-[200px] border"
-              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
-            >
-              <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search cities…"
-                  value={citySearch}
-                  onChange={(e) => setCitySearch(e.target.value)}
-                  className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
-                  style={{ color: "oklch(0.85 0 0)" }}
-                />
-              </div>
-              <div className="max-h-[280px] overflow-y-auto">
-                {!citySearch && (
-                  <button
-                    onClick={() => { router.push(rankingsUrl(filters, { city: "all", neighborhood: "all", limit: 25 }), { scroll: false }); setCityOpen(false); }}
-                    onMouseEnter={() => setHoveredCity("all")}
-                    onMouseLeave={() => setHoveredCity(null)}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                    style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.city === "all" || hoveredCity === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.city === "all" ? "#FF744410" : hoveredCity === "all" ? "#FF744408" : "transparent",
-                    }}
-                  >
-                    All Cities
-                  </button>
-                )}
-                {filteredCities.map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => { router.push(rankingsUrl(filters, { city, neighborhood: "all", limit: 25 }), { scroll: false }); setCityOpen(false); setCitySearch(""); }}
-                    onMouseEnter={() => setHoveredCity(city)}
-                    onMouseLeave={() => setHoveredCity(null)}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                    style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.city === city || hoveredCity === city ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.city === city ? "#FF744410" : hoveredCity === city ? "#FF744408" : "transparent",
-                    }}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>}
-
-      {/* Neighborhood typeahead — only when a city is selected and neighborhoods exist */}
-      {filters.city !== "all" && neighborhoods.length > 0 && (
-        <div className="relative">
-          <div
-            className="flex items-center border"
-            style={{
-              borderColor: filters.neighborhood !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-              backgroundColor: filters.neighborhood !== "all" ? "#FF744410" : "oklch(0.1 0 0)",
-            }}
-          >
-            <button
-              onClick={() => { setNeighborhoodOpen((o) => !o); setCityOpen(false); if (!neighborhoodOpen) setNeighborhoodSearch(""); }}
-              className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 transition-colors"
-              style={{ color: filters.neighborhood !== "all" ? "#FF7444" : "oklch(0.72 0 0)" }}
-            >
-              {filters.neighborhood === "all" ? "All Neighborhoods" : filters.neighborhood}
-              <span className="ml-2 text-[9px] opacity-40">{neighborhoodOpen ? "▲" : "▼"}</span>
-            </button>
-          <button
-            onClick={() => router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }))}
-            className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${filters.neighborhood === "all" ? "invisible" : ""}`}
-            style={{ color: "oklch(0.68 0 0)" }}
-          >
-            ✕
-          </button>
-          </div>
-
-          {neighborhoodOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setNeighborhoodOpen(false)} />
-              <div
-                className="absolute left-0 top-full z-20 min-w-[220px] border"
-                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
-              >
-                <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="Search neighborhoods…"
-                    value={neighborhoodSearch}
-                    onChange={(e) => setNeighborhoodSearch(e.target.value)}
-                    className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
-                    style={{ color: "oklch(0.85 0 0)" }}
-                  />
-                </div>
-                <div className="max-h-[280px] overflow-y-auto">
-                  {!neighborhoodSearch && (
-                    <button
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }), { scroll: false }); setNeighborhoodOpen(false); }}
-                      onMouseEnter={() => setHoveredNeighborhood("all")}
-                      onMouseLeave={() => setHoveredNeighborhood(null)}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                      style={{
-                        borderColor: "oklch(0.18 0 0)",
-                        color: filters.neighborhood === "all" || hoveredNeighborhood === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.neighborhood === "all" ? "#FF744410" : hoveredNeighborhood === "all" ? "#FF744408" : "transparent",
-                      }}
-                    >
-                      All Neighborhoods
-                    </button>
-                  )}
-                  {filteredNeighborhoods.map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => { router.push(rankingsUrl(filters, { neighborhood: n, limit: 25 }), { scroll: false }); setNeighborhoodOpen(false); setNeighborhoodSearch(""); }}
-                      onMouseEnter={() => setHoveredNeighborhood(n)}
-                      onMouseLeave={() => setHoveredNeighborhood(null)}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                      style={{
-                        borderColor: "oklch(0.18 0 0)",
-                        color: filters.neighborhood === n || hoveredNeighborhood === n ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.neighborhood === n ? "#FF744410" : hoveredNeighborhood === n ? "#FF744408" : "transparent",
-                      }}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+      {/* Neighborhood selector — single-city regions (e.g. NYC) */}
+      {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
+        <LocationDropdown
+          value={filters.neighborhood}
+          options={neighborhoods}
+          allLabel="All Neighborhoods"
+          searchPlaceholder="Search neighborhoods…"
+          isActive={filters.neighborhood !== "all"}
+          onSelect={(neighborhood) =>
+            router.push(rankingsUrl(filters, { neighborhood, limit: 25 }), { scroll: false })
+          }
+          onClear={() =>
+            router.push(rankingsUrl(filters, { neighborhood: "all", limit: 25 }), { scroll: false })
+          }
+        />
       )}
     </div>
   );

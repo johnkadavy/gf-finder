@@ -1,6 +1,7 @@
 export type Experience = "all" | "good" | "great" | "excellent";
 
 export type Filters = {
+  region: string;
   city: string;
   neighborhood: string;
   cuisine: string;
@@ -46,6 +47,7 @@ export const EXPERIENCE_OPTIONS: { label: string; value: Experience; minScore: n
 export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   const merged = { ...f, ...overrides };
   const params = new URLSearchParams();
+  if (merged.region !== "all")       params.set("region", merged.region);
   if (merged.city !== "all")         params.set("city", merged.city);
   if (merged.neighborhood !== "all") params.set("neighborhood", merged.neighborhood);
   if (merged.cuisine !== "all")      params.set("cuisine", merged.cuisine);
