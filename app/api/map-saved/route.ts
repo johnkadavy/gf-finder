@@ -3,13 +3,14 @@ import { supabase } from "@/lib/supabase";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import type { MapRestaurant } from "@/app/map/types";
 
-const SELECT = "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, source, ingested_at";
+const SELECT = "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, source, ingested_at";
 
 type Row = {
   id: number;
   name: string;
   city: string;
   neighborhood: string | null;
+  region: string | null;
   lat: number;
   lng: number;
   cuisine: string | null;
@@ -48,7 +49,7 @@ export async function GET() {
     .limit(50);
 
   const results: MapRestaurant[] = (data ?? []).map((r: Row) => ({
-    id: r.id, name: r.name, city: r.city, neighborhood: r.neighborhood,
+    id: r.id, name: r.name, city: r.city, neighborhood: r.neighborhood, region: r.region,
     lat: r.lat, lng: r.lng, cuisine: r.cuisine, google_rating: r.google_rating,
     price_level: r.price_level, address: r.address, website: r.website_url,
     google_maps_url: r.google_maps_url,

@@ -529,7 +529,7 @@ const [mapReady, setMapReady] = useState(false);
     setShowSearchArea(false);
 
     const restaurant: MapRestaurant = {
-      id: s.id, name: s.name, city: s.city, neighborhood: s.neighborhood,
+      id: s.id, name: s.name, city: s.city, neighborhood: s.neighborhood, region: null,
       lat: s.lat, lng: s.lng, cuisine: s.cuisine, google_rating: s.google_rating,
       price_level: s.price_level, address: s.address, website: s.website_url,
       google_maps_url: null, short_summary: null,

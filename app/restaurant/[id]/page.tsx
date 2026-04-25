@@ -13,7 +13,7 @@ import {
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
 import { StickyInfoBar } from "@/app/components/StickyInfoBar";
-import { isNewRestaurant } from "@/lib/utils";
+import { isNewRestaurant, formatLocation } from "@/lib/utils";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -28,6 +28,7 @@ type Restaurant = {
   name: string;
   city: string;
   neighborhood: string | null;
+  region: string | null;
   address: string | null;
   phone: string | null;
   website_url: string | null;
@@ -172,7 +173,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const { data } = await supabase
     .from("restaurants")
-    .select("name, city, neighborhood, dossier, verified_data")
+    .select("name, city, neighborhood, region, dossier, verified_data")
     .eq("id", id)
     .single();
 
@@ -182,7 +183,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     ? calculateScore(data.dossier as ScoringDossier, (data.verified_data ?? undefined) as VerifiedData | undefined)
     : null;
   const d = data.dossier as ScoringDossier | null;
-  const location = [data.neighborhood, data.city].filter(Boolean).join(", ");
+  const location = formatLocation(data.neighborhood, data.city, data.region, ", ");
   const canonicalUrl = `/restaurant/${id}`;
 
   const title = `${data.name} — Gluten-Free Safety Rating | CleanPlate`;
@@ -219,7 +220,7 @@ export default async function RestaurantPage({
   const { data, error } = await supabase
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at"
+      "id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at"
     )
     .eq("id", id)
     .single();
@@ -511,7 +512,7 @@ export default async function RestaurantPage({
             )}
             <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>
             <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
-              {[r.neighborhood, r.city].filter(Boolean).join(", ")}
+              {formatLocation(r.neighborhood, r.city, r.region, ", ")}
             </span>
           </div>
         </div>

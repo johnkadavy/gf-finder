@@ -8,6 +8,7 @@ export type MapRestaurant = {
   name: string;
   city: string;
   neighborhood: string | null;
+  region: string | null;
   lat: number;
   lng: number;
   cuisine: string | null;

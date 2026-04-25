@@ -45,7 +45,7 @@ export default async function SharedMapPage({
   const { data: rows } = await supabaseServer
     .from("restaurants")
     .select(
-      "id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, dossier, source, ingested_at"
+      "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, dossier, source, ingested_at"
     )
     .in("id", ids);
 
@@ -58,6 +58,7 @@ export default async function SharedMapPage({
       name: r.name,
       city: r.city ?? "",
       neighborhood: r.neighborhood ?? null,
+      region: r.region ?? null,
       lat: r.lat,
       lng: r.lng,
       cuisine: r.cuisine ?? null,

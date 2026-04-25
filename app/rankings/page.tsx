@@ -9,6 +9,7 @@ import { rankingsUrl, type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_T
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { ExpandableText } from "./ExpandableText";
 import { normalizeCuisine } from "@/lib/cuisine";
+import { formatLocation } from "@/lib/utils";
 import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
 
 type SearchParams = {
@@ -79,6 +80,7 @@ type Restaurant = {
   name: string;
   city: string;
   neighborhood: string | null;
+  region: string | null;
   website_url: string | null;
   google_maps_url: string | null;
   score: number;
@@ -182,7 +184,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   // Build paginated query with all filters applied DB-side
   let query = supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, website_url, google_maps_url, score, dossier, source, ingested_at", { count: "exact" })
+    .select("id, name, city, neighborhood, region, website_url, google_maps_url, score, dossier, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
@@ -333,7 +335,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
                       )}
                     </div>
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] mt-1 md:mt-2 truncate">
-                      {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
+                      {formatLocation(restaurant.neighborhood, restaurant.city, restaurant.region)}
                     </p>
                     {restaurant.dossier?.summary?.short_summary && (
                       <>

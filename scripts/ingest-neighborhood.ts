@@ -191,7 +191,7 @@ async function main() {
     google_maps_url: place.googleMapsUri ?? null,
     phone: place.nationalPhoneNumber ?? null,
     city,
-    neighborhood,
+    neighborhood: neighborhood !== city ? neighborhood : null,
     region: region ?? null,
     cuisine_types: place.types ?? null,
     source: "neighborhood_ingest",
