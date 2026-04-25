@@ -7,6 +7,7 @@ export type Filters = {
   cuisine: string;
   placeType: string;
   gfCategory: string;
+  priceLevel: number; // 0 = any, 1–4 = up to that level
   fryer: boolean;
   labeled: boolean;
   experience: Experience;
@@ -53,6 +54,7 @@ export function rankingsUrl(f: Filters, overrides: Partial<Filters> = {}) {
   if (merged.cuisine !== "all")      params.set("cuisine", merged.cuisine);
   if (merged.placeType !== "all")    params.set("placeType", merged.placeType);
   if (merged.gfCategory !== "all")   params.set("gfCategory", merged.gfCategory);
+  if (merged.priceLevel > 0)         params.set("priceLevel", String(merged.priceLevel));
   if (merged.fryer)                  params.set("fryer", "1");
   if (merged.labeled)                params.set("labeled", "1");
   if (merged.experience !== "all")   params.set("experience", merged.experience);

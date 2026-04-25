@@ -19,6 +19,7 @@ type SearchParams = {
   cuisine?: string;
   placeType?: string;
   gfCategory?: string;
+  priceLevel?: string;
   fryer?: string;
   labeled?: string;
   experience?: string;
@@ -97,6 +98,7 @@ type RankingsPageProps = {
     cuisine?: string;
     placeType?: string;
     gfCategory?: string;
+    priceLevel?: string;
     fryer?: string;
     labeled?: string;
     experience?: string;
@@ -122,6 +124,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     cuisine:      params.cuisine      ?? "all",
     placeType:    validPlaceTypes.has(params.placeType ?? "")     ? (params.placeType   ?? "all") : "all",
     gfCategory:   validGfCategories.has(params.gfCategory ?? "") ? (params.gfCategory  ?? "all") : "all",
+    priceLevel:   Math.min(4, Math.max(0, parseInt(params.priceLevel ?? "0", 10) || 0)),
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
     experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
@@ -197,6 +200,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     query = query.in("city", cityAccess.allowedCities);
   }
   if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
+  if (filters.priceLevel > 0)         query = query.lte("price_level", filters.priceLevel);
   if (filters.cuisine !== "all") {
     const matchingRaw = Array.from(new Set(rawCuisines.filter((c) => normalizeCuisine(c) === filters.cuisine)));
     if (matchingRaw.length > 0) query = query.in("cuisine", matchingRaw);

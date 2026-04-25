@@ -237,9 +237,13 @@ export function RankingsSecondaryFilters({
       label: currentExp.label,
       clear: rankingsUrl(filters, { experience: "all", limit: 25 }),
     },
+    filters.priceLevel > 0 && {
+      label: `Up to ${"$".repeat(filters.priceLevel)}`,
+      clear: rankingsUrl(filters, { priceLevel: 0, limit: 25 }),
+    },
   ].filter(Boolean) as { label: string; clear: string }[];
 
-  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", gfCategory: "all", experience: "all", limit: 25 });
+  const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", gfCategory: "all", priceLevel: 0, experience: "all", limit: 25 });
   const activeCount = activePills.length;
 
   return (
@@ -259,6 +263,32 @@ export function RankingsSecondaryFilters({
           active={filters.labeled}
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
+
+        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "oklch(0.22 0 0)" }} />
+
+        {/* Price filter */}
+        <div className="flex items-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-3" style={{ color: "oklch(0.6 0 0)" }}>Price:</span>
+          {[1, 2, 3, 4].map((level) => {
+            const isMax = filters.priceLevel === level;
+            const isActive = filters.priceLevel >= level && filters.priceLevel > 0;
+            return (
+              <Link
+                key={level}
+                href={rankingsUrl(filters, { priceLevel: isMax ? 0 : level, limit: 25 })}
+                scroll={false}
+                className="font-mono text-[12px] px-2 py-3 transition-colors duration-150"
+                style={{
+                  color: isActive ? "#FF7444" : "oklch(0.45 0 0)",
+                  backgroundColor: isMax ? "#FF744415" : "transparent",
+                  fontWeight: isMax ? 600 : 400,
+                }}
+              >
+                {"$".repeat(level)}
+              </Link>
+            );
+          })}
+        </div>
 
         <div className="w-px self-stretch mx-1" style={{ backgroundColor: "oklch(0.22 0 0)" }} />
 
@@ -510,6 +540,20 @@ export function RankingsSecondaryFilters({
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
 
+        {/* Price pill → opens sheet */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          style={{
+            borderColor: filters.priceLevel > 0 ? "#FF744460" : "oklch(0.28 0 0)",
+            backgroundColor: filters.priceLevel > 0 ? "#FF744415" : "transparent",
+            color: filters.priceLevel > 0 ? "#FF7444" : "oklch(0.65 0 0)",
+          }}
+        >
+          {filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Price"}
+          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+        </button>
+
         {/* Place Type pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
@@ -606,6 +650,28 @@ export function RankingsSecondaryFilters({
                 href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
                 onNavigate={() => setSheetOpen(false)}
               />
+            </div>
+
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+              Price
+            </p>
+            <div className="flex gap-2 mb-7">
+              {[{ label: "Any", value: 0 }, { label: "$", value: 1 }, { label: "$$", value: 2 }, { label: "$$$", value: 3 }, { label: "$$$$", value: 4 }].map((opt) => (
+                <Link
+                  key={opt.value}
+                  href={rankingsUrl(filters, { priceLevel: opt.value, limit: 25 })}
+                  scroll={false}
+                  onClick={() => setSheetOpen(false)}
+                  className="font-mono text-[11px] tracking-[0.1em] px-3 py-2.5 border transition-colors duration-150 text-center"
+                  style={{
+                    borderColor: filters.priceLevel === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
+                    backgroundColor: filters.priceLevel === opt.value ? "#FF744420" : "transparent",
+                    color: filters.priceLevel === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                  }}
+                >
+                  {opt.label}
+                </Link>
+              ))}
             </div>
 
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
