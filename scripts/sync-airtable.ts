@@ -73,6 +73,8 @@ async function sync() {
   let skipped = 0;
   let failed = 0;
   const savedPlaceIds: string[] = [];
+  const syncedAirtableIds: string[] = [];
+  const syncedAt = new Date().toISOString();
 
   for (const record of records) {
     const googlePlaceId = record.fields["google_place_id"] as string | undefined;
@@ -152,10 +154,40 @@ async function sync() {
       console.log(`  Saved: ${googlePlaceId}`);
       saved++;
       savedPlaceIds.push(googlePlaceId);
+      syncedAirtableIds.push(record.id);
     }
   }
 
   console.log(`\nDone. Saved: ${saved} | Skipped: ${skipped} | Failed: ${failed}`);
+
+  // ── Stamp last_synced_at on Airtable records ──────────────────────────────
+  if (syncedAirtableIds.length > 0) {
+    console.log(`\nStamping last_synced_at on ${syncedAirtableIds.length} Airtable records...`);
+    const AT_BATCH = 10;
+    let stamped = 0;
+    for (let i = 0; i < syncedAirtableIds.length; i += AT_BATCH) {
+      const chunk = syncedAirtableIds.slice(i, i + AT_BATCH);
+      const res = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            records: chunk.map((id) => ({ id, fields: { last_synced_at: syncedAt } })),
+          }),
+        }
+      );
+      if (!res.ok) {
+        console.warn(`  Stamp batch ${i / AT_BATCH + 1} failed: ${res.status}`);
+      } else {
+        stamped += chunk.length;
+      }
+    }
+    console.log(`✓ Stamped ${stamped} records`);
+  }
 
   // ── Score backfill for newly synced records ───────────────────────────────
   if (savedPlaceIds.length === 0) return;
