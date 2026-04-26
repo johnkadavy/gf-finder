@@ -37,6 +37,14 @@ if (!neighborhood || !city) {
   process.exit(1);
 }
 
+const PRICE_LEVEL_MAP: Record<string, number> = {
+  PRICE_LEVEL_FREE: 0,
+  PRICE_LEVEL_INEXPENSIVE: 1,
+  PRICE_LEVEL_MODERATE: 2,
+  PRICE_LEVEL_EXPENSIVE: 3,
+  PRICE_LEVEL_VERY_EXPENSIVE: 4,
+};
+
 interface RawPlace {
   id: string;
   displayName?: { text: string };
@@ -48,6 +56,8 @@ interface RawPlace {
   businessStatus?: string;
   rating?: number;
   userRatingCount?: number;
+  priceLevel?: string;
+  regularOpeningHours?: { periods?: unknown[]; weekdayDescriptions?: string[] };
   types?: string[];
 }
 
@@ -81,6 +91,8 @@ async function searchStreet(query: string): Promise<RawPlace[]> {
           "places.rating",
           "places.userRatingCount",
           "places.types",
+          "places.priceLevel",
+          "places.regularOpeningHours",
           "nextPageToken",
         ].join(","),
       },
@@ -194,6 +206,9 @@ async function main() {
     neighborhood: neighborhood !== city ? neighborhood : null,
     region: region ?? null,
     cuisine_types: place.types ?? null,
+    google_rating: place.rating ?? null,
+    price_level: place.priceLevel ? (PRICE_LEVEL_MAP[place.priceLevel] ?? null) : null,
+    opening_hours: place.regularOpeningHours ?? null,
     source: "neighborhood_ingest",
     slug: [place.displayName?.text ?? "", city, neighborhood, place.id.slice(-6)]
       .join("-")
