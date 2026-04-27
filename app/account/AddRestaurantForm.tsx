@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 type StepStatus = "idle" | "running" | "done" | "error" | "duplicate" | "timeout";
@@ -34,10 +34,56 @@ export function AddRestaurantForm() {
   const [retrying, setRetrying]     = useState(false);
   const [retryResult, setRetryResult] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const autoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [autoPollAttempt, setAutoPollAttempt] = useState(0);
 
   function updateStep(key: string, patch: Partial<Step>) {
     setSteps((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
   }
+
+  // Auto-poll Airtable after enrichment timeout — checks every 30s, gives up after 20 attempts (~10 min)
+  const enrichmentTimedOut = steps.find((s) => s.key === "enrichment")?.status === "timeout";
+
+  useEffect(() => {
+    if (!enrichmentTimedOut || !timedOutPlaceId) return;
+    if (autoPollRef.current) return; // already polling
+
+    let attempts = 0;
+    autoPollRef.current = setInterval(async () => {
+      attempts++;
+      setAutoPollAttempt(attempts);
+      if (attempts > 20) {
+        clearInterval(autoPollRef.current!);
+        autoPollRef.current = null;
+        return;
+      }
+      try {
+        const res = await fetch("/api/admin/sync-restaurant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ placeId: timedOutPlaceId }),
+        });
+        const data = await res.json();
+        if (data.status === "synced") {
+          clearInterval(autoPollRef.current!);
+          autoPollRef.current = null;
+          updateStep("enrichment", { status: "done", detail: "Ready" });
+          updateStep("sync", {
+            status: "done",
+            detail: data.score != null ? `Score: ${Math.round(data.score)}` : undefined,
+          });
+        }
+      } catch { /* ignore transient errors */ }
+    }, 30_000);
+
+    return () => {
+      if (autoPollRef.current) {
+        clearInterval(autoPollRef.current);
+        autoPollRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enrichmentTimedOut, timedOutPlaceId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,6 +95,11 @@ export function AddRestaurantForm() {
     setFatalError(null);
     setTimedOutPlaceId(null);
     setRetryResult(null);
+    setAutoPollAttempt(0);
+    if (autoPollRef.current) {
+      clearInterval(autoPollRef.current);
+      autoPollRef.current = null;
+    }
     setRunning(true);
 
     const abort = new AbortController();
@@ -294,26 +345,30 @@ export function AddRestaurantForm() {
             </p>
           )}
 
-          {/* Timeout — retry button */}
+          {/* Timeout — auto-polls in background, manual retry also available */}
           {steps.find((s) => s.key === "enrichment" && s.status === "timeout") && (
-            <div className="pt-2 flex items-center gap-3 flex-wrap">
+            <div className="pt-2 space-y-2">
               <p className="font-mono text-[11px] text-[oklch(0.5_0_0)]">
-                Airtable enrichment is still in progress.
+                {autoPollAttempt > 0
+                  ? `Enrichment in progress — auto-check ${autoPollAttempt}/20…`
+                  : "Enrichment in progress — checking automatically every 30s."}
               </p>
-              <button
-                type="button"
-                onClick={handleRetrySync}
-                disabled={retrying}
-                className="font-mono text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors disabled:opacity-40"
-                style={{ borderColor: "oklch(0.35 0 0)", color: "oklch(0.75 0 0)" }}
-              >
-                {retrying ? "Checking…" : "Retry Sync"}
-              </button>
-              {retryResult && (
-                <span className="font-mono text-[11px]" style={{ color: retryResult.startsWith("Synced") ? "#7ECF9A" : "oklch(0.55 0 0)" }}>
-                  {retryResult}
-                </span>
-              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleRetrySync}
+                  disabled={retrying}
+                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors disabled:opacity-40"
+                  style={{ borderColor: "oklch(0.35 0 0)", color: "oklch(0.75 0 0)" }}
+                >
+                  {retrying ? "Checking…" : "Check Now"}
+                </button>
+                {retryResult && (
+                  <span className="font-mono text-[11px]" style={{ color: retryResult.startsWith("Synced") ? "#7ECF9A" : "oklch(0.55 0 0)" }}>
+                    {retryResult}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
