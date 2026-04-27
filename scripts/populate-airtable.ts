@@ -123,7 +123,8 @@ async function main() {
     .eq("city", city)
     .not("google_place_id", "is", null);
 
-  if (neighborhood) query = query.eq("neighborhood", neighborhood);
+  // When neighborhood equals city (e.g. Garden City, Huntington), it's stored as null
+  if (neighborhood && neighborhood !== city) query = query.eq("neighborhood", neighborhood);
 
   const { data: restaurants, error } = await query;
   if (error) {
