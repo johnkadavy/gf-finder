@@ -42,6 +42,7 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "google_place_id");
     url.searchParams.append("fields[]", "JSON dossier");
     url.searchParams.append("fields[]", "Sick reports JSON");
+    url.searchParams.append("fields[]", "cuisine");
     url.searchParams.append("fields[]", "place_type");
     url.searchParams.append("fields[]", "gf_food_categories");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
@@ -124,7 +125,9 @@ async function sync() {
     const cuisineField = record.fields["cuisine"];
     const cuisine = typeof cuisineField === "string" && cuisineField.trim()
       ? cuisineField.trim()
-      : null;
+      : (cuisineField as AirtableAIField)?.state === "generated" && (cuisineField as AirtableAIField).value?.trim()
+        ? (cuisineField as AirtableAIField).value!.trim()
+        : null;
 
     const parseCsv = (field: unknown): string[] | null => {
       const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
