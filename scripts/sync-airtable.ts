@@ -205,7 +205,7 @@ async function sync() {
     const chunk = savedPlaceIds.slice(i, i + BATCH);
     const { data, error: fetchError } = await supabase
       .from("restaurants")
-      .select("id, dossier, verified_data")
+      .select("id, dossier, verified_data, cuisine, place_type")
       .in("google_place_id", chunk);
     if (fetchError) {
       console.error("Could not fetch rows for scoring:", fetchError.message);
@@ -216,7 +216,7 @@ async function sync() {
 
   let scored = 0;
   const scoreUpdates = allRows
-    .map((row) => ({ id: row.id, score: calculateScore(row.dossier, row.verified_data as VerifiedData | undefined) }))
+    .map((row) => ({ id: row.id, score: calculateScore(row.dossier, row.verified_data as VerifiedData | undefined, { cuisine: row.cuisine as string | null, placeTypes: row.place_type as string[] | null }) }))
     .filter((u) => u.score !== null) as { id: number; score: number }[];
 
   const CHUNK = 25;

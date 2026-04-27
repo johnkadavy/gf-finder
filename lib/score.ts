@@ -1,3 +1,33 @@
+import { normalizeCuisine } from "./cuisine";
+
+/**
+ * Rule-based cross-contamination risk prior derived from cuisine and place type.
+ * Used as a fallback when the AI dossier lacks a CC signal, and as a sanity
+ * check to prevent an AI "low" verdict on an inherently high-risk kitchen type.
+ */
+export function cuisineContamRisk(
+  cuisine: string | null | undefined,
+  placeTypes: string[] | null | undefined,
+): "high" | "medium" | "low" {
+  // place_type overrides take precedence — more specific than cuisine
+  if (placeTypes?.length) {
+    if (placeTypes.some((t) => ["bakery", "pizzeria", "deli"].includes(t))) return "high";
+    if (placeTypes.includes("juice_bar"))                                    return "low";
+  }
+
+  const category = normalizeCuisine(cuisine ?? "");
+  switch (category) {
+    case "Italian":
+    case "French":
+      return "high";
+    case "Steakhouse":
+    case "Vegan / Vegetarian":
+      return "low";
+    default:
+      return "medium";
+  }
+}
+
 // Verified signals from scraping — takes precedence over AI-inferred dossier fields
 export type VerifiedData = {
   menu?: {
@@ -48,7 +78,11 @@ function clamp(v: number, min: number, max: number) {
  * Soft floor:  if solid signals across all categories, score ≥ 72
  * Confidence:  medium → ×0.95 + 50×0.05 | low → ×0.88 + 50×0.12
  */
-export function calculateScore(dossier: ScoringDossier, verifiedData?: VerifiedData): number | null {
+export function calculateScore(
+  dossier: ScoringDossier,
+  verifiedData?: VerifiedData,
+  context?: { cuisine?: string | null; placeTypes?: string[] | null },
+): number | null {
   const r = dossier.reviews;
   const m = verifiedData?.menu ? { ...dossier.menu, ...verifiedData.menu } : dossier.menu;
   const o = dossier.operations;
@@ -134,12 +168,27 @@ export function calculateScore(dossier: ScoringDossier, verifiedData?: VerifiedD
     default:       staffScore = 60;  // unknown: neutral
   }
 
+  const cuisinePrior = cuisineContamRisk(context?.cuisine, context?.placeTypes);
+
   let contamScore: number;
-  switch (o?.cross_contamination_risk) {
-    case "low":    contamScore = 100; break;
-    case "medium": contamScore = 75;  break; // medium is baseline, not a red flag
-    case "high":   contamScore = 40;  break; // hurts, but doesn't nuke an otherwise good place
-    default:       contamScore = 70;  // unknown: neutral
+  const aiRisk = o?.cross_contamination_risk;
+  if (!aiRisk || aiRisk === "unknown") {
+    // No AI signal — fall back to cuisine prior
+    switch (cuisinePrior) {
+      case "high":   contamScore = 40; break;
+      case "medium": contamScore = 70; break;
+      case "low":    contamScore = 100; break;
+    }
+  } else if (aiRisk === "low" && cuisinePrior === "high") {
+    // AI says safe but cuisine is inherently high-risk — pull back to medium
+    contamScore = 75;
+  } else {
+    switch (aiRisk) {
+      case "low":    contamScore = 100; break;
+      case "medium": contamScore = 75;  break;
+      case "high":   contamScore = 40;  break;
+      default:       contamScore = 70;
+    }
   }
 
   let opsScore = staffScore * 0.7 + contamScore * 0.3;

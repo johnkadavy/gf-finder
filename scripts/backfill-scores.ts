@@ -29,7 +29,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, dossier, verified_data")
+      .select("id, dossier, verified_data, cuisine, place_type")
       .not("dossier", "is", null)
       .range(offset, offset + BATCH_SIZE - 1);
 
@@ -45,7 +45,7 @@ async function main() {
     const updates: { id: number; score: number }[] = [];
 
     for (const row of data) {
-      const score = calculateScore(row.dossier, row.verified_data as VerifiedData | undefined);
+      const score = calculateScore(row.dossier, row.verified_data as VerifiedData | undefined, { cuisine: row.cuisine as string | null, placeTypes: row.place_type as string[] | null });
       if (score !== null) {
         updates.push({ id: row.id, score });
       } else {

@@ -424,13 +424,13 @@ export async function syncAirtableRecordToSupabase(
 
   const { data: forScore } = await supabaseServer
     .from("restaurants")
-    .select("id, dossier, verified_data")
+    .select("id, dossier, verified_data, cuisine, place_type")
     .eq("google_place_id", placeId)
     .single();
 
   if (!forScore) return null;
 
-  const score = calculateScore(forScore.dossier, forScore.verified_data as VerifiedData | undefined);
+  const score = calculateScore(forScore.dossier, forScore.verified_data as VerifiedData | undefined, { cuisine: forScore.cuisine as string | null, placeTypes: forScore.place_type as string[] | null });
   if (score !== null) {
     await supabaseServer.from("restaurants").update({ score }).eq("id", forScore.id);
   }
