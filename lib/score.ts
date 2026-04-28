@@ -59,8 +59,6 @@ export type ScoringDossier = {
     };
     cc_signals?: {
       shared_equipment?: "yes" | "no" | "unknown";
-      menu_disclaimer?: "warning" | "safe" | "none";
-      menu_disclaimer_url?: string | null;
       staff_cc_awareness?: "high" | "low" | "unknown";
       signal?: "high" | "medium" | "low";
       evidence?: string;
