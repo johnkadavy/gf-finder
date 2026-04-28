@@ -57,6 +57,14 @@ export type ScoringDossier = {
       fryer?: boolean;
       prep_area?: "yes" | "no" | "dedicated" | "shared" | "unknown";
     };
+    cc_signals?: {
+      shared_equipment?: "yes" | "no" | "unknown";
+      menu_disclaimer?: "warning" | "safe" | "none";
+      menu_disclaimer_url?: string | null;
+      staff_cc_awareness?: "high" | "low" | "unknown";
+      signal?: "high" | "medium" | "low";
+      evidence?: string;
+    };
   };
   data_quality?: {
     confidence?: "high" | "medium" | "low";
@@ -170,17 +178,28 @@ export function calculateScore(
 
   const cuisinePrior = cuisineContamRisk(context?.cuisine, context?.placeTypes);
 
+  // Priority: focused cc_signals → broad AI cross_contamination_risk → cuisine prior
   let contamScore: number;
+  const ccSignal = o?.cc_signals?.signal;
   const aiRisk = o?.cross_contamination_risk;
-  if (!aiRisk || aiRisk === "unknown") {
-    // No AI signal — fall back to cuisine prior
+
+  if (ccSignal) {
+    switch (ccSignal) {
+      case "high":   contamScore = 40;  break;
+      case "medium": contamScore = 75;  break;
+      case "low":    contamScore = 100; break;
+    }
+    // Cuisine prior as sanity check: can't be "low" for an inherently high-risk kitchen
+    if (ccSignal === "low" && cuisinePrior === "high") contamScore = 75;
+  } else if (!aiRisk || aiRisk === "unknown") {
+    // No AI signal at all — fall back to cuisine prior
     switch (cuisinePrior) {
-      case "high":   contamScore = 40; break;
-      case "medium": contamScore = 70; break;
+      case "high":   contamScore = 40;  break;
+      case "medium": contamScore = 70;  break;
       case "low":    contamScore = 100; break;
     }
   } else if (aiRisk === "low" && cuisinePrior === "high") {
-    // AI says safe but cuisine is inherently high-risk — pull back to medium
+    // Broad AI says safe but cuisine is inherently high-risk — pull back to medium
     contamScore = 75;
   } else {
     switch (aiRisk) {

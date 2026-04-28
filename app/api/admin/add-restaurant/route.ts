@@ -405,6 +405,16 @@ export async function syncAirtableRecordToSupabase(
     } catch { /* skip */ }
   }
 
+  // Merge focused CC signals into dossier.operations.cc_signals if present
+  const ccRiskField = fields["cc_risk_json"];
+  const ccRiskText = getAIFieldValue(ccRiskField as string | AirtableAIField | undefined);
+  if (ccRiskText) {
+    try {
+      const ccSignals = JSON.parse(ccRiskText);
+      dossier.operations = { ...(dossier.operations ?? {}), cc_signals: ccSignals };
+    } catch { /* skip malformed */ }
+  }
+
   const cuisine = dossier?.restaurant?.cuisine ?? null;
   const placeTypes = parseCsv(fields["place_type"]);
   const gfFoodCategories = parseCsv(fields["gf_food_categories"]);

@@ -45,6 +45,7 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "cuisine");
     url.searchParams.append("fields[]", "place_type");
     url.searchParams.append("fields[]", "gf_food_categories");
+    url.searchParams.append("fields[]", "cc_risk_json");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -119,6 +120,23 @@ async function sync() {
         };
       } catch {
         console.warn(`  Could not parse sick reports JSON for ${googlePlaceId} — skipping merge`);
+      }
+    }
+
+    // Merge focused CC signals into dossier.operations.cc_signals
+    const ccRiskField = record.fields["cc_risk_json"];
+    const ccRiskText = typeof ccRiskField === "string"
+      ? ccRiskField
+      : (ccRiskField as AirtableAIField)?.state === "generated"
+        ? (ccRiskField as AirtableAIField).value
+        : null;
+
+    if (ccRiskText) {
+      try {
+        const ccSignals = JSON.parse(ccRiskText);
+        dossier.operations = { ...(dossier.operations ?? {}), cc_signals: ccSignals };
+      } catch {
+        console.warn(`  Could not parse cc_risk_json for ${googlePlaceId} — skipping`);
       }
     }
 
