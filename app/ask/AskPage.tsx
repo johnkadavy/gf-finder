@@ -23,6 +23,17 @@ type Message = {
 // ── Markdown renderer ────────────────────────────────────────────────────────
 // Renders **bold** text as inline links when the name matches a referenced restaurant.
 
+function findRestaurant(boldText: string, byName: Map<string, RestaurantRef>): RestaurantRef | undefined {
+  const lower = boldText.toLowerCase().trim();
+  // Exact match
+  if (byName.has(lower)) return byName.get(lower);
+  // Fuzzy: bold text contains the restaurant name (e.g. "1. Soda Club" contains "soda club")
+  for (const [name, r] of byName) {
+    if (lower.includes(name) || name.includes(lower)) return r;
+  }
+  return undefined;
+}
+
 function renderContent(text: string, restaurants: RestaurantRef[] = []) {
   const byName = new Map(restaurants.map((r) => [r.name.toLowerCase(), r]));
 
@@ -35,7 +46,7 @@ function renderContent(text: string, restaurants: RestaurantRef[] = []) {
       const parts = line.split(/\*\*(.+?)\*\*/g);
       const rendered = parts.map((part, k) => {
         if (k % 2 !== 1) return part; // plain text
-        const restaurant = byName.get(part.toLowerCase());
+        const restaurant = findRestaurant(part, byName);
         if (restaurant) {
           return (
             <Link
@@ -186,18 +197,10 @@ export function AskPage() {
     setTimeout(tick, 12);
   }
 
-  // Only auto-scroll when near the bottom (avoids fighting the user if they scroll up)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   function scrollToBottom() {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distanceFromBottom < 120) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }
-
-  useEffect(() => { scrollToBottom(); }, [messages, loading]);
 
   async function submit(text: string) {
     const trimmed = text.trim();
@@ -213,6 +216,8 @@ export function AskPage() {
     setLoading(true);
     pendingCharsRef.current = "";
     pendingRestaurantsRef.current = null;
+    // Scroll to show the user's message
+    setTimeout(scrollToBottom, 50);
 
     try {
       const res = await fetch("/api/agent", {
@@ -264,6 +269,8 @@ export function AskPage() {
               setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
               setLoading(false);
               assistantAdded = true;
+              // Scroll once to show the new assistant message — then leave it alone
+              setTimeout(scrollToBottom, 50);
             }
             // Push incoming text to the drip queue instead of updating state directly
             pendingCharsRef.current += event.text;
