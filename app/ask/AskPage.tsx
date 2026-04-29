@@ -52,6 +52,8 @@ function renderContent(text: string, restaurants: RestaurantRef[] = []) {
             <Link
               key={k}
               href={`/restaurant/${restaurant.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-semibold underline underline-offset-2 decoration-1 transition-colors duration-150"
               style={{ color: "#FF7444", textDecorationColor: "#FF744460" }}
               onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = "#FF7444")}
