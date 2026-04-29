@@ -220,6 +220,11 @@ export async function POST(request: Request) {
 
       try {
         while (rounds < MAX_TOOL_ROUNDS) {
+          // Buffer text per round — only flush to client on end_turn.
+          // Claude sometimes emits text before a tool call ("Let me search…"); discarding
+          // that pre-tool text prevents it from running into the actual response.
+          let roundText = "";
+
           const stream = anthropic.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: 1024,
@@ -228,13 +233,14 @@ export async function POST(request: Request) {
             messages,
           });
 
-          // Forward text tokens to client in real-time.
-          // During tool-use rounds Claude emits no text, so this only fires on the final response.
-          stream.on("text", (text) => send({ type: "delta", text }));
+          stream.on("text", (text) => { roundText += text; });
 
           const message = await stream.finalMessage();
 
           if (message.stop_reason === "end_turn") {
+            // Flush the buffered response text as a single delta (frontend drip smooths it)
+            if (roundText) send({ type: "delta", text: roundText });
+
             // Increment DB usage for logged-in users (cookie already set in response headers)
             if (usageCtx.type === "user") {
               const serverClient = await createClient();
