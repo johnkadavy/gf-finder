@@ -146,13 +146,30 @@ export function AskPage() {
   // Character drip queue — smooths out chunky SSE bursts into a continuous typing effect
   const pendingCharsRef = useRef<string>("");
   const isDrippingRef = useRef(false);
+  // Restaurants held here until drip finishes so inline links appear after text is complete
+  const pendingRestaurantsRef = useRef<RestaurantRef[] | null>(null);
 
   function scheduleDrip() {
     if (isDrippingRef.current) return;
     isDrippingRef.current = true;
     function tick() {
       const pending = pendingCharsRef.current;
-      if (pending.length === 0) { isDrippingRef.current = false; return; }
+      if (pending.length === 0) {
+        isDrippingRef.current = false;
+        // Drip finished — attach any queued restaurants now that full text is rendered
+        if (pendingRestaurantsRef.current) {
+          const restaurants = pendingRestaurantsRef.current;
+          pendingRestaurantsRef.current = null;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return [...prev.slice(0, -1), { ...last, restaurants }];
+            }
+            return prev;
+          });
+        }
+        return;
+      }
       // Drain faster when queue is large (catching up after a big chunk)
       const take = pending.length > 30 ? 4 : pending.length > 10 ? 2 : 1;
       const chars = pending.slice(0, take);
@@ -195,6 +212,7 @@ export function AskPage() {
     setInput("");
     setLoading(true);
     pendingCharsRef.current = "";
+    pendingRestaurantsRef.current = null;
 
     try {
       const res = await fetch("/api/agent", {
@@ -251,15 +269,20 @@ export function AskPage() {
             pendingCharsRef.current += event.text;
             scheduleDrip();
           } else if (event.type === "done") {
-            // Attach restaurant links and update usage counter
-            if (event.referenced_restaurants) {
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return [...prev.slice(0, -1), { ...last, restaurants: event.referenced_restaurants }];
-                }
-                return prev;
-              });
+            // Queue restaurants to attach once drip finishes (so links apply to complete text)
+            if (event.referenced_restaurants?.length) {
+              if (isDrippingRef.current) {
+                pendingRestaurantsRef.current = event.referenced_restaurants;
+              } else {
+                // Drip already done — attach immediately
+                setMessages((prev) => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === "assistant") {
+                    return [...prev.slice(0, -1), { ...last, restaurants: event.referenced_restaurants }];
+                  }
+                  return prev;
+                });
+              }
             }
             if (event.queries_remaining !== null && event.queries_remaining !== undefined) {
               setQueriesRemaining(event.queries_remaining);
