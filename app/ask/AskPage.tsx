@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -80,17 +81,25 @@ function renderContent(text: string, restaurants: RestaurantRef[] = []) {
   });
 }
 
+// ── CleanPlate avatar ────────────────────────────────────────────────────────
+
+function CPAvatar() {
+  return (
+    <div
+      className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full overflow-hidden"
+      style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
+    >
+      <Image src="/guanaco_logo.svg" alt="CleanPlate" width={14} height={14} />
+    </div>
+  );
+}
+
 // ── Typing indicator ─────────────────────────────────────────────────────────
 
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-3 px-4 md:px-6 py-3">
-      <div
-        className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full"
-        style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
-      >
-        <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
-      </div>
+      <CPAvatar />
       <div
         className="flex items-center gap-1 px-3 py-2.5 rounded-sm"
         style={{ backgroundColor: "oklch(0.12 0 0)" }}
@@ -348,12 +357,7 @@ export function AskPage() {
               ) : msg.content === "__limit_reached__" ? (
                 // Paywall message
                 <div key={i} className="flex items-end gap-3 pt-2 pb-1">
-                  <div
-                    className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full"
-                    style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
-                  >
-                    <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
-                  </div>
+                  <CPAvatar />
                   <div
                     className="flex-1 px-4 py-4 border text-center space-y-2"
                     style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
@@ -372,11 +376,8 @@ export function AskPage() {
               ) : (
                 // Assistant message — left aligned
                 <div key={i} className="flex items-start gap-3 pt-2 pb-1">
-                  <div
-                    className="w-6 h-6 mt-0.5 shrink-0 flex items-center justify-center rounded-full"
-                    style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
-                  >
-                    <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
+                  <div className="mt-0.5">
+                    <CPAvatar />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div
