@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -11,21 +12,46 @@ const SUGGESTED_QUERIES = [
   "Quick GF lunch options in Midtown",
 ];
 
-// ── Simple markdown renderer ─────────────────────────────────────────────────
-// Handles the patterns Claude's responses use: **bold**, ---, and line breaks.
-// Avoids a heavy dependency for v1.
+type RestaurantRef = { id: number; name: string };
 
-function renderResponse(text: string) {
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  restaurants?: RestaurantRef[];
+};
+
+// ── Markdown renderer ────────────────────────────────────────────────────────
+// Renders **bold** text as inline links when the name matches a referenced restaurant.
+
+function renderContent(text: string, restaurants: RestaurantRef[] = []) {
+  const byName = new Map(restaurants.map((r) => [r.name.toLowerCase(), r]));
+
   const paragraphs = text.split(/\n\n+/);
   return paragraphs.map((para, i) => {
     if (para.trim() === "---") {
-      return <hr key={i} style={{ borderColor: "oklch(0.2 0 0)", margin: "1rem 0" }} />;
+      return <hr key={i} style={{ borderColor: "oklch(0.22 0 0)", margin: "1rem 0" }} />;
     }
     const lines = para.split("\n").map((line, j) => {
       const parts = line.split(/\*\*(.+?)\*\*/g);
-      const rendered = parts.map((part, k) =>
-        k % 2 === 1 ? <strong key={k} style={{ color: "oklch(0.92 0 0)" }}>{part}</strong> : part
-      );
+      const rendered = parts.map((part, k) => {
+        if (k % 2 !== 1) return part; // plain text
+        const restaurant = byName.get(part.toLowerCase());
+        if (restaurant) {
+          return (
+            <Link
+              key={k}
+              href={`/restaurant/${restaurant.id}`}
+              className="font-semibold underline underline-offset-2 decoration-1 transition-colors duration-150"
+              style={{ color: "#FF7444", textDecorationColor: "#FF744460" }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = "#FF7444")}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = "#FF744460")}
+            >
+              {part}
+            </Link>
+          );
+        }
+        return <strong key={k} style={{ color: "oklch(0.97 0 0)", fontWeight: 600 }}>{part}</strong>;
+      });
       return (
         <span key={j}>
           {j > 0 && <br />}
@@ -34,32 +60,72 @@ function renderResponse(text: string) {
       );
     });
     return (
-      <p key={i} className="leading-relaxed" style={{ marginBottom: "0.75rem" }}>
+      <p key={i} style={{ marginBottom: i < paragraphs.length - 1 ? "0.75rem" : 0 }}>
         {lines}
       </p>
     );
   });
 }
 
-// ── Loading skeleton ─────────────────────────────────────────────────────────
+// ── Typing indicator ─────────────────────────────────────────────────────────
 
-function ResponseSkeleton() {
+function TypingIndicator() {
   return (
-    <div className="animate-pulse space-y-3 pt-2">
-      {[85, 65, 90, 55, 75].map((w, i) => (
-        <div
-          key={i}
-          className="h-3 rounded"
-          style={{ width: `${w}%`, backgroundColor: "oklch(0.15 0 0)" }}
-        />
-      ))}
-      <div className="pt-2 space-y-3">
-        {[70, 80, 60].map((w, i) => (
-          <div
+    <div className="flex items-end gap-3 px-4 md:px-6 py-3">
+      <div
+        className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full"
+        style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
+      >
+        <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
+      </div>
+      <div
+        className="flex items-center gap-1 px-3 py-2.5 rounded-sm"
+        style={{ backgroundColor: "oklch(0.12 0 0)" }}
+      >
+        {[0, 1, 2].map((i) => (
+          <span
             key={i}
-            className="h-3 rounded"
-            style={{ width: `${w}%`, backgroundColor: "oklch(0.15 0 0)" }}
+            className="block w-1.5 h-1.5 rounded-full animate-bounce"
+            style={{ backgroundColor: "oklch(0.45 0 0)", animationDelay: `${i * 0.15}s` }}
           />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">
+      <div
+        className="w-10 h-10 flex items-center justify-center rounded-full mb-5"
+        style={{ backgroundColor: "#FF744415", border: "1px solid #FF744430" }}
+      >
+        <span className="font-[family-name:var(--font-display)]" style={{ color: "#FF7444", fontSize: "1.1rem" }}>C</span>
+      </div>
+      <p
+        className="font-[family-name:var(--font-display)] mb-1"
+        style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "oklch(0.9 0 0)", letterSpacing: "0.02em" }}
+      >
+        Ask CleanPlate
+      </p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)] mb-8">
+        GF safety data for 3,500+ NYC restaurants
+      </p>
+      <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+        {SUGGESTED_QUERIES.map((s) => (
+          <button
+            key={s}
+            onClick={() => onSelect(s)}
+            className="font-mono text-[10px] tracking-[0.08em] px-3 py-2 border transition-colors duration-150 text-left"
+            style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.1 0 0)", color: "oklch(0.6 0 0)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "oklch(0.35 0 0)"; e.currentTarget.style.color = "oklch(0.82 0 0)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "oklch(0.2 0 0)"; e.currentTarget.style.color = "oklch(0.6 0 0)"; }}
+          >
+            {s}
+          </button>
         ))}
       </div>
     </div>
@@ -69,30 +135,26 @@ function ResponseSkeleton() {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function AskPage() {
-  const [query, setQuery] = useState("");
-  const [response, setResponse] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastQuery, setLastQuery] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const [queriesRemaining, setQueriesRemaining] = useState<number | null>(null);
-  const responseRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to response when it arrives
+  // Scroll to bottom whenever messages change or loading state changes
   useEffect(() => {
-    if (response && responseRef.current) {
-      responseRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [response]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-  async function submit(q: string) {
-    const trimmed = q.trim();
-    if (!trimmed || loading) return;
+  async function submit(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || loading || limitReached) return;
 
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
+    setInput("");
     setLoading(true);
-    setError(null);
-    setResponse(null);
-    setLastQuery(trimmed);
 
     try {
       const res = await fetch("/api/agent", {
@@ -100,216 +162,226 @@ export function AskPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: trimmed }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error === "limit_reached"
-          ? "limit_reached"
-          : "Something went wrong. Please try again.");
-      } else {
-        setResponse(data.response);
-        if (data.queries_remaining !== null && data.queries_remaining !== undefined) {
-          setQueriesRemaining(data.queries_remaining);
+
+      // Limit reached — not a stream, plain JSON error
+      if (res.status === 402) {
+        setLimitReached(true);
+        setMessages((prev) => [...prev, { role: "assistant", content: "__limit_reached__" }]);
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok || !res.body) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+        setLoading(false);
+        return;
+      }
+
+      // Read SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let assistantAdded = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          let event: { type: string; text?: string; referenced_restaurants?: RestaurantRef[]; queries_remaining?: number; message?: string };
+          try {
+            event = JSON.parse(part.slice(6));
+          } catch {
+            continue;
+          }
+
+          if (event.type === "delta" && event.text) {
+            if (!assistantAdded) {
+              // First token: add the assistant message and drop the typing indicator
+              setMessages((prev) => [...prev, { role: "assistant", content: event.text! }]);
+              setLoading(false);
+              assistantAdded = true;
+            } else {
+              // Subsequent tokens: append to the last message
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant") {
+                  return [...prev.slice(0, -1), { ...last, content: last.content + event.text }];
+                }
+                return prev;
+              });
+            }
+          } else if (event.type === "done") {
+            // Attach restaurant links and update usage counter
+            if (event.referenced_restaurants) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant") {
+                  return [...prev.slice(0, -1), { ...last, restaurants: event.referenced_restaurants }];
+                }
+                return prev;
+              });
+            }
+            if (event.queries_remaining !== null && event.queries_remaining !== undefined) {
+              setQueriesRemaining(event.queries_remaining);
+            }
+          } else if (event.type === "error") {
+            setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+            setLoading(false);
+          }
         }
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleSuggestion(s: string) {
-    setQuery(s);
-    submit(s);
-    inputRef.current?.focus();
-  }
-
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      submit(query);
+      submit(input);
     }
   }
 
+  const hasMessages = messages.length > 0;
+
   return (
-    <main className="pt-16 pb-32 md:pb-24">
-      {/* Hero / input area */}
-      <section
-        className="grid-bg border-b px-4 md:px-8 py-12 md:py-20"
-        style={{ borderColor: "oklch(0.22 0 0)" }}
+    // Full viewport height minus top nav (64px). On mobile, bottom nav adds 64px so we pad input.
+    <div
+      className="flex flex-col"
+      style={{ height: "calc(100dvh - 64px)", marginTop: "64px" }}
+    >
+      {/* ── Message thread ── */}
+      <div className="flex-1 overflow-y-auto">
+        {!hasMessages ? (
+          <EmptyState onSelect={(q) => { setInput(q); submit(q); }} />
+        ) : (
+          <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 space-y-1">
+            {messages.map((msg, i) =>
+              msg.role === "user" ? (
+                // User bubble — right aligned
+                <div key={i} className="flex justify-end pt-3 pb-1">
+                  <div
+                    className="max-w-[80%] px-4 py-3 text-[13px] leading-relaxed font-mono"
+                    style={{
+                      backgroundColor: "#FF744412",
+                      border: "1px solid #FF744430",
+                      color: "oklch(0.88 0 0)",
+                    }}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ) : msg.content === "__limit_reached__" ? (
+                // Paywall message
+                <div key={i} className="flex items-end gap-3 pt-2 pb-1">
+                  <div
+                    className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full"
+                    style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
+                  >
+                    <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
+                  </div>
+                  <div
+                    className="flex-1 px-4 py-4 border text-center space-y-2"
+                    style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+                  >
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.7_0_0)]">
+                      You&apos;ve used your 5 free queries
+                    </p>
+                    <p className="font-mono text-[10px] text-[oklch(0.48_0_0)]">
+                      Upgrade to CleanPlate Premium for unlimited access.
+                    </p>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.15em]" style={{ color: "#FF7444" }}>
+                      $7 / month — coming soon
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Assistant message — left aligned
+                <div key={i} className="flex items-start gap-3 pt-2 pb-1">
+                  <div
+                    className="w-6 h-6 mt-0.5 shrink-0 flex items-center justify-center rounded-full"
+                    style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
+                  >
+                    <span style={{ fontSize: 10, color: "#FF7444" }}>C</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="text-[15px] leading-[1.7]"
+                      style={{ color: "oklch(0.92 0 0)" }}
+                    >
+                      {renderContent(msg.content, msg.restaurants ?? [])}
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+            {loading && <TypingIndicator />}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Input bar ── */}
+      <div
+        className="shrink-0 border-t px-4 md:px-6 pt-3 pb-20 md:pb-4"
+        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)" }}
       >
         <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.55_0_0)] mb-4">
-            Ask CleanPlate
-          </p>
-          <h1
-            className="font-[family-name:var(--font-display)] leading-none mb-8"
-            style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", letterSpacing: "0.02em" }}
-          >
-            What can I help<br />
-            <span style={{ color: "#FF7444" }}>you find?</span>
-          </h1>
-
-          {/* Input */}
-          <div className="relative">
+          <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={'e.g. \u201cSafe GF pizza in the East Village\u201d'}
-              rows={2}
-              disabled={loading}
-              className="w-full resize-none border px-4 py-4 pr-24 font-mono text-[13px] leading-relaxed placeholder:text-[oklch(0.4_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150 disabled:opacity-50"
+              placeholder={limitReached ? "Upgrade to ask more questions" : "Ask about GF dining in NYC…"}
+              rows={1}
+              disabled={loading || limitReached}
+              className="flex-1 resize-none border px-3 py-2.5 font-mono text-[13px] leading-relaxed placeholder:text-[oklch(0.35_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150 disabled:opacity-40"
               style={{
-                backgroundColor: "oklch(0.09 0 0)",
-                borderColor: "oklch(0.26 0 0)",
+                backgroundColor: "oklch(0.11 0 0)",
+                borderColor: "oklch(0.22 0 0)",
+                maxHeight: "120px",
+                overflowY: "auto",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(0.42 0 0)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.26 0 0)")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(0.38 0 0)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.22 0 0)")}
+              onInput={(e) => {
+                // Auto-grow textarea
+                const el = e.currentTarget;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+              }}
             />
             <button
-              onClick={() => submit(query)}
-              disabled={!query.trim() || loading}
-              className="absolute right-3 bottom-3 font-mono text-[10px] uppercase tracking-[0.18em] px-4 py-2 border transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{
-                borderColor: "#FF7444",
-                backgroundColor: "#FF744420",
-                color: "#FF7444",
-              }}
+              onClick={() => submit(input)}
+              disabled={!input.trim() || loading || limitReached}
+              className="shrink-0 w-9 h-9 flex items-center justify-center border transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ borderColor: "#FF7444", backgroundColor: "#FF744420", color: "#FF7444" }}
             >
-              {loading ? "..." : "Ask"}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
             </button>
           </div>
 
           {/* Usage counter */}
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.42_0_0)] mt-3">
-            {queriesRemaining !== null
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.36_0_0)] mt-2">
+            {limitReached
+              ? "Query limit reached"
+              : queriesRemaining !== null
               ? `${queriesRemaining} free quer${queriesRemaining === 1 ? "y" : "ies"} remaining`
               : "5 free queries · No account needed"}
           </p>
-
-          {/* Suggested queries */}
-          {!response && !loading && (
-            <div className="mt-6">
-              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[oklch(0.45_0_0)] mb-3">
-                Try asking
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTED_QUERIES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleSuggestion(s)}
-                    className="font-mono text-[10px] tracking-[0.1em] px-3 py-1.5 border transition-colors duration-150 text-left"
-                    style={{
-                      borderColor: "oklch(0.22 0 0)",
-                      backgroundColor: "oklch(0.1 0 0)",
-                      color: "oklch(0.62 0 0)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "oklch(0.38 0 0)";
-                      e.currentTarget.style.color = "oklch(0.8 0 0)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "oklch(0.22 0 0)";
-                      e.currentTarget.style.color = "oklch(0.62 0 0)";
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </section>
-
-      {/* Response area */}
-      {(loading || response || error) && (
-        <section className="px-4 md:px-8 pt-10" ref={responseRef}>
-          <div className="max-w-2xl mx-auto">
-
-            {/* Question echo */}
-            {lastQuery && (
-              <p
-                className="font-mono text-[10px] uppercase tracking-[0.22em] mb-6 pb-4 border-b"
-                style={{ color: "oklch(0.52 0 0)", borderColor: "oklch(0.18 0 0)" }}
-              >
-                {lastQuery}
-              </p>
-            )}
-
-            {/* Loading */}
-            {loading && <ResponseSkeleton />}
-
-            {/* Error */}
-            {error && error !== "limit_reached" && (
-              <p className="font-mono text-[12px] text-[#FF7444]">{error}</p>
-            )}
-
-            {/* Limit reached */}
-            {error === "limit_reached" && (
-              <div
-                className="border p-6 text-center space-y-3"
-                style={{ borderColor: "oklch(0.22 0 0)" }}
-              >
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.7_0_0)]">
-                  You&apos;ve used your 5 free queries
-                </p>
-                <p className="font-mono text-[10px] text-[oklch(0.5_0_0)]">
-                  Upgrade to CleanPlate Premium for unlimited access.
-                </p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.15em]" style={{ color: "#FF7444" }}>
-                  $7 / month — coming soon
-                </p>
-              </div>
-            )}
-
-            {/* Response */}
-            {response && (
-              <>
-                <div
-                  className="text-[14px] leading-relaxed"
-                  style={{ color: "oklch(0.78 0 0)" }}
-                >
-                  {renderResponse(response)}
-                </div>
-
-                {/* Ask another */}
-                <div
-                  className="mt-8 pt-6 border-t flex items-center justify-between"
-                  style={{ borderColor: "oklch(0.18 0 0)" }}
-                >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)]">
-                    Ask another question
-                  </span>
-                  <button
-                    onClick={() => {
-                      setResponse(null);
-                      setQuery("");
-                      setLastQuery(null);
-                      inputRef.current?.focus();
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className="font-mono text-[10px] uppercase tracking-[0.18em] px-4 py-2 border transition-colors duration-150"
-                    style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65 0 0)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "white";
-                      e.currentTarget.style.borderColor = "oklch(0.5 0 0)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "oklch(0.65 0 0)";
-                      e.currentTarget.style.borderColor = "oklch(0.28 0 0)";
-                    }}
-                  >
-                    ↑ New Question
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
-      )}
-    </main>
+      </div>
+    </div>
   );
 }

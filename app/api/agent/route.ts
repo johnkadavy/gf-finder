@@ -166,86 +166,140 @@ export async function POST(request: Request) {
     );
   }
 
+  // Pre-build response headers. For anonymous users, set the cookie upfront so it's
+  // included on the streaming response (we only reach this point if the query is allowed).
+  const responseHeaders = new Headers({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+  });
+  if (usageCtx.type === "anon") {
+    responseHeaders.append(
+      "Set-Cookie",
+      `${ANON_COOKIE}=${usageCtx.count + 1}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`,
+    );
+  }
+
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: query },
   ];
 
-  let rounds = 0;
+  const referencedRestaurants: Array<{ id: number; name: string }> = [];
 
-  try {
-    // Tool-use loop: Claude may call tools multiple times before giving a final answer
-    while (rounds < MAX_TOOL_ROUNDS) {
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        tools: TOOLS,
-        messages,
+  function trackRestaurants(toolName: string, result: unknown) {
+    if (toolName === "search_restaurants") {
+      const r = result as { results?: Array<{ id: number; name: string }> };
+      r.results?.forEach(({ id, name }) => {
+        if (!referencedRestaurants.find((x) => x.id === id)) referencedRestaurants.push({ id, name });
       });
+    } else if (toolName === "get_restaurant_details") {
+      const r = result as { restaurant?: { id: number; name: string } | null };
+      if (r.restaurant && !referencedRestaurants.find((x) => x.id === r.restaurant!.id)) {
+        referencedRestaurants.push({ id: r.restaurant.id, name: r.restaurant.name });
+      }
+    }
+  }
 
-      // If Claude is done (no more tool calls), extract text, increment usage, and return
-      if (response.stop_reason === "end_turn") {
-        const textBlock = response.content.find((b) => b.type === "text");
-        const text = textBlock?.type === "text" ? textBlock.text : "";
+  const encoder = new TextEncoder();
 
-        const responseHeaders = new Headers({ "Content-Type": "application/json" });
-        await incrementUsage(usageCtx, responseHeaders);
-
-        const newCount = isUnlimited ? null : queriesUsed + 1;
-        const queriesRemaining = isUnlimited ? null : FREE_LIMIT - (newCount ?? 0);
-
-        return new Response(
-          JSON.stringify({ response: text, queries_used: newCount, queries_remaining: queriesRemaining }),
-          { headers: responseHeaders },
-        );
+  const body = new ReadableStream({
+    async start(controller) {
+      function send(data: object) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       }
 
-      // Claude wants to call a tool — execute it and feed the result back
-      if (response.stop_reason === "tool_use") {
-        messages.push({ role: "assistant", content: response.content });
+      let rounds = 0;
 
-        const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      try {
+        while (rounds < MAX_TOOL_ROUNDS) {
+          const stream = anthropic.messages.stream({
+            model: "claude-sonnet-4-6",
+            max_tokens: 1024,
+            system: SYSTEM_PROMPT,
+            tools: TOOLS,
+            messages,
+          });
 
-        for (const block of response.content) {
-          if (block.type !== "tool_use") continue;
+          // Forward text tokens to client in real-time.
+          // During tool-use rounds Claude emits no text, so this only fires on the final response.
+          stream.on("text", (text) => send({ type: "delta", text }));
 
-          let result: unknown;
-          try {
-            switch (block.name) {
-              case "search_restaurants":
-                result = await searchRestaurants(block.input as Parameters<typeof searchRestaurants>[0]);
-                break;
-              case "get_restaurant_details":
-                result = await getRestaurantDetails(block.input as Parameters<typeof getRestaurantDetails>[0]);
-                break;
-              case "get_neighborhood_overview":
-                result = await getNeighborhoodOverview(block.input as Parameters<typeof getNeighborhoodOverview>[0]);
-                break;
-              default:
-                result = { error: `Unknown tool: ${block.name}` };
+          const message = await stream.finalMessage();
+
+          if (message.stop_reason === "end_turn") {
+            // Increment DB usage for logged-in users (cookie already set in response headers)
+            if (usageCtx.type === "user") {
+              const serverClient = await createClient();
+              await serverClient
+                .from("profiles")
+                .update({ agent_queries_used: usageCtx.count + 1 })
+                .eq("id", usageCtx.userId);
             }
-          } catch (err) {
-            result = { error: `Tool execution failed: ${err instanceof Error ? err.message : String(err)}` };
+
+            const newCount = isUnlimited ? null : queriesUsed + 1;
+            const queriesRemaining = isUnlimited ? null : FREE_LIMIT - (newCount ?? 0);
+
+            send({
+              type: "done",
+              referenced_restaurants: referencedRestaurants,
+              queries_remaining: queriesRemaining,
+            });
+            controller.close();
+            return;
           }
 
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: JSON.stringify(result),
-          });
+          if (message.stop_reason === "tool_use") {
+            messages.push({ role: "assistant", content: message.content });
+
+            const toolResults: Anthropic.ToolResultBlockParam[] = [];
+
+            for (const block of message.content) {
+              if (block.type !== "tool_use") continue;
+
+              let result: unknown;
+              try {
+                switch (block.name) {
+                  case "search_restaurants":
+                    result = await searchRestaurants(block.input as Parameters<typeof searchRestaurants>[0]);
+                    break;
+                  case "get_restaurant_details":
+                    result = await getRestaurantDetails(block.input as Parameters<typeof getRestaurantDetails>[0]);
+                    break;
+                  case "get_neighborhood_overview":
+                    result = await getNeighborhoodOverview(block.input as Parameters<typeof getNeighborhoodOverview>[0]);
+                    break;
+                  default:
+                    result = { error: `Unknown tool: ${block.name}` };
+                }
+                trackRestaurants(block.name, result);
+              } catch (err) {
+                result = { error: `Tool execution failed: ${err instanceof Error ? err.message : String(err)}` };
+              }
+
+              toolResults.push({
+                type: "tool_result",
+                tool_use_id: block.id,
+                content: JSON.stringify(result),
+              });
+            }
+
+            messages.push({ role: "user", content: toolResults });
+            rounds++;
+            continue;
+          }
+
+          break;
         }
 
-        messages.push({ role: "user", content: toolResults });
-        rounds++;
-        continue;
+        send({ type: "error", message: "Agent did not produce a response" });
+        controller.close();
+      } catch (err) {
+        console.error("[/api/agent] Error:", err);
+        send({ type: "error", message: "Failed to get response from agent" });
+        controller.close();
       }
+    },
+  });
 
-      break;
-    }
-
-    return Response.json({ error: "Agent did not produce a response" }, { status: 500 });
-  } catch (err) {
-    console.error("[/api/agent] Error:", err);
-    return Response.json({ error: "Failed to get response from agent" }, { status: 500 });
-  }
+  return new Response(body, { headers: responseHeaders });
 }
