@@ -143,24 +143,64 @@ export function AskPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Scroll to bottom whenever messages change or loading state changes
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  // Character drip queue — smooths out chunky SSE bursts into a continuous typing effect
+  const pendingCharsRef = useRef<string>("");
+  const isDrippingRef = useRef(false);
+
+  function scheduleDrip() {
+    if (isDrippingRef.current) return;
+    isDrippingRef.current = true;
+    function tick() {
+      const pending = pendingCharsRef.current;
+      if (pending.length === 0) { isDrippingRef.current = false; return; }
+      // Drain faster when queue is large (catching up after a big chunk)
+      const take = pending.length > 30 ? 4 : pending.length > 10 ? 2 : 1;
+      const chars = pending.slice(0, take);
+      pendingCharsRef.current = pending.slice(take);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.content !== "__limit_reached__") {
+          return [...prev.slice(0, -1), { ...last, content: last.content + chars }];
+        }
+        return prev;
+      });
+      setTimeout(tick, 12);
+    }
+    setTimeout(tick, 12);
+  }
+
+  // Only auto-scroll when near the bottom (avoids fighting the user if they scroll up)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  function scrollToBottom() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 120) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
+  useEffect(() => { scrollToBottom(); }, [messages, loading]);
 
   async function submit(text: string) {
     const trimmed = text.trim();
     if (!trimmed || loading || limitReached) return;
 
+    // Snapshot history before adding the new user message (sent to API for context)
+    const history = messages
+      .filter((m) => m.content !== "__limit_reached__")
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setInput("");
     setLoading(true);
+    pendingCharsRef.current = "";
 
     try {
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed }),
+        body: JSON.stringify({ query: trimmed, history }),
       });
 
       // Limit reached — not a stream, plain JSON error
@@ -202,20 +242,14 @@ export function AskPage() {
 
           if (event.type === "delta" && event.text) {
             if (!assistantAdded) {
-              // First token: add the assistant message and drop the typing indicator
-              setMessages((prev) => [...prev, { role: "assistant", content: event.text! }]);
+              // First token: add empty assistant message, drop the typing indicator
+              setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
               setLoading(false);
               assistantAdded = true;
-            } else {
-              // Subsequent tokens: append to the last message
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return [...prev.slice(0, -1), { ...last, content: last.content + event.text }];
-                }
-                return prev;
-              });
             }
+            // Push incoming text to the drip queue instead of updating state directly
+            pendingCharsRef.current += event.text;
+            scheduleDrip();
           } else if (event.type === "done") {
             // Attach restaurant links and update usage counter
             if (event.referenced_restaurants) {
@@ -259,7 +293,7 @@ export function AskPage() {
       style={{ height: "calc(100dvh - 64px)", marginTop: "64px" }}
     >
       {/* ── Message thread ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {!hasMessages ? (
           <EmptyState onSelect={(q) => { setInput(q); submit(q); }} />
         ) : (

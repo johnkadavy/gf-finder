@@ -143,9 +143,16 @@ async function incrementUsage(ctx: UsageContext, responseHeaders: Headers): Prom
 
 export async function POST(request: Request) {
   let query: string;
+  let history: Anthropic.MessageParam[];
   try {
     const body = await request.json();
     query = (body.query ?? "").trim();
+    // Accept up to 20 prior turns for context; older history is dropped to control token cost
+    const raw = Array.isArray(body.history) ? body.history : [];
+    history = raw.slice(-20).map((m: { role: string; content: string }) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content ?? ""),
+    }));
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -181,6 +188,7 @@ export async function POST(request: Request) {
   }
 
   const messages: Anthropic.MessageParam[] = [
+    ...history,
     { role: "user", content: query },
   ];
 
