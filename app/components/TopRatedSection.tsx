@@ -93,37 +93,39 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
         {([
           { chips: GF_CHIPS,         label: "GF Features" },
           { chips: PLACE_TYPE_CHIPS, label: "Place Type"  },
-        ] as const).map(({ chips, label }, rowIdx) => (
-          <div key={rowIdx}>
-            <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-1.5" style={{ color: "oklch(0.52 0 0)" }}>
-              {label}
-            </p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
-              {chips.map((chip) => {
-                const isActive = activeChip === chip.id;
-                const hasResults = restaurants.some(chip.filter);
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => setActiveChip(isActive ? null : chip.id)}
-                    disabled={!hasResults}
-                    className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 border font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{
-                      borderColor: isActive ? "#FF7444" : "oklch(0.28 0 0)",
-                      backgroundColor: isActive ? "#FF744430" : "oklch(0.1 0 0)",
-                      color: isActive ? "#FF7444" : "oklch(0.68 0 0)",
-                      fontWeight: isActive ? 600 : 400,
-                    }}
-                  >
-                    {chip.label}
-                    {isActive && <span className="text-[9px] opacity-70">×</span>}
-                  </button>
-                );
-              })}
+        ] as const).map(({ chips, label }, rowIdx) => {
+          const visibleChips = chips.filter((chip) => restaurants.some(chip.filter));
+          if (visibleChips.length === 0) return null;
+          return (
+            <div key={rowIdx}>
+              <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-1.5" style={{ color: "oklch(0.52 0 0)" }}>
+                {label}
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
+                {visibleChips.map((chip) => {
+                  const isActive = activeChip === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setActiveChip(isActive ? null : chip.id)}
+                      className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 border font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-150"
+                      style={{
+                        borderColor: isActive ? "#FF7444" : "oklch(0.28 0 0)",
+                        backgroundColor: isActive ? "#FF744430" : "oklch(0.1 0 0)",
+                        color: isActive ? "#FF7444" : "oklch(0.68 0 0)",
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                    >
+                      {chip.label}
+                      {isActive && <span className="text-[9px] opacity-70">×</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Cards grid */}
