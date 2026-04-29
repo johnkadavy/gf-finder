@@ -36,9 +36,18 @@ function MapIcon() {
   );
 }
 
+function AskIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 const TABS = [
   { href: "/",         label: "Search",   Icon: SearchIcon   },
   { href: "/rankings", label: "Rankings", Icon: RankingsIcon },
+  { href: "/ask",      label: "Ask",      Icon: AskIcon      },
   { href: "/map",      label: "Map",      Icon: MapIcon      },
 ];
 
@@ -63,6 +72,7 @@ export function Nav() {
           <Link href="/" className={linkClass}>Search</Link>
         )}
         <Link href="/rankings" className={linkClass}>Rankings</Link>
+        <Link href="/ask" className={linkClass}>Ask</Link>
         <Link href="/map" className={linkClass}>Map</Link>
         <Link href="/about" className={linkClass}>About</Link>
         {/* Blog link hidden until posts exist */}
