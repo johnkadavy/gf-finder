@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
@@ -97,6 +98,39 @@ export type TopRestaurant = {
   place_type: string[] | null;
 };
 
+// Cached per-city top-50 — revalidates every 30 min
+const getTopRestaurants = unstable_cache(
+  async (city: string) => {
+    const { data } = await supabase
+      .from("restaurants")
+      .select("id, name, neighborhood, cuisine, score, dossier, gf_food_categories, place_type")
+      .eq("city", city)
+      .not("score", "is", null)
+      .order("score", { ascending: false })
+      .limit(50);
+    return (data ?? []) as Array<{
+      id: number; name: string; neighborhood: string | null;
+      cuisine: string | null; score: number | null; dossier: Dossier | null;
+      gf_food_categories: string[] | null; place_type: string[] | null;
+    }>;
+  },
+  ["homepage-top-restaurants"],
+  { revalidate: 1800 },
+);
+
+// Cached homepage metadata (city list + NYC count) — revalidates every hour
+const getHomepageMeta = unstable_cache(
+  async () => {
+    const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
+      supabase.from("restaurants").select("city").not("score", "is", null),
+      supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
+    ]);
+    return { cityRows: cityRows ?? [], totalCount: totalCount ?? 0 };
+  },
+  ["homepage-meta"],
+  { revalidate: 3600 },
+);
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
@@ -108,45 +142,31 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const selectedCity = resolveCity(params.city, cityAccess);
   const topRatedCity = selectedCity !== "all" ? selectedCity : cityAccess.defaultCity;
 
-  // Metadata queries in parallel (cities filter + social proof count)
-  const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
-    supabase.from("restaurants").select("city").not("score", "is", null),
-    supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
+  // Cached metadata + top restaurants — run in parallel since both are independent of each other
+  const [{ cityRows, totalCount }, topData] = await Promise.all([
+    getHomepageMeta(),
+    query ? Promise.resolve([]) : getTopRestaurants(topRatedCity),
   ]);
 
-  const allDbCities = Array.from(new Set((cityRows ?? []).map((r) => r.city))).sort();
-  // City selector shows only allowed cities (empty = hidden for single-city users)
+  const allDbCities = Array.from(new Set(cityRows.map((r: { city: string }) => r.city))).sort();
   const selectableCities = getSelectableCities(cityAccess, allDbCities);
   const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
 
-  // Fetch top 50 restaurants for homepage cards + chip filtering
-  let topRated: TopRestaurant[] = [];
-  if (!query) {
-    const { data: topData } = await supabase
-      .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score, dossier, gf_food_categories, place_type")
-      .eq("city", topRatedCity)
-      .not("score", "is", null)
-      .order("score", { ascending: false })
-      .limit(50);
-
-    topRated = ((topData ?? []) as Array<{
-      id: number; name: string; neighborhood: string | null;
-      cuisine: string | null; score: number | null; dossier: Dossier | null;
-      gf_food_categories: string[] | null;
-      place_type: string[] | null;
-    }>).map((r) => ({
-      id: r.id,
-      name: r.name,
-      neighborhood: r.neighborhood,
-      cuisine: r.cuisine,
-      score: r.score,
-      hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
-      isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
-      gf_food_categories: r.gf_food_categories ?? null,
-      place_type: r.place_type ?? null,
-    }));
-  }
+  const topRated: TopRestaurant[] = (topData as Array<{
+    id: number; name: string; neighborhood: string | null;
+    cuisine: string | null; score: number | null; dossier: Dossier | null;
+    gf_food_categories: string[] | null; place_type: string[] | null;
+  }>).map((r) => ({
+    id: r.id,
+    name: r.name,
+    neighborhood: r.neighborhood,
+    cuisine: r.cuisine,
+    score: r.score,
+    hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
+    isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
+    gf_food_categories: r.gf_food_categories ?? null,
+    place_type: r.place_type ?? null,
+  }));
 
   let restaurants: Restaurant[] = [];
 
