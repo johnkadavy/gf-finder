@@ -39,7 +39,7 @@ const TOOLS: Anthropic.Tool[] = [
         },
         gf_food_category: {
           type: "string",
-          description: "Specific GF food available: gf_pizza, gf_pasta, gf_bread_bakery, gf_beer, gf_fried_items, gf_desserts, gf_sandwiches, gf_breakfast",
+          description: "Specific GF food available: gf_pizza, gf_pasta, gf_bread, gf_beer, gf_fried_items, gf_desserts, gf_sandwiches, gf_breakfast",
         },
         min_score: {
           type: "number",
