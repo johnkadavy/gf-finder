@@ -341,27 +341,66 @@ export default async function RestaurantPage({
     d?.reviews?.recent_sentiment === "mostly_negative" ? "Mostly negative" : "Unknown";
 
   // ── JSON-LD structured data ──────────────────────────────────────────────
+  const reviewCount = (d?.reviews?.positive_count ?? 0) + (d?.reviews?.negative_count ?? 0);
+  const summary = d?.summary?.short_summary;
+
+  // Convert opening hours from Google's "Monday: 9:00 AM – 10:00 PM" format
+  // to schema.org "Mo 09:00-22:00" format (best-effort, skip if unparseable)
+  const openingHoursSpec: string[] = [];
+  const dayMap: Record<string, string> = {
+    Monday: "Mo", Tuesday: "Tu", Wednesday: "We", Thursday: "Th",
+    Friday: "Fr", Saturday: "Sa", Sunday: "Su",
+  };
+  for (const line of r.opening_hours?.weekdayDescriptions ?? []) {
+    const m = line.match(/^(\w+):\s*(.+)$/);
+    if (!m) continue;
+    const day = dayMap[m[1]];
+    if (!day) continue;
+    const times = m[2].trim();
+    if (times.toLowerCase() === "closed") continue;
+    // Handle "9:00 AM – 10:00 PM" → "09:00-22:00"
+    const rangeParts = times.split(/\s*[–-]\s*/);
+    if (rangeParts.length !== 2) continue;
+    const toH = (t: string) => {
+      const pm = /pm/i.test(t);
+      const [h, mm] = t.replace(/[^\d:]/g, "").split(":");
+      let hour = parseInt(h, 10);
+      if (pm && hour !== 12) hour += 12;
+      if (!pm && hour === 12) hour = 0;
+      return `${String(hour).padStart(2, "0")}:${mm ?? "00"}`;
+    };
+    openingHoursSpec.push(`${day} ${toH(rangeParts[0])}-${toH(rangeParts[1])}`);
+  }
+
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Restaurant",
     "name": r.name,
+    ...(summary ? { "description": summary } : {}),
     ...(r.address ? {
       "address": {
         "@type": "PostalAddress",
         "streetAddress": r.address,
-        "addressLocality": r.city,
+        "addressLocality": r.neighborhood ?? r.city,
+        "addressRegion": "NY",
+        "addressCountry": "US",
       },
     } : {}),
-    ...(r.phone        ? { "telephone": r.phone }                                               : {}),
-    ...(r.website_url  ? { "url": r.website_url }                                               : {}),
-    ...(r.cuisine      ? { "servesCuisine": r.cuisine }                                         : {}),
-    ...(score !== null ? {
+    ...(r.phone          ? { "telephone": r.phone }                      : {}),
+    ...(r.website_url    ? { "url": r.website_url }                      : {}),
+    ...(r.google_maps_url ? { "hasMap": r.google_maps_url,
+                               "sameAs": r.google_maps_url }             : {}),
+    ...(r.cuisine        ? { "servesCuisine": r.cuisine }                : {}),
+    ...(r.price_level    ? { "priceRange": priceSymbol(r.price_level) }  : {}),
+    ...(openingHoursSpec.length > 0 ? { "openingHours": openingHoursSpec } : {}),
+    // Only include aggregateRating when we have real review signal data
+    ...(score !== null && reviewCount >= 3 ? {
       "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": Math.round(score),
-        "bestRating": 100,
-        "worstRating": 0,
-        "ratingCount": 1,
+        "ratingValue": (score / 20).toFixed(1),   // convert 0-100 → 0-5 scale
+        "bestRating": "5",
+        "worstRating": "1",
+        "reviewCount": reviewCount,
       },
     } : {}),
   };
