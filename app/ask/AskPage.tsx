@@ -26,8 +26,8 @@ type Message = {
 
 function renderLine(line: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
-  // Match [text](url) and **bold** in one pass
-  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*/g;
+  // Match [text](url), **bold**, and *italic* in one pass
+  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*([^*\n]+)\*/g;
   let last = 0;
   let match: RegExpExecArray | null;
 
@@ -56,6 +56,13 @@ function renderLine(line: string): React.ReactNode[] {
         <strong key={match.index} style={{ color: "oklch(0.97 0 0)", fontWeight: 600 }}>
           {match[3]}
         </strong>
+      );
+    } else if (match[4] !== undefined) {
+      // *italic* — used by Claude for score labels like *(Excellent)*
+      nodes.push(
+        <em key={match.index} style={{ color: "oklch(0.75 0 0)", fontStyle: "normal" }}>
+          {match[4]}
+        </em>
       );
     }
     last = match.index + match[0].length;
