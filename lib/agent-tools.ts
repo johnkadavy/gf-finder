@@ -82,6 +82,7 @@ type DbRow = {
   region: string | null;
   cuisine: string | null;
   score: number | null;
+  slug: string | null;
   place_type: string[] | null;
   gf_food_categories: string[] | null;
   website_url: string | null;
@@ -104,7 +105,7 @@ type DbRow = {
 };
 
 const DB_SELECT =
-  "id, name, city, neighborhood, cuisine, score, place_type, gf_food_categories, website_url, google_maps_url, dossier";
+  "id, name, city, neighborhood, cuisine, score, slug, place_type, gf_food_categories, website_url, google_maps_url, dossier";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ function toSummary(r: DbRow): RestaurantSummary {
     has_gf_labels: r.dossier?.menu?.gf_labeling === "clear",
     cross_contamination_risk: r.dossier?.operations?.cross_contamination_risk ?? null,
     sick_reports_recent: r.dossier?.reviews?.sick_reports_recent ?? 0,
-    url: `/restaurant/${r.id}`,
+    url: r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`,
   };
 }
 
@@ -246,7 +247,7 @@ export async function getNeighborhoodOverview(
       id: r.id,
       name: r.name,
       score: r.score as number,
-      url: `/restaurant/${r.id}`,
+      url: r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`,
     })),
     dedicated_gf_count: rows.filter(
       (r) => r.dossier?.operations?.cross_contamination_risk === "low",

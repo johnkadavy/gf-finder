@@ -18,17 +18,19 @@ const PLACE_TYPE_MAP: Record<string, string> = {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [restaurantsRes, landingRes] = await Promise.all([
-    supabase.from("restaurants").select("id, updated_at").not("score", "is", null).order("id", { ascending: true }),
+    supabase.from("restaurants").select("id, slug, updated_at").not("score", "is", null).order("id", { ascending: true }),
     supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score").not("score", "is", null).not("neighborhood", "is", null),
   ]);
 
   // ── Restaurant detail pages ──
-  const restaurantUrls: MetadataRoute.Sitemap = (restaurantsRes.data ?? []).map((r) => ({
-    url: `${BASE_URL}/restaurant/${r.id}`,
-    lastModified: r.updated_at ? new Date(r.updated_at) : new Date(),
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }));
+  const restaurantUrls: MetadataRoute.Sitemap = (restaurantsRes.data ?? [])
+    .filter((r) => r.slug)
+    .map((r) => ({
+      url: `${BASE_URL}/restaurant/${r.slug}`,
+      lastModified: r.updated_at ? new Date(r.updated_at) : new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
 
   // ── Programmatic landing pages ──
   type Row = { city: string; neighborhood: string | null; gf_food_categories: string[] | null; place_type: string[] | null; score: number | null };

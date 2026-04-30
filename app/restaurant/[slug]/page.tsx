@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SaveButton } from "@/app/components/SaveButton";
@@ -42,6 +42,7 @@ type Restaurant = {
   google_place_id: string | null;
   source: string | null;
   ingested_at: string | null;
+  slug: string | null;
 };
 
 type VerifiedVisit = {
@@ -169,14 +170,41 @@ function buildSignalSummary(d: ScoringDossier | null): string {
   return ` ${cap(top[0])}, ${top[1]}, and ${top[2]}.`;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// ── Slug resolution ────────────────────────────────────────────────────────
+// Supports both slug-based URLs (/restaurant/wild-west-village) and legacy
+// numeric IDs (/restaurant/5) — the latter 301-redirects to the slug URL.
+
+async function resolveRestaurant(slugOrId: string) {
+  const isNumericId = /^\d+$/.test(slugOrId);
+
+  if (isNumericId) {
+    const { data } = await supabase
+      .from("restaurants")
+      .select("slug")
+      .eq("id", slugOrId)
+      .single();
+    if (data?.slug) redirect(`/restaurant/${data.slug}`);
+    return null;
+  }
+
   const { data } = await supabase
     .from("restaurants")
-    .select("name, city, neighborhood, region, dossier, verified_data")
-    .eq("id", id)
+    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug")
+    .eq("slug", slugOrId)
     .single();
 
+  return data ?? null;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const isNumericId = /^\d+$/.test(slug);
+
+  const query = isNumericId
+    ? supabase.from("restaurants").select("name, city, neighborhood, region, dossier, verified_data, slug").eq("id", slug).single()
+    : supabase.from("restaurants").select("name, city, neighborhood, region, dossier, verified_data, slug").eq("slug", slug).single();
+
+  const { data } = await query;
   if (!data) return {};
 
   const score = data.dossier
@@ -184,7 +212,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     : null;
   const d = data.dossier as ScoringDossier | null;
   const location = formatLocation(data.neighborhood, data.city, data.region, ", ");
-  const canonicalUrl = `/restaurant/${id}`;
+  const canonicalUrl = `/restaurant/${data.slug ?? slug}`;
 
   const title = `${data.name} — Gluten-Free Safety Rating | CleanPlate`;
   const description = score !== null
@@ -210,22 +238,15 @@ export default async function RestaurantPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ from?: string }>;
 }) {
-  const { id } = await params;
+  const { slug } = await params;
   const { from } = await searchParams;
   const fromMap = from === "map";
 
-  const { data, error } = await supabase
-    .from("restaurants")
-    .select(
-      "id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at"
-    )
-    .eq("id", id)
-    .single();
-
-  if (error || !data) notFound();
+  const data = await resolveRestaurant(slug);
+  if (!data) notFound();
 
   const r = data as Restaurant;
 

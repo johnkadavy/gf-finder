@@ -6,16 +6,16 @@ import { loadBebasNeue } from "@/app/og-font";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const fontData = await loadBebasNeue();
   const hasFont = !!fontData;
 
-  const { data } = await supabase
-    .from("restaurants")
-    .select("name, city, neighborhood, dossier, verified_data")
-    .eq("id", id)
-    .single();
+  const isNumericId = /^\d+$/.test(slug);
+  const { data } = await (isNumericId
+    ? supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data").eq("id", slug).single()
+    : supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data").eq("slug", slug).single()
+  );
 
   const name = data?.name ?? "CleanPlate";
   const location = [data?.neighborhood, data?.city].filter(Boolean).join(" / ");
