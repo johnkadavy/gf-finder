@@ -72,6 +72,7 @@ type RestaurantRow = {
   id: number;
   name: string;
   score: number;
+  slug: string | null;
   cuisine: string | null;
   dossier: { summary?: { short_summary?: string } } | null;
   source: string | null;
@@ -128,7 +129,7 @@ export default async function LandingPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from("restaurants")
-    .select("id, name, score, cuisine, dossier, source, ingested_at")
+    .select("id, name, score, slug, cuisine, dossier, source, ingested_at")
     .not("score", "is", null)
     .eq("city", city)
     .eq("neighborhood", neighborhood)
@@ -237,7 +238,7 @@ export default async function LandingPage({ params }: Props) {
               return (
                 <Link
                   key={r.id}
-                  href={`/restaurant/${r.id}`}
+                  href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
                   className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
                   style={{ borderColor: "oklch(0.18 0 0)", borderLeft: `2px solid ${color}` }}
                 >
