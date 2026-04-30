@@ -22,57 +22,61 @@ type Message = {
 };
 
 // ── Markdown renderer ────────────────────────────────────────────────────────
-// Renders **bold** text as inline links when the name matches a referenced restaurant.
+// Handles **bold** and [text](url) links within each line.
 
-function findRestaurant(boldText: string, byName: Map<string, RestaurantRef>): RestaurantRef | undefined {
-  const lower = boldText.toLowerCase().trim();
-  // Exact match
-  if (byName.has(lower)) return byName.get(lower);
-  // Fuzzy: bold text contains the restaurant name (e.g. "1. Soda Club" contains "soda club")
-  for (const [name, r] of byName) {
-    if (lower.includes(name) || name.includes(lower)) return r;
+function renderLine(line: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  // Match [text](url) and **bold** in one pass
+  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(line)) !== null) {
+    if (match.index > last) nodes.push(line.slice(last, match.index));
+
+    if (match[1] !== undefined) {
+      // [text](url) — restaurant link
+      nodes.push(
+        <Link
+          key={match.index}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold underline underline-offset-2 decoration-1 transition-colors duration-150"
+          style={{ color: "#FF7444", textDecorationColor: "#FF744460" }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = "#FF7444")}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = "#FF744460")}
+        >
+          {match[1]}
+        </Link>
+      );
+    } else if (match[3] !== undefined) {
+      // **bold**
+      nodes.push(
+        <strong key={match.index} style={{ color: "oklch(0.97 0 0)", fontWeight: 600 }}>
+          {match[3]}
+        </strong>
+      );
+    }
+    last = match.index + match[0].length;
   }
-  return undefined;
+
+  if (last < line.length) nodes.push(line.slice(last));
+  return nodes;
 }
 
-function renderContent(text: string, restaurants: RestaurantRef[] = []) {
-  const byName = new Map(restaurants.map((r) => [r.name.toLowerCase(), r]));
-
+function renderContent(text: string) {
   const paragraphs = text.split(/\n\n+/);
   return paragraphs.map((para, i) => {
     if (para.trim() === "---") {
       return <hr key={i} style={{ borderColor: "oklch(0.22 0 0)", margin: "1rem 0" }} />;
     }
-    const lines = para.split("\n").map((line, j) => {
-      const parts = line.split(/\*\*(.+?)\*\*/g);
-      const rendered = parts.map((part, k) => {
-        if (k % 2 !== 1) return part; // plain text
-        const restaurant = findRestaurant(part, byName);
-        if (restaurant) {
-          return (
-            <Link
-              key={k}
-              href={`/restaurant/${restaurant.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline underline-offset-2 decoration-1 transition-colors duration-150"
-              style={{ color: "#FF7444", textDecorationColor: "#FF744460" }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = "#FF7444")}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = "#FF744460")}
-            >
-              {part}
-            </Link>
-          );
-        }
-        return <strong key={k} style={{ color: "oklch(0.97 0 0)", fontWeight: 600 }}>{part}</strong>;
-      });
-      return (
-        <span key={j}>
-          {j > 0 && <br />}
-          {rendered}
-        </span>
-      );
-    });
+    const lines = para.split("\n").map((line, j) => (
+      <span key={j}>
+        {j > 0 && <br />}
+        {renderLine(line)}
+      </span>
+    ));
     return (
       <p key={i} style={{ marginBottom: i < paragraphs.length - 1 ? "0.75rem" : 0 }}>
         {lines}
@@ -384,7 +388,7 @@ export function AskPage() {
                       className="text-[15px] leading-[1.7]"
                       style={{ color: "oklch(0.92 0 0)" }}
                     >
-                      {renderContent(msg.content, msg.restaurants ?? [])}
+                      {renderContent(msg.content)}
                     </div>
                   </div>
                 </div>

@@ -42,6 +42,7 @@ export type RestaurantSummary = {
   has_gf_labels: boolean;
   cross_contamination_risk: string | null;
   sick_reports_recent: number;
+  url: string;
 };
 
 export type RestaurantDetails = RestaurantSummary & {
@@ -60,7 +61,7 @@ export type NeighborhoodOverview = {
   city: string;
   total_restaurants: number;
   avg_score: number | null;
-  top_rated: Array<{ id: number; name: string; score: number }>;
+  top_rated: Array<{ id: number; name: string; score: number; url: string }>;
   dedicated_gf_count: number;
   has_gf_fryer_count: number;
   score_distribution: {
@@ -124,6 +125,7 @@ function toSummary(r: DbRow): RestaurantSummary {
     has_gf_labels: r.dossier?.menu?.gf_labeling === "clear",
     cross_contamination_risk: r.dossier?.operations?.cross_contamination_risk ?? null,
     sick_reports_recent: r.dossier?.reviews?.sick_reports_recent ?? 0,
+    url: `/restaurant/${r.id}`,
   };
 }
 
@@ -244,6 +246,7 @@ export async function getNeighborhoodOverview(
       id: r.id,
       name: r.name,
       score: r.score as number,
+      url: `/restaurant/${r.id}`,
     })),
     dedicated_gf_count: rows.filter(
       (r) => r.dossier?.operations?.cross_contamination_risk === "low",

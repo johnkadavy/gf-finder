@@ -19,7 +19,8 @@ IMPORTANT RULES:
 6. Default to New York City if no location is specified.
 7. When recommending restaurants, prioritize by GF score, then by relevance to the user's specific request.
 8. GF scores: 85+ = Excellent, 75–84 = Great, 65–74 = Good, 55–64 = Ask Questions, 40–54 = Limited/Inconsistent, <40 = High Risk.
-9. Format restaurant recommendations clearly: lead with the name and score, then location, then the key safety signals that are relevant to the user's question.`;
+9. Format restaurant recommendations clearly: lead with the name and score, then location, then the key safety signals that are relevant to the user's question.
+10. Always format restaurant names as markdown links using the url field from the tool result, e.g. [Soda Club](/restaurant/123). Every restaurant name must be a link.`;
 
 const TOOLS: Anthropic.Tool[] = [
   {
