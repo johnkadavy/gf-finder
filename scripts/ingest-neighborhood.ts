@@ -113,6 +113,36 @@ async function searchStreet(query: string): Promise<RawPlace[]> {
   return all;
 }
 
+// ── Slug generation (mirrors backfill-slugs.ts logic) ────────────────────────
+
+function toSlugPart(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[''`]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buildBaseSlug(name: string, nbhd: string | null, c: string): string {
+  const namePart = toSlugPart(name);
+  const locationPart = toSlugPart(nbhd ?? c);
+  if (namePart.endsWith(locationPart)) return namePart;
+  return `${namePart}-${locationPart}`;
+}
+
+function assignSlug(name: string, nbhd: string | null, c: string, taken: Set<string>): string {
+  const base = buildBaseSlug(name, nbhd, c);
+  let candidate = base;
+  let suffix = 2;
+  while (taken.has(candidate)) {
+    candidate = `${base}-${suffix}`;
+    suffix++;
+  }
+  taken.add(candidate);
+  return candidate;
+}
+
 async function main() {
   if (!GOOGLE_API_KEY) {
     console.error("GOOGLE_MAPS_API_KEY is not set in .env.local");
@@ -192,31 +222,50 @@ async function main() {
   const top = sorted.slice(0, count);
   console.log(`Upserting ${top.length} restaurants...\n`);
 
+  // Load all existing slugs so new ones don't collide
+  const { data: existingSlugs } = await supabase
+    .from("restaurants")
+    .select("slug")
+    .not("slug", "is", null);
+  const takenSlugs = new Set((existingSlugs ?? []).map((r) => r.slug as string));
+
+  // Also load existing place_ids so we can reuse their existing slugs on re-ingest
+  const { data: existingPlaces } = await supabase
+    .from("restaurants")
+    .select("google_place_id, slug")
+    .not("google_place_id", "is", null);
+  const existingSlugByPlaceId = new Map(
+    (existingPlaces ?? []).map((r) => [r.google_place_id, r.slug as string | null])
+  );
+
   // Build rows
-  const rows = top.map((place) => ({
-    google_place_id: place.id,
-    name: place.displayName?.text ?? "Unknown",
-    address: place.formattedAddress ?? null,
-    lat: place.location?.latitude ?? null,
-    lng: place.location?.longitude ?? null,
-    website_url: place.websiteUri ?? null,
-    google_maps_url: place.googleMapsUri ?? null,
-    phone: place.nationalPhoneNumber ?? null,
-    city,
-    neighborhood: neighborhood !== city ? neighborhood : null,
-    region: region ?? null,
-    cuisine_types: place.types ?? null,
-    google_rating: place.rating ?? null,
-    price_level: place.priceLevel ? (PRICE_LEVEL_MAP[place.priceLevel] ?? null) : null,
-    opening_hours: place.regularOpeningHours ?? null,
-    source: "neighborhood_ingest",
-    slug: [place.displayName?.text ?? "", city, neighborhood, place.id.slice(-6)]
-      .join("-")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, ""),
-    ingested_at: new Date().toISOString(),
-  }));
+  const nbhdForSlug = neighborhood !== city ? neighborhood : null;
+  const rows = top.map((place) => {
+    // Reuse existing slug if this place was already ingested
+    const existingSlug = existingSlugByPlaceId.get(place.id);
+    const slug = existingSlug ?? assignSlug(place.displayName?.text ?? "unknown", nbhdForSlug, city, takenSlugs);
+
+    return {
+      google_place_id: place.id,
+      name: place.displayName?.text ?? "Unknown",
+      address: place.formattedAddress ?? null,
+      lat: place.location?.latitude ?? null,
+      lng: place.location?.longitude ?? null,
+      website_url: place.websiteUri ?? null,
+      google_maps_url: place.googleMapsUri ?? null,
+      phone: place.nationalPhoneNumber ?? null,
+      city,
+      neighborhood: nbhdForSlug,
+      region: region ?? null,
+      cuisine_types: place.types ?? null,
+      google_rating: place.rating ?? null,
+      price_level: place.priceLevel ? (PRICE_LEVEL_MAP[place.priceLevel] ?? null) : null,
+      opening_hours: place.regularOpeningHours ?? null,
+      source: "neighborhood_ingest",
+      slug,
+      ingested_at: new Date().toISOString(),
+    };
+  });
 
   // Fetch all existing rows for this city+neighborhood to detect conflicts
   const { data: existing } = await supabase
