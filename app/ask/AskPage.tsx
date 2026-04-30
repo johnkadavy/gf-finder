@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import { marked, Renderer } from "marked";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -22,74 +22,26 @@ type Message = {
 };
 
 // ── Markdown renderer ────────────────────────────────────────────────────────
-// Handles **bold** and [text](url) links within each line.
+// Uses `marked` for reliable parsing of all markdown patterns Claude outputs.
 
-function renderLine(line: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  // Match [text](url), **bold**, and *italic* in one pass
-  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*([^*\n]+)\*/g;
-  let last = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(line)) !== null) {
-    if (match.index > last) nodes.push(line.slice(last, match.index));
-
-    if (match[1] !== undefined) {
-      // [text](url) — restaurant link
-      nodes.push(
-        <Link
-          key={match.index}
-          href={match[2]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold underline underline-offset-2 decoration-1 transition-colors duration-150"
-          style={{ color: "#FF7444", textDecorationColor: "#FF744460" }}
-          onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = "#FF7444")}
-          onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = "#FF744460")}
-        >
-          {match[1]}
-        </Link>
-      );
-    } else if (match[3] !== undefined) {
-      // **bold**
-      nodes.push(
-        <strong key={match.index} style={{ color: "oklch(0.97 0 0)", fontWeight: 600 }}>
-          {match[3]}
-        </strong>
-      );
-    } else if (match[4] !== undefined) {
-      // *italic* — used by Claude for score labels like *(Excellent)*
-      nodes.push(
-        <em key={match.index} style={{ color: "oklch(0.75 0 0)", fontStyle: "normal" }}>
-          {match[4]}
-        </em>
-      );
-    }
-    last = match.index + match[0].length;
-  }
-
-  if (last < line.length) nodes.push(line.slice(last));
-  return nodes;
-}
+const chatRenderer = new Renderer();
+marked.use({
+  renderer: chatRenderer,
+  hooks: {
+    postprocess(html: string) {
+      // Open all links in a new tab
+      return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+    },
+  },
+  gfm: true,
+  breaks: false,
+});
 
 function renderContent(text: string) {
-  const paragraphs = text.split(/\n\n+/);
-  return paragraphs.map((para, i) => {
-    if (para.trim() === "---") {
-      return <hr key={i} style={{ borderColor: "oklch(0.22 0 0)", margin: "1rem 0" }} />;
-    }
-    const lines = para.split("\n").map((line, j) => (
-      <span key={j}>
-        {j > 0 && <br />}
-        {renderLine(line)}
-      </span>
-    ));
-    return (
-      <p key={i} style={{ marginBottom: i < paragraphs.length - 1 ? "0.75rem" : 0 }}>
-        {lines}
-      </p>
-    );
-  });
+  // Strip any raw <script> tags as a basic precaution (Claude output only)
+  const safe = text.replace(/<script[\s\S]*?<\/script>/gi, "");
+  const html = marked.parse(safe) as string;
+  return <div className="agent-message" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // ── CleanPlate avatar ────────────────────────────────────────────────────────

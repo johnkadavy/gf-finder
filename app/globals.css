@@ -134,6 +134,23 @@
 }
 .blog-prose strong { color: oklch(0.92 0 0); font-weight: 600; }
 
+/* Agent chat message prose */
+.agent-message { font-size: 15px; line-height: 1.7; color: oklch(0.92 0 0); }
+.agent-message p { margin-bottom: 0.75rem; }
+.agent-message p:last-child { margin-bottom: 0; }
+.agent-message strong { color: oklch(0.97 0 0); font-weight: 600; }
+.agent-message em { color: oklch(0.75 0 0); font-style: normal; }
+.agent-message a { color: #FF7444; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #FF744460; font-weight: 600; transition: text-decoration-color 0.15s; }
+.agent-message a:hover { text-decoration-color: #FF7444; }
+.agent-message h1, .agent-message h2, .agent-message h3 { color: oklch(0.97 0 0); font-weight: 600; font-size: 0.95em; margin: 0.75rem 0 0.35rem; }
+.agent-message h1:first-child, .agent-message h2:first-child, .agent-message h3:first-child { margin-top: 0; }
+.agent-message ul, .agent-message ol { padding-left: 1.25rem; margin: 0.35rem 0 0.75rem; }
+.agent-message ul { list-style-type: disc; }
+.agent-message ol { list-style-type: decimal; }
+.agent-message li { margin-bottom: 0.2rem; }
+.agent-message hr { border: none; border-top: 1px solid oklch(0.22 0 0); margin: 1rem 0; }
+.agent-message blockquote { border-left: 2px solid oklch(0.28 0 0); padding-left: 1rem; color: oklch(0.68 0 0); margin: 0.75rem 0; }
+
 /* Noise texture overlay */
 .noise-overlay {
   position: fixed;
