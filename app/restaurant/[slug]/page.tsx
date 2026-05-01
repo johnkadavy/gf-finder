@@ -43,6 +43,7 @@ type Restaurant = {
   source: string | null;
   ingested_at: string | null;
   slug: string | null;
+  gf_food_categories: string[] | null;
 };
 
 type VerifiedVisit = {
@@ -122,6 +123,41 @@ function SignalCard({ label, value, level }: {
   );
 }
 
+// ── GF food category tags ─────────────────────────────────────────────────
+
+const GF_FOOD_LABELS: Record<string, string> = {
+  gf_pizza:       "GF Pizza",
+  gf_pasta:       "GF Pasta",
+  gf_bread:       "GF Bread",
+  gf_baked_goods: "GF Pastries",
+  gf_bagels:      "GF Bagels",
+  gf_beer:        "GF Beer",
+  gf_fried_items: "GF Fryer",
+  gf_desserts:    "GF Desserts",
+  gf_sandwiches:  "GF Sandwiches",
+  gf_buns:        "GF Buns",
+  gf_breakfast:   "GF Breakfast",
+  gf_soy_sauce:   "GF Soy Sauce",
+};
+
+function GfFoodTags({ categories }: { categories: string[] | null }) {
+  const tags = (categories ?? []).filter((c) => GF_FOOD_LABELS[c]);
+  if (tags.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map((cat) => (
+        <span
+          key={cat}
+          className="inline-flex items-center px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.15em] border"
+          style={{ borderColor: "#4A7C5945", backgroundColor: "#4A7C5912", color: "#7ECF9A" }}
+        >
+          {GF_FOOD_LABELS[cat]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Icons ──────────────────────────────────────────────────────────────────
 
 const IconPin = () => (
@@ -189,7 +225,7 @@ async function resolveRestaurant(slugOrId: string) {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug")
+    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories")
     .eq("slug", slugOrId)
     .single();
 
@@ -487,6 +523,9 @@ export default async function RestaurantPage({
             </p>
           )}
 
+          {/* GF food tags */}
+          <GfFoodTags categories={r.gf_food_categories} />
+
           {/* Save button */}
           <div>
             <SaveButton
@@ -601,6 +640,19 @@ export default async function RestaurantPage({
                 >
                   {d.summary.short_summary}
                 </p>
+              </div>
+            )}
+
+            {/* GF food tags — desktop */}
+            {r.gf_food_categories && r.gf_food_categories.length > 0 && (
+              <div className="hidden md:block">
+                <div className="flex items-center gap-4 mb-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                    GF Options
+                  </p>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                </div>
+                <GfFoodTags categories={r.gf_food_categories} />
               </div>
             )}
 
