@@ -7,10 +7,11 @@ function toSlug(s: string): string {
   return s.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-const CATEGORY_SLUGS = ["pizza", "pasta", "bakery", "breakfast", "cafe", "bar", "fine-dining"];
+// Must stay in sync with CATEGORIES in app/gluten-free/[...slug]/page.tsx
+const CATEGORY_SLUGS = ["pizza", "pasta", "bakery", "breakfast", "desserts", "fryer", "dedicated", "cafe", "bar", "fine-dining"];
 
 const GF_FOOD_MAP: Record<string, string> = {
-  pizza: "gf_pizza", pasta: "gf_pasta", bakery: "gf_baked_goods", breakfast: "gf_breakfast",
+  pizza: "gf_pizza", pasta: "gf_pasta", bakery: "gf_baked_goods", breakfast: "gf_breakfast", desserts: "gf_desserts",
 };
 const PLACE_TYPE_MAP: Record<string, string> = {
   cafe: "cafe", bar: "bar", "fine-dining": "fine_dining",
@@ -19,7 +20,7 @@ const PLACE_TYPE_MAP: Record<string, string> = {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [restaurantsRes, landingRes] = await Promise.all([
     supabase.from("restaurants").select("id, slug, updated_at").not("score", "is", null).order("id", { ascending: true }),
-    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score").not("score", "is", null).not("neighborhood", "is", null),
+    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score, dossier").not("score", "is", null),
   ]);
 
   // ── Restaurant detail pages ──
@@ -33,37 +34,100 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   // ── Programmatic landing pages ──
-  type Row = { city: string; neighborhood: string | null; gf_food_categories: string[] | null; place_type: string[] | null; score: number | null };
+  type Row = {
+    city: string;
+    neighborhood: string | null;
+    gf_food_categories: string[] | null;
+    place_type: string[] | null;
+    score: number | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dossier: Record<string, any> | null;
+  };
   const rows = (landingRes.data ?? []) as Row[];
 
+  // ── Per city+neighborhood counts (for neighborhood pages) ──
   type Entry = { count: number; catCounts: Map<string, number> };
-  const map = new Map<string, Entry>();
+  const nbhdMap = new Map<string, Entry>();
+
+  // ── Per city counts (for city-level pages) ──
+  type CityEntry = { count: number; catCounts: Map<string, number> };
+  const cityMap = new Map<string, CityEntry>();
+
   for (const r of rows) {
-    if (!r.neighborhood) continue;
-    const key = `${r.city}||${r.neighborhood}`;
-    if (!map.has(key)) map.set(key, { count: 0, catCounts: new Map() });
-    const entry = map.get(key)!;
-    // All pages require score >= 75
-    if ((r.score ?? 0) >= 75) {
-      entry.count++;
-      for (const cat of r.gf_food_categories ?? []) entry.catCounts.set(cat, (entry.catCounts.get(cat) ?? 0) + 1);
+    const score = r.score ?? 0;
+    const qualifies = score >= 75;
+
+    // City-level aggregation
+    const cityKey = r.city;
+    if (!cityMap.has(cityKey)) cityMap.set(cityKey, { count: 0, catCounts: new Map() });
+    const cityEntry = cityMap.get(cityKey)!;
+    if (qualifies) {
+      cityEntry.count++;
+      for (const cat of r.gf_food_categories ?? []) cityEntry.catCounts.set(cat, (cityEntry.catCounts.get(cat) ?? 0) + 1);
       for (const pt of r.place_type ?? []) {
         const k = `pt:${pt}`;
-        entry.catCounts.set(k, (entry.catCounts.get(k) ?? 0) + 1);
+        cityEntry.catCounts.set(k, (cityEntry.catCounts.get(k) ?? 0) + 1);
+      }
+      // fryer
+      if (r.dossier?.operations?.dedicated_equipment?.fryer === true) {
+        cityEntry.catCounts.set("fryer", (cityEntry.catCounts.get("fryer") ?? 0) + 1);
+      }
+      // dedicated
+      if (r.dossier?.operations?.cross_contamination_risk === "low") {
+        cityEntry.catCounts.set("dedicated", (cityEntry.catCounts.get("dedicated") ?? 0) + 1);
+      }
+    }
+
+    // Neighborhood-level aggregation
+    if (!r.neighborhood) continue;
+    const nbhdKey = `${r.city}||${r.neighborhood}`;
+    if (!nbhdMap.has(nbhdKey)) nbhdMap.set(nbhdKey, { count: 0, catCounts: new Map() });
+    const nbhdEntry = nbhdMap.get(nbhdKey)!;
+    if (qualifies) {
+      nbhdEntry.count++;
+      for (const cat of r.gf_food_categories ?? []) nbhdEntry.catCounts.set(cat, (nbhdEntry.catCounts.get(cat) ?? 0) + 1);
+      for (const pt of r.place_type ?? []) {
+        const k = `pt:${pt}`;
+        nbhdEntry.catCounts.set(k, (nbhdEntry.catCounts.get(k) ?? 0) + 1);
+      }
+      if (r.dossier?.operations?.dedicated_equipment?.fryer === true) {
+        nbhdEntry.catCounts.set("fryer", (nbhdEntry.catCounts.get("fryer") ?? 0) + 1);
+      }
+      if (r.dossier?.operations?.cross_contamination_risk === "low") {
+        nbhdEntry.catCounts.set("dedicated", (nbhdEntry.catCounts.get("dedicated") ?? 0) + 1);
       }
     }
   }
 
+  function catCount(catCounts: Map<string, number>, catSlug: string): number {
+    if (GF_FOOD_MAP[catSlug])       return catCounts.get(GF_FOOD_MAP[catSlug]) ?? 0;
+    if (PLACE_TYPE_MAP[catSlug])    return catCounts.get(`pt:${PLACE_TYPE_MAP[catSlug]}`) ?? 0;
+    if (catSlug === "fryer")        return catCounts.get("fryer") ?? 0;
+    if (catSlug === "dedicated")    return catCounts.get("dedicated") ?? 0;
+    return 0;
+  }
+
   const landingUrls: MetadataRoute.Sitemap = [];
-  for (const [key, { count, catCounts }] of map) {
+
+  // City-level category pages (min 5 qualifying restaurants)
+  for (const [city, { catCounts }] of cityMap) {
+    const cs = toSlug(city);
+    for (const catSlug of CATEGORY_SLUGS) {
+      if (catCount(catCounts, catSlug) >= 5) {
+        landingUrls.push({ url: `${BASE_URL}/gluten-free/${cs}/${catSlug}`, changeFrequency: "weekly", priority: 0.85 });
+      }
+    }
+  }
+
+  // Neighborhood base + category pages (min 3 qualifying restaurants)
+  for (const [key, { count, catCounts }] of nbhdMap) {
     if (count < 3) continue;
     const [city, neighborhood] = key.split("||");
     const cs = toSlug(city);
     const ns = toSlug(neighborhood);
     landingUrls.push({ url: `${BASE_URL}/gluten-free/${cs}/${ns}`, changeFrequency: "weekly", priority: 0.8 });
     for (const catSlug of CATEGORY_SLUGS) {
-      const dbKey = GF_FOOD_MAP[catSlug] ? GF_FOOD_MAP[catSlug] : `pt:${PLACE_TYPE_MAP[catSlug]}`;
-      if ((catCounts.get(dbKey) ?? 0) >= 3) {
+      if (catCount(catCounts, catSlug) >= 3) {
         landingUrls.push({ url: `${BASE_URL}/gluten-free/${cs}/${ns}/${catSlug}`, changeFrequency: "weekly", priority: 0.8 });
       }
     }

@@ -28,6 +28,7 @@ type Restaurant = {
   neighborhood: string | null;
   website_url: string | null;
   google_maps_url: string | null;
+  slug: string | null;
   dossier: Dossier | null;
   verified_data: VerifiedData | null;
 };
@@ -92,6 +93,7 @@ export type TopRestaurant = {
   neighborhood: string | null;
   cuisine: string | null;
   score: number | null;
+  slug: string | null;
   hasGfFryer: boolean;
   isDedicatedGf: boolean;
   gf_food_categories: string[] | null;
@@ -103,14 +105,15 @@ const getTopRestaurants = unstable_cache(
   async (city: string) => {
     const { data } = await supabase
       .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score, dossier, gf_food_categories, place_type")
+      .select("id, name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
       .eq("city", city)
       .not("score", "is", null)
       .order("score", { ascending: false })
       .limit(50);
     return (data ?? []) as Array<{
       id: number; name: string; neighborhood: string | null;
-      cuisine: string | null; score: number | null; dossier: Dossier | null;
+      cuisine: string | null; score: number | null; slug: string | null;
+      dossier: Dossier | null;
       gf_food_categories: string[] | null; place_type: string[] | null;
     }>;
   },
@@ -154,7 +157,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const topRated: TopRestaurant[] = (topData as Array<{
     id: number; name: string; neighborhood: string | null;
-    cuisine: string | null; score: number | null; dossier: Dossier | null;
+    cuisine: string | null; score: number | null; slug: string | null; dossier: Dossier | null;
     gf_food_categories: string[] | null; place_type: string[] | null;
   }>).map((r) => ({
     id: r.id,
@@ -162,6 +165,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     neighborhood: r.neighborhood,
     cuisine: r.cuisine,
     score: r.score,
+    slug: r.slug ?? null,
     hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
     isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
     gf_food_categories: r.gf_food_categories ?? null,
@@ -173,7 +177,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (query) {
     let q = supabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, website_url, google_maps_url, dossier, verified_data")
+      .select("id, name, city, neighborhood, website_url, google_maps_url, slug, dossier, verified_data")
       .ilike("name", `%${query}%`)
       .order("name");
 
@@ -312,7 +316,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                       {/* Restaurant name */}
                       <Link
-                        href={`/restaurant/${restaurant.id}`}
+                        href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
                         className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-4 md:mb-5 hover:text-[#FF7444] transition-colors duration-150"
                         style={{
                           fontSize: "clamp(1.6rem, 5vw, 2.75rem)",

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   // ── Restaurant name suggestions ────────────────────────────────────────────
   let restaurantQuery = supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score")
+    .select("id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, slug")
     .ilike("name", `%${q}%`)
     .order("name")
     .limit(6);

@@ -18,6 +18,7 @@ type Restaurant = {
   city: string;
   neighborhood: string | null;
   region: string | null;
+  slug: string | null;
   website_url: string | null;
   google_maps_url: string | null;
   score: number;
@@ -38,7 +39,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
 
   let query = supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, website_url, google_maps_url, score, dossier, source, ingested_at", { count: "exact" })
+    .select("id, name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
@@ -111,7 +112,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
         return (
           <Link
             key={restaurant.id}
-            href={`/restaurant/${restaurant.id}`}
+            href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
             className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-3 md:gap-10 py-4 md:py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
             style={{
               borderColor: "oklch(0.18 0 0)",

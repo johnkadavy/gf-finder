@@ -17,6 +17,7 @@ type SavedRestaurant = {
   cuisine: string | null;
   website_url: string | null;
   google_maps_url: string | null;
+  slug: string | null;
   dossier: (ScoringDossier & { summary?: { short_summary?: string } }) | null;
   verified_data: VerifiedData | null;
 };
@@ -60,7 +61,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
   if (ids.length > 0) {
     const { data } = await publicSupabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, cuisine, website_url, google_maps_url, dossier, verified_data")
+      .select("id, name, city, neighborhood, cuisine, website_url, google_maps_url, slug, dossier, verified_data")
       .in("id", ids);
     const map = new Map((data ?? []).map((r) => [r.id, r]));
     allRestaurants = ids.map((id) => map.get(id)).filter(Boolean) as SavedRestaurant[];
@@ -87,7 +88,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
 
   const reviewPlaceIds = (reviewVisits ?? []).map((v) => v.google_place_id).filter(Boolean);
   const { data: reviewRestaurants } = reviewPlaceIds.length > 0
-    ? await publicSupabase.from("restaurants").select("id, name, google_place_id").in("google_place_id", reviewPlaceIds)
+    ? await publicSupabase.from("restaurants").select("id, name, slug, google_place_id").in("google_place_id", reviewPlaceIds)
     : { data: [] };
   const placeIdToRestaurant = new Map((reviewRestaurants ?? []).map((r) => [r.google_place_id, r]));
 
@@ -233,7 +234,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/restaurant/${restaurant.id}`}
+                      href={`/restaurant/${restaurant.slug ?? restaurant.id}`}
                       className="group/name font-[family-name:var(--font-display)] leading-none truncate block hover:text-[#FF7444] transition-colors duration-150"
                       style={{
                         fontSize: "clamp(1.4rem, 2.5vw, 2.1rem)",
@@ -330,7 +331,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
                   {/* Restaurant name link */}
                   {restaurant && (
                     <Link
-                      href={`/restaurant/${restaurant.id}`}
+                      href={`/restaurant/${restaurant.slug ?? restaurant.id}`}
                       className="font-[family-name:var(--font-display)] text-[1.5rem] leading-none hover:text-[#FF7444] transition-colors block"
                       style={{ color: "oklch(0.92 0 0)", letterSpacing: "0.02em" }}
                     >

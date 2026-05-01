@@ -28,7 +28,7 @@ export function AddRestaurantForm() {
   const [neighborhood, setNeighborhood] = useState("");
   const [steps, setSteps]           = useState<Step[]>(INITIAL_STEPS);
   const [running, setRunning]       = useState(false);
-  const [result, setResult]         = useState<{ name: string; id: number; score: number | null } | null>(null);
+  const [result, setResult]         = useState<{ name: string; id: number; slug: string | null; score: number | null } | null>(null);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [timedOutPlaceId, setTimedOutPlaceId] = useState<string | null>(null);
   const [retrying, setRetrying]     = useState(false);
@@ -186,7 +186,7 @@ export function AddRestaurantForm() {
               break;
 
             case "complete":
-              setResult({ name: event.name, id: event.id, score: event.score ?? null });
+              setResult({ name: event.name, id: event.id, slug: event.slug ?? null, score: event.score ?? null });
               break;
 
             case "error":
@@ -387,7 +387,7 @@ export function AddRestaurantForm() {
                 {result.score != null && ` — Score: ${Math.round(result.score)}`}
               </span>
               <Link
-                href={`/restaurant/${result.id}`}
+                href={`/restaurant/${result.slug ?? result.id}`}
                 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
               >
                 View →

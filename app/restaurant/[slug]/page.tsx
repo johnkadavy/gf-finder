@@ -492,7 +492,7 @@ export default async function RestaurantPage({
             <SaveButton
               restaurantId={r.id}
               initialSaved={initialSaved}
-              redirectPath={`/restaurant/${r.id}`}
+              redirectPath={`/restaurant/${r.slug ?? r.id}`}
               showLabel
             />
           </div>
@@ -547,7 +547,7 @@ export default async function RestaurantPage({
               <SaveButton
                 restaurantId={r.id}
                 initialSaved={initialSaved}
-                redirectPath={`/restaurant/${r.id}`}
+                redirectPath={`/restaurant/${r.slug ?? r.id}`}
                 showLabel
               />
             </div>

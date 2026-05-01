@@ -37,7 +37,7 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
   const color = getGaugeColor(r.score);
   return (
     <Link
-      href={`/restaurant/${r.id}`}
+      href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
       className="group flex flex-col justify-between p-4 md:p-5 border transition-colors duration-150"
       style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = color)}

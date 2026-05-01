@@ -23,6 +23,7 @@ type Row = {
   opening_hours: { periods?: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] } | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dossier: Record<string, any> | null;
+  slug: string | null;
   source: string | null;
   ingested_at: string | null;
 };
@@ -36,6 +37,7 @@ function toMapRestaurant(r: Row): MapRestaurant {
     score: r.score, color: getGaugeColor(r.score), scoreLabel: getScoreLabel(r.score).label,
     periods: r.opening_hours?.periods ?? null,
     short_summary: r.dossier?.summary?.short_summary ?? null,
+    slug: r.slug,
     source: r.source, ingested_at: r.ingested_at,
   };
 }
@@ -77,7 +79,7 @@ function scoreMatch(name: string, cuisine: string | null, query: string): number
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-const SELECT = "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, source, ingested_at";
+const SELECT = "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, slug, source, ingested_at";
 const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {

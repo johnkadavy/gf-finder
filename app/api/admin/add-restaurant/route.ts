@@ -547,7 +547,7 @@ export async function POST(req: Request) {
         const { data: inserted, error: upsertError } = await supabaseServer
           .from("restaurants")
           .upsert(row, { onConflict: "google_place_id" })
-          .select("id")
+          .select("id, slug")
           .single();
 
         if (upsertError || !inserted) {
@@ -616,7 +616,7 @@ export async function POST(req: Request) {
         }
 
         send({ step: "sync", status: "done", score });
-        send({ step: "complete", name: details.displayName?.text ?? "Restaurant", id: inserted.id, score });
+        send({ step: "complete", name: details.displayName?.text ?? "Restaurant", id: inserted.id, slug: inserted.slug ?? null, score });
 
       } catch (err) {
         send({ step: "error", message: err instanceof Error ? err.message : "Unexpected error" });

@@ -152,7 +152,7 @@ const [mapReady, setMapReady] = useState(false);
   }, []);
 
   // Autocomplete
-  type Suggestion = { id: number; name: string; city: string; neighborhood: string | null; lat: number; lng: number; cuisine: string | null; google_rating: number | null; price_level: number | null; address: string | null; website_url: string | null; score: number | null };
+  type Suggestion = { id: number; name: string; city: string; neighborhood: string | null; lat: number; lng: number; cuisine: string | null; google_rating: number | null; price_level: number | null; address: string | null; website_url: string | null; score: number | null; slug: string | null };
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [cuisineSuggestions, setCuisineSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -535,6 +535,7 @@ const [mapReady, setMapReady] = useState(false);
       google_maps_url: null, short_summary: null,
       score: s.score, color: getGaugeColor(s.score), scoreLabel: getScoreLabel(s.score).label,
       periods: null,
+      slug: s.slug,
       source: null, ingested_at: null,
     };
 
@@ -773,7 +774,7 @@ const [mapReady, setMapReady] = useState(false);
           Directions
         </a>
         <Link
-          href={`/restaurant/${selected.id}?from=map`}
+          href={`/restaurant/${selected.slug ?? selected.id}?from=map`}
           onClick={(e) => e.stopPropagation()}
           className="flex-1 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
           style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
@@ -845,7 +846,7 @@ const [mapReady, setMapReady] = useState(false);
           pointerEvents: selected ? "auto" : "none",
           boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
         }}
-        onClick={() => selected && router.push(`/restaurant/${selected.id}?from=map`)}
+        onClick={() => selected && router.push(`/restaurant/${selected.slug ?? selected.id}?from=map`)}
       >
         {panelContent}
       </div>

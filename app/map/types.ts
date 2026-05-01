@@ -22,6 +22,7 @@ export type MapRestaurant = {
   scoreLabel: string;
   periods: OpeningPeriod[] | null;
   short_summary: string | null;
+  slug: string | null;
   source: string | null;
   ingested_at: string | null;
 };

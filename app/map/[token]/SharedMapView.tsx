@@ -247,7 +247,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
 
       <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "oklch(0.16 0 0)" }}>
         <Link
-          href={`/restaurant/${selected.id}`}
+          href={`/restaurant/${selected.slug ?? selected.id}`}
           className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
           style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
         >
