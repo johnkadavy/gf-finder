@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +10,6 @@ import { TopRatedSection } from "./components/TopRatedSection";
 import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
-// getGaugeColor is also used in the search results section below
 
 type Signal = {
   label: string;
@@ -36,6 +36,67 @@ type Restaurant = {
 type HomePageProps = {
   searchParams: Promise<{ q?: string; city?: string }>;
 };
+
+// ── Per-request auth deduplication ──────────────────────────────────────────
+// React.cache ensures getUser() is called at most once per request even when
+// multiple async server components race to call it inside Suspense boundaries.
+const getRequestAuth = cache(async () => {
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  const cityAccess = await getCityAccess(user?.id, serverClient);
+  return { serverClient, user, cityAccess };
+});
+
+// ── Cached DB queries ────────────────────────────────────────────────────────
+
+// Cached homepage metadata (city list + NYC count) — revalidates every hour
+const getHomepageMeta = unstable_cache(
+  async () => {
+    const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
+      supabase.from("restaurants").select("city").not("score", "is", null),
+      supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
+    ]);
+    return { cityRows: cityRows ?? [], totalCount: totalCount ?? 0 };
+  },
+  ["homepage-meta"],
+  { revalidate: 3600 },
+);
+
+export type TopRestaurant = {
+  id: number;
+  name: string;
+  neighborhood: string | null;
+  cuisine: string | null;
+  score: number | null;
+  slug: string | null;
+  hasGfFryer: boolean;
+  isDedicatedGf: boolean;
+  gf_food_categories: string[] | null;
+  place_type: string[] | null;
+};
+
+// Cached per-city top-50 — revalidates every 30 min
+const getTopRestaurants = unstable_cache(
+  async (city: string) => {
+    const { data } = await supabase
+      .from("restaurants")
+      .select("id, name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
+      .eq("city", city)
+      .not("score", "is", null)
+      .order("score", { ascending: false })
+      .limit(50);
+    return (data ?? []) as Array<{
+      id: number; name: string; neighborhood: string | null;
+      cuisine: string | null; score: number | null; slug: string | null;
+      dossier: Dossier | null;
+      gf_food_categories: string[] | null; place_type: string[] | null;
+    }>;
+  },
+  ["homepage-top-restaurants"],
+  { revalidate: 1800 },
+);
+
+// ── Shared helpers ───────────────────────────────────────────────────────────
 
 function buildSignals(dossier: Dossier): Signal[] {
   const signals: Signal[] = [];
@@ -87,93 +148,45 @@ function SignalChip({ signal }: { signal: Signal }) {
   );
 }
 
-export type TopRestaurant = {
-  id: number;
-  name: string;
-  neighborhood: string | null;
-  cuisine: string | null;
-  score: number | null;
-  slug: string | null;
-  hasGfFryer: boolean;
-  isDedicatedGf: boolean;
-  gf_food_categories: string[] | null;
-  place_type: string[] | null;
-};
+// ── Async server components (each deferred behind Suspense) ──────────────────
 
-// Cached per-city top-50 — revalidates every 30 min
-const getTopRestaurants = unstable_cache(
-  async (city: string) => {
-    const { data } = await supabase
-      .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
-      .eq("city", city)
-      .not("score", "is", null)
-      .order("score", { ascending: false })
-      .limit(50);
-    return (data ?? []) as Array<{
-      id: number; name: string; neighborhood: string | null;
-      cuisine: string | null; score: number | null; slug: string | null;
-      dossier: Dossier | null;
-      gf_food_categories: string[] | null; place_type: string[] | null;
-    }>;
-  },
-  ["homepage-top-restaurants"],
-  { revalidate: 1800 },
-);
-
-// Cached homepage metadata (city list + NYC count) — revalidates every hour
-const getHomepageMeta = unstable_cache(
-  async () => {
-    const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
-      supabase.from("restaurants").select("city").not("score", "is", null),
-      supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
-    ]);
-    return { cityRows: cityRows ?? [], totalCount: totalCount ?? 0 };
-  },
-  ["homepage-meta"],
-  { revalidate: 3600 },
-);
-
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const params = await searchParams;
-  const query = params.q?.trim() ?? "";
-
-  // Resolve city access first — gates everything below
-  const serverClient = await createClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  const cityAccess = await getCityAccess(user?.id, serverClient);
-  const selectedCity = resolveCity(params.city, cityAccess);
-  const topRatedCity = selectedCity !== "all" ? selectedCity : cityAccess.defaultCity;
-
-  // Cached metadata + top restaurants — run in parallel since both are independent of each other
-  const [{ cityRows, totalCount }, topData] = await Promise.all([
+async function LocationBannerServer() {
+  const [{ cityAccess }, { cityRows }] = await Promise.all([
+    getRequestAuth(),
     getHomepageMeta(),
-    query ? Promise.resolve([]) : getTopRestaurants(topRatedCity),
   ]);
-
   const allDbCities = Array.from(new Set(cityRows.map((r: { city: string }) => r.city))).sort();
   const selectableCities = getSelectableCities(cityAccess, allDbCities);
+  return <LocationBanner cities={selectableCities} />;
+}
+
+async function HeroCount() {
+  const { totalCount } = await getHomepageMeta();
   const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
+  return (
+    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.62_0_0)] mt-5">
+      {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
+    </p>
+  );
+}
 
-  const topRated: TopRestaurant[] = (topData as Array<{
-    id: number; name: string; neighborhood: string | null;
-    cuisine: string | null; score: number | null; slug: string | null; dossier: Dossier | null;
-    gf_food_categories: string[] | null; place_type: string[] | null;
-  }>).map((r) => ({
-    id: r.id,
-    name: r.name,
-    neighborhood: r.neighborhood,
-    cuisine: r.cuisine,
-    score: r.score,
-    slug: r.slug ?? null,
-    hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
-    isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
-    gf_food_categories: r.gf_food_categories ?? null,
-    place_type: r.place_type ?? null,
-  }));
+async function HeroSearchForm({ query, cityParam }: { query: string; cityParam?: string }) {
+  const [{ cityAccess }, { cityRows }] = await Promise.all([
+    getRequestAuth(),
+    getHomepageMeta(),
+  ]);
+  const allDbCities = Array.from(new Set(cityRows.map((r: { city: string }) => r.city))).sort();
+  const selectableCities = getSelectableCities(cityAccess, allDbCities);
+  const selectedCity = resolveCity(cityParam, cityAccess);
+  return <SearchForm initialQuery={query} cities={selectableCities} selectedCity={selectedCity} />;
+}
 
-  let restaurants: Restaurant[] = [];
+async function PageContent({ query, cityParam }: { query: string; cityParam?: string }) {
+  const { serverClient, user, cityAccess } = await getRequestAuth();
+  const selectedCity = resolveCity(cityParam, cityAccess);
+  const topRatedCity = selectedCity !== "all" ? selectedCity : cityAccess.defaultCity;
 
+  // ── Search mode ────────────────────────────────────────────────────────────
   if (query) {
     let q = supabase
       .from("restaurants")
@@ -188,54 +201,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     }
 
     const { data, error } = await q;
-    if (!error) restaurants = (data ?? []) as Restaurant[];
-  }
+    const restaurants: Restaurant[] = error ? [] : ((data ?? []) as Restaurant[]);
 
-  let savedIds = new Set<number>();
-  if (user && restaurants.length > 0) {
-    const { data: saves } = await serverClient
-      .from("saved_restaurants")
-      .select("restaurant_id")
-      .eq("user_id", user.id)
-      .in("restaurant_id", restaurants.map((r) => r.id));
-    savedIds = new Set((saves ?? []).map((s) => s.restaurant_id));
-  }
+    let savedIds = new Set<number>();
+    if (user && restaurants.length > 0) {
+      const { data: saves } = await serverClient
+        .from("saved_restaurants")
+        .select("restaurant_id")
+        .eq("user_id", user.id)
+        .in("restaurant_id", restaurants.map((r) => r.id));
+      savedIds = new Set((saves ?? []).map((s) => s.restaurant_id));
+    }
 
-  return (
-    <main className="pt-16">
-      <LocationBanner cities={selectableCities} />
-      {/* Hero */}
-      <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
-        {/* Bottom fade — softens grid into results section */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
-        <div className="max-w-3xl md:max-w-5xl lg:max-w-6xl w-full text-center space-y-6 md:space-y-8">
-          <div>
-            <h1
-              className="font-[family-name:var(--font-display)] leading-none"
-              style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
-            >
-              Search less.
-              <br />
-              <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
-            </h1>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.62_0_0)] mt-5">
-              {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
-            </p>
-          </div>
-
-          <SearchForm initialQuery={query} cities={selectableCities} selectedCity={selectedCity} />
-        </div>
-
-      </section>
-
-      {/* Top Rated section with filter chips */}
-      {!query && topRated.length > 0 && (
-        <TopRatedSection restaurants={topRated} city={topRatedCity} />
-      )}
-
-      {/* Results */}
+    return (
       <section className="max-w-4xl mx-auto px-4 md:px-8 pb-24 md:pb-32 mt-6 md:mt-8">
-        {!query ? null : restaurants.length === 0 ? (
+        {restaurants.length === 0 ? (
           <div className="py-16 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)]">
               No results for &ldquo;{query}&rdquo;
@@ -243,7 +223,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         ) : (
           <div className="space-y-0">
-            {/* Result count header */}
             <div
               className="flex items-center justify-between px-0 py-4 border-b"
               style={{ borderColor: "oklch(0.22 0 0)" }}
@@ -271,13 +250,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     borderLeft: `2px solid ${accentColor}`,
                   }}
                 >
-                  {/* Main content: 2-column grid on desktop */}
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-0">
-
-                    {/* Left column */}
                     <div className="px-4 pt-5 pb-4 md:px-8 md:pt-9 md:pb-6">
 
-                      {/* Sick report warning */}
                       {sickCount > 0 && (
                         <div
                           className="flex items-center gap-3 mb-4 md:mb-6 px-4 py-2.5 border"
@@ -301,20 +276,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         </div>
                       )}
 
-                      {/* Location + mobile gauge row */}
                       <div className="flex items-start justify-between gap-4 mb-3 md:mb-0">
                         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] md:mb-4">
                           {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                         </p>
                         <div className="flex items-center gap-2 shrink-0 -mt-1">
-                          {/* Gauge — mobile only */}
                           <div className="md:hidden">
                             <SafetyGauge score={score} size="sm" />
                           </div>
                         </div>
                       </div>
 
-                      {/* Restaurant name */}
                       <Link
                         href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
                         className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-4 md:mb-5 hover:text-[#FF7444] transition-colors duration-150"
@@ -331,7 +303,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         />
                       </Link>
 
-                      {/* Links + Save */}
                       <div className="flex items-center gap-6 mb-4 md:mb-6">
                         {restaurant.website_url && (
                           <a
@@ -360,7 +331,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         />
                       </div>
 
-                      {/* Summary */}
                       {summary && (
                         <p className="text-[14px] leading-[1.75] text-[oklch(0.82_0_0)] max-w-[520px]">
                           {summary}
@@ -368,13 +338,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       )}
                     </div>
 
-                    {/* Right column — desktop only */}
                     <div className="hidden md:flex items-start justify-end pr-8 pt-5 pb-5">
                       <SafetyGauge score={score} />
                     </div>
                   </div>
 
-                  {/* Signal row */}
                   {signals.length > 0 && (
                     <div
                       className="grid grid-cols-1 md:grid-cols-3 border-t"
@@ -391,6 +359,86 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         )}
       </section>
+    );
+  }
+
+  // ── Top rated mode ─────────────────────────────────────────────────────────
+  const topData = await getTopRestaurants(topRatedCity);
+  const topRated: TopRestaurant[] = topData.map((r) => ({
+    id: r.id,
+    name: r.name,
+    neighborhood: r.neighborhood,
+    cuisine: r.cuisine,
+    score: r.score,
+    slug: r.slug ?? null,
+    hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
+    isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
+    gf_food_categories: r.gf_food_categories ?? null,
+    place_type: r.place_type ?? null,
+  }));
+
+  if (topRated.length === 0) return null;
+  return <TopRatedSection restaurants={topRated} city={topRatedCity} />;
+}
+
+// ── Top rated skeleton (shown while PageContent resolves) ────────────────────
+function TopRatedSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8 md:mt-12 pb-24 md:pb-32">
+      <div className="h-5 w-40 rounded bg-[oklch(0.14_0_0)] mb-6 animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[oklch(0.14_0_0)]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="bg-[oklch(0.08_0_0)] h-40 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Page shell ───────────────────────────────────────────────────────────────
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const query = params.q?.trim() ?? "";
+
+  return (
+    <main className="pt-16">
+      {/* LocationBanner — deferred, doesn't block hero */}
+      <Suspense fallback={null}>
+        <LocationBannerServer />
+      </Suspense>
+
+      {/* Hero — static shell renders immediately; count + search stream in */}
+      <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
+        <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
+        <div className="max-w-3xl md:max-w-5xl lg:max-w-6xl w-full text-center space-y-6 md:space-y-8">
+          <div>
+            {/* h1 is fully static — paints on first byte */}
+            <h1
+              className="font-[family-name:var(--font-display)] leading-none"
+              style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
+            >
+              Search less.
+              <br />
+              <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
+            </h1>
+            {/* Count streams in — placeholder holds space */}
+            <Suspense fallback={<p className="mt-5 h-4 opacity-0">placeholder</p>}>
+              <HeroCount />
+            </Suspense>
+          </div>
+
+          {/* Search form streams in with empty city list as fallback */}
+          <Suspense fallback={<SearchForm initialQuery={query} cities={[]} selectedCity="" />}>
+            <HeroSearchForm query={query} cityParam={params.city} />
+          </Suspense>
+        </div>
+      </section>
+
+      {/* Top rated / search results — deferred */}
+      <Suspense fallback={!query ? <TopRatedSkeleton /> : null}>
+        <PageContent query={query} cityParam={params.city} />
+      </Suspense>
     </main>
   );
 }
