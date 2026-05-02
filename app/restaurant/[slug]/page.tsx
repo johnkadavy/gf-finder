@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -206,6 +207,43 @@ function buildSignalSummary(d: ScoringDossier | null): string {
   return ` ${cap(top[0])}, ${top[1]}, and ${top[2]}.`;
 }
 
+// ── Auth — deferred behind Suspense so it never blocks the page shell ───────
+
+// Per-request dedup: getUser() is called at most once even if SaveState
+// renders in multiple Suspense boundaries (mobile + desktop).
+const getRestaurantAuth = cache(async (restaurantId: number) => {
+  const serverClient = await createClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  if (!user) return false;
+  const { data: save } = await serverClient
+    .from("saved_restaurants")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
+  return !!save;
+});
+
+async function SaveState({
+  restaurantId,
+  redirectPath,
+  showLabel,
+}: {
+  restaurantId: number;
+  redirectPath: string;
+  showLabel?: boolean;
+}) {
+  const initialSaved = await getRestaurantAuth(restaurantId);
+  return (
+    <SaveButton
+      restaurantId={restaurantId}
+      initialSaved={initialSaved}
+      redirectPath={redirectPath}
+      showLabel={showLabel}
+    />
+  );
+}
+
 // ── Slug resolution ────────────────────────────────────────────────────────
 // Supports both slug-based URLs (/restaurant/wild-west-village) and legacy
 // numeric IDs (/restaurant/5) — the latter 301-redirects to the slug URL.
@@ -300,19 +338,6 @@ export default async function RestaurantPage({
   const visit = visitData as VerifiedVisit | null;
   const score = r.dossier ? calculateScore(r.dossier, r.verified_data ?? undefined) : null;
 
-  // Check if current user has saved this restaurant
-  const serverClient = await createClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  let initialSaved = false;
-  if (user) {
-    const { data: save } = await serverClient
-      .from("saved_restaurants")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("restaurant_id", r.id)
-      .maybeSingle();
-    initialSaved = !!save;
-  }
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);
   const d = r.dossier;
@@ -528,12 +553,9 @@ export default async function RestaurantPage({
 
           {/* Save button */}
           <div>
-            <SaveButton
-              restaurantId={r.id}
-              initialSaved={initialSaved}
-              redirectPath={`/restaurant/${r.slug ?? r.id}`}
-              showLabel
-            />
+            <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />}>
+              <SaveState restaurantId={r.id} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />
+            </Suspense>
           </div>
         </div>
 
@@ -583,12 +605,9 @@ export default async function RestaurantPage({
               </p>
             </div>
             <div className="mt-2 shrink-0">
-              <SaveButton
-                restaurantId={r.id}
-                initialSaved={initialSaved}
-                redirectPath={`/restaurant/${r.slug ?? r.id}`}
-                showLabel
-              />
+              <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />}>
+                <SaveState restaurantId={r.id} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />
+              </Suspense>
             </div>
           </div>
 
