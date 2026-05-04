@@ -1,11 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase-server";
+import { supabaseServer } from "@/lib/supabase-admin";
 import { searchRestaurants, getRestaurantDetails, getNeighborhoodOverview } from "@/lib/agent-tools";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const FREE_LIMIT = 5;
+const DEFAULT_USER_LIMIT = 5; // Default for logged-in users (overridden by profiles.agent_query_limit)
+const ANON_LIMIT = 3;         // Tighter for anonymous — cookie is easily bypassed
 const ANON_COOKIE = "cp_agent_queries";
 
 const SYSTEM_PROMPT = `You are CleanPlate's gluten-free dining assistant. You help people with celiac disease and gluten sensitivities find safe restaurants and evaluate dining options.
@@ -92,8 +94,8 @@ const MAX_TOOL_ROUNDS = 5;
 
 type UsageContext =
   | { type: "admin" }
-  | { type: "user"; userId: string; count: number }
-  | { type: "anon"; count: number };
+  | { type: "user"; userId: string; count: number; limit: number }
+  | { type: "anon"; count: number; limit: number };
 
 async function getUsageContext(): Promise<UsageContext> {
   const serverClient = await createClient();
@@ -102,7 +104,7 @@ async function getUsageContext(): Promise<UsageContext> {
   if (user) {
     const { data: profile } = await serverClient
       .from("profiles")
-      .select("agent_queries_used, is_admin")
+      .select("agent_queries_used, agent_query_limit, is_admin")
       .eq("id", user.id)
       .single();
 
@@ -112,32 +114,46 @@ async function getUsageContext(): Promise<UsageContext> {
       type: "user",
       userId: user.id,
       count: profile?.agent_queries_used ?? 0,
+      limit: profile?.agent_query_limit ?? DEFAULT_USER_LIMIT,
     };
   }
 
   // Anonymous: read count from cookie
   const cookieStore = await cookies();
   const count = parseInt(cookieStore.get(ANON_COOKIE)?.value ?? "0", 10) || 0;
-  return { type: "anon", count };
+  return { type: "anon", count, limit: ANON_LIMIT };
 }
 
-async function incrementUsage(ctx: UsageContext, responseHeaders: Headers): Promise<void> {
-  if (ctx.type === "admin") return;
+// ── Query logging ─────────────────────────────────────────────────────────────
 
-  if (ctx.type === "user") {
-    const serverClient = await createClient();
-    await serverClient
-      .from("profiles")
-      .update({ agent_queries_used: ctx.count + 1 })
-      .eq("id", ctx.userId);
-    return;
-  }
-
-  // Anonymous: set cookie with incremented count (1-year expiry)
-  responseHeaders.append(
-    "Set-Cookie",
-    `${ANON_COOKIE}=${ctx.count + 1}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`,
-  );
+async function logQuery({
+  userId,
+  query,
+  inputTokens,
+  outputTokens,
+  toolCalls,
+  error,
+}: {
+  userId: string | null;
+  query: string;
+  inputTokens: number;
+  outputTokens: number;
+  toolCalls: number;
+  error: boolean;
+}) {
+  await supabaseServer
+    .from("agent_query_logs")
+    .insert({
+      user_id: userId,
+      query,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      tool_calls: toolCalls,
+      error,
+    })
+    .then(({ error: e }) => {
+      if (e) console.error("[agent] Failed to log query:", e.message);
+    });
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -165,11 +181,13 @@ export async function POST(request: Request) {
   // Check usage limit
   const usageCtx = await getUsageContext();
   const queriesUsed = usageCtx.type === "admin" ? 0 : usageCtx.count;
+  const queryLimit = usageCtx.type === "admin" ? Infinity : usageCtx.limit;
   const isUnlimited = usageCtx.type === "admin";
+  const userId = usageCtx.type === "user" ? usageCtx.userId : null;
 
-  if (!isUnlimited && queriesUsed >= FREE_LIMIT) {
+  if (!isUnlimited && queriesUsed >= queryLimit) {
     return Response.json(
-      { error: "limit_reached", queries_used: queriesUsed, limit: FREE_LIMIT },
+      { error: "limit_reached", queries_used: queriesUsed, limit: queryLimit },
       { status: 402 },
     );
   }
@@ -218,6 +236,9 @@ export async function POST(request: Request) {
       }
 
       let rounds = 0;
+      let totalInputTokens = 0;
+      let totalOutputTokens = 0;
+      let totalToolCalls = 0;
 
       try {
         while (rounds < MAX_TOOL_ROUNDS) {
@@ -238,11 +259,15 @@ export async function POST(request: Request) {
 
           const message = await stream.finalMessage();
 
+          // Accumulate token usage across all rounds
+          totalInputTokens += message.usage.input_tokens;
+          totalOutputTokens += message.usage.output_tokens;
+
           if (message.stop_reason === "end_turn") {
             // Flush the buffered response text as a single delta (frontend drip smooths it)
             if (roundText) send({ type: "delta", text: roundText });
 
-            // Increment DB usage for logged-in users (cookie already set in response headers)
+            // Increment DB usage count for logged-in users
             if (usageCtx.type === "user") {
               const serverClient = await createClient();
               await serverClient
@@ -251,8 +276,18 @@ export async function POST(request: Request) {
                 .eq("id", usageCtx.userId);
             }
 
+            // Log the completed query
+            await logQuery({
+              userId,
+              query,
+              inputTokens: totalInputTokens,
+              outputTokens: totalOutputTokens,
+              toolCalls: totalToolCalls,
+              error: false,
+            });
+
             const newCount = isUnlimited ? null : queriesUsed + 1;
-            const queriesRemaining = isUnlimited ? null : FREE_LIMIT - (newCount ?? 0);
+            const queriesRemaining = isUnlimited ? null : queryLimit - (newCount ?? 0);
 
             send({
               type: "done",
@@ -271,6 +306,7 @@ export async function POST(request: Request) {
             for (const block of message.content) {
               if (block.type !== "tool_use") continue;
 
+              totalToolCalls++;
               let result: unknown;
               try {
                 switch (block.name) {
@@ -306,10 +342,12 @@ export async function POST(request: Request) {
           break;
         }
 
+        await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
         send({ type: "error", message: "Agent did not produce a response" });
         controller.close();
       } catch (err) {
         console.error("[/api/agent] Error:", err);
+        await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
         send({ type: "error", message: "Failed to get response from agent" });
         controller.close();
       }
