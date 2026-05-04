@@ -158,11 +158,30 @@ async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails | null> 
   return res.json();
 }
 
-/** Extracts city from Google Places addressComponents (locality type). */
+// NYC borough names that Google Places returns as `locality` instead of "New York"
+const NYC_BOROUGH_TO_CITY: Record<string, string> = {
+  Bronx: "New York",
+  Brooklyn: "New York",
+  Queens: "New York",
+  "Staten Island": "New York",
+  Manhattan: "New York",
+};
+
+/** Extracts city from Google Places addressComponents (locality type).
+ *  Handles NYC boroughs: Google sometimes returns "Bronx" / "Brooklyn" etc.
+ *  as the locality, or omits locality entirely — both normalize to "New York".
+ */
 function extractCity(details: PlaceDetails): string {
   const components = details.addressComponents ?? [];
-  const locality = components.find((c) => c.types.includes("locality"));
-  return locality?.longText ?? "";
+
+  const locality = components.find((c) => c.types.includes("locality"))?.longText ?? "";
+  if (locality) return NYC_BOROUGH_TO_CITY[locality] ?? locality;
+
+  // Fallback: sublocality_level_1 covers the borough when locality is absent
+  const sublocality = components.find((c) => c.types.includes("sublocality_level_1"))?.longText ?? "";
+  if (NYC_BOROUGH_TO_CITY[sublocality]) return NYC_BOROUGH_TO_CITY[sublocality];
+
+  return "";
 }
 
 /** Extracts neighborhood from Google Places addressComponents. */
