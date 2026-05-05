@@ -186,6 +186,7 @@ export function calculateScore(
       case "high":   contamScore = 40;  break;
       case "medium": contamScore = 75;  break;
       case "low":    contamScore = 100; break;
+      default:       contamScore = 70;  // "unknown" or unexpected value → neutral
     }
     // Cuisine prior as sanity check: can't be "low" for an inherently high-risk kitchen
     if (ccSignal === "low" && cuisinePrior === "high") contamScore = 75;
