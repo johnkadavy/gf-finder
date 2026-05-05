@@ -104,7 +104,9 @@ ORDER BY score DESC;
 ```
 
 **Runs:**
-<!-- date | pass/fail | notes -->
+| Date | Result | Notes |
+|------|--------|-------|
+| 2026-05-05 | ✅ Pass | Top 5 correct and in order (100, 99, 95, 93, 91) out of 73 Italian restaurants in the neighborhood. Good calibration — flagged CC risk and shared fryer caveats for lower-scoring options without being alarmist. |
 
 ---
 
@@ -129,7 +131,9 @@ LIMIT 10;
 ```
 
 **Runs:**
-<!-- date | pass/fail | notes -->
+| Date | Result | Notes |
+|------|--------|-------|
+| 2026-05-05 | ✅ Pass | Asked for location + sensitivity level before searching (correct). Place type filtering correct (all results fast_casual/cafe/bakery). Scores accurate. Illness report caveat for Sushi Counter shows good judgment. Sensitivity question is a strong bonus — personalizes the score threshold. |
 
 ---
 
@@ -156,4 +160,6 @@ WHERE neighborhood = 'West Village'
 ```
 
 **Runs:**
-<!-- date | pass/fail | notes -->
+| Date | Result | Notes |
+|------|--------|-------|
+| 2026-05-05 | ✅ Pass | All stats exact: 269 restaurants, avg 56, score breakdown 30/21/34/184, top 5 correct. Used get_neighborhood_overview correctly. Good framing — avg score context helps user calibrate expectations. Beer Garage at 98 is correct (dossier score is legitimate, gf_sandwiches false positive was a separate data issue). |
