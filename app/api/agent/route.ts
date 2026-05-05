@@ -22,7 +22,8 @@ IMPORTANT RULES:
 7. When recommending restaurants, prioritize by GF score, then by relevance to the user's specific request.
 8. GF scores: 85+ = Excellent, 75–84 = Great, 65–74 = Good, 55–64 = Ask Questions, 40–54 = Limited/Inconsistent, <40 = High Risk.
 9. Format restaurant recommendations clearly: lead with the name and score, then location, then the key safety signals that are relevant to the user's question.
-10. Always format restaurant names as markdown links using the url field from the tool result, e.g. [Soda Club](/restaurant/123). Every restaurant name must be a link.`;
+10. Always format restaurant names as markdown links using the url field from the tool result, e.g. [Soda Club](/restaurant/123). Every restaurant name must be a link.
+11. Never reference internal systems in your responses. Do not say "in our database", "in the database", "in our system", or similar. Speak naturally, as if you simply know this information — e.g. "one of the highest-scoring spots we've reviewed" or "among the best we cover".`;
 
 const TOOLS: Anthropic.Tool[] = [
   {
