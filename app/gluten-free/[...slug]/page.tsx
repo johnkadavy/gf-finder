@@ -101,6 +101,67 @@ const CATEGORIES: Record<string, CategoryDef> = {
   },
 };
 
+// ── Structured data ───────────────────────────────────────────────────────────
+
+const BASE_URL = "https://trycleanplate.com";
+
+function buildPageJsonLd({
+  pageUrl,
+  name,
+  description,
+  breadcrumbs,
+  restaurants,
+}: {
+  pageUrl: string;
+  name: string;
+  description: string;
+  breadcrumbs: Array<{ name: string; item?: string }>;
+  restaurants: RestaurantRow[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": breadcrumbs.map((b, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "name": b.name,
+          ...(b.item ? { "item": b.item } : {}),
+        })),
+      },
+      {
+        "@type": "CollectionPage",
+        "name": name,
+        "description": description,
+        "url": `${BASE_URL}${pageUrl}`,
+        "numberOfItems": restaurants.length,
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": restaurants.length,
+          "itemListElement": restaurants.map((r, i) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "item": {
+              "@type": "Restaurant",
+              "name": r.name,
+              "url": `${BASE_URL}/restaurant/${r.slug ?? r.id}`,
+              ...(r.neighborhood ? {
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": r.neighborhood,
+                  "addressRegion": "NY",
+                  "addressCountry": "US",
+                },
+              } : {}),
+            },
+          })),
+        },
+      },
+    ],
+  };
+}
+
 // ── Category filter helper ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -248,8 +309,22 @@ export default async function LandingPage({ params }: Props) {
     const h1 = `${catDef.cityLabelPlural} in ${city}`;
     const otherCategories = Object.entries(CATEGORIES).filter(([cs]) => cs !== catSlug);
 
+    const cityJsonLd = buildPageJsonLd({
+      pageUrl: `/gluten-free/${s0}/${s1}`,
+      name: h1,
+      description: catDef.editorialIntro,
+      breadcrumbs: [
+        { name: "Rankings", item: `${BASE_URL}/rankings` },
+        { name: city, item: `${BASE_URL}/rankings?city=${encodeURIComponent(city)}` },
+        { name: catDef.label },
+      ],
+      restaurants,
+    });
+
     return (
       <main className="pt-16">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cityJsonLd) }} />
+
         {/* ── Hero ── */}
         <section
           className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
@@ -455,8 +530,22 @@ export default async function LandingPage({ params }: Props) {
 
   const availableCategories = Object.entries(CATEGORIES).filter(([cs]) => cs !== categorySlug);
 
+  const neighborhoodJsonLd = buildPageJsonLd({
+    pageUrl: `/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`,
+    name: h1,
+    description: intro,
+    breadcrumbs: [
+      { name: "Rankings", item: `${BASE_URL}/rankings` },
+      { name: neighborhood, item: `${BASE_URL}/gluten-free/${citySlug}/${neighborhoodSlug}` },
+      ...(catDef ? [{ name: catDef.label }] : []),
+    ],
+    restaurants,
+  });
+
   return (
     <main className="pt-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(neighborhoodJsonLd) }} />
+
       {/* ── Hero ── */}
       <section
         className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"

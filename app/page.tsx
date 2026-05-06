@@ -1,6 +1,7 @@
 import { cache, Suspense } from "react";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
@@ -35,6 +36,52 @@ type Restaurant = {
 
 type HomePageProps = {
   searchParams: Promise<{ q?: string; city?: string }>;
+};
+
+// ── Page metadata ────────────────────────────────────────────────────────────
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { totalCount } = await getHomepageMeta();
+  const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
+  return {
+    title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
+    description: `${roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety. Find celiac-safe dining with dedicated fryers, clear menu labeling, and low cross-contamination risk.`,
+    alternates: { canonical: "/" },
+    openGraph: {
+      title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
+      description: `${roundedCount.toLocaleString()}+ NYC restaurants rated for GF safety. No guessing.`,
+      url: "/",
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "CleanPlate — NYC's Gluten-Free Restaurant Guide" }],
+    },
+  };
+}
+
+// ── Homepage structured data ─────────────────────────────────────────────────
+
+const HOME_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://trycleanplate.com/#organization",
+      "name": "CleanPlate",
+      "url": "https://trycleanplate.com",
+      "description": "NYC's gluten-free restaurant guide. Restaurants rated 0–100 for GF safety based on cross-contamination risk, menu labeling, and real diner experiences.",
+      "logo": { "@type": "ImageObject", "url": "https://trycleanplate.com/guanaco_logo.svg" },
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://trycleanplate.com/#website",
+      "name": "CleanPlate",
+      "url": "https://trycleanplate.com",
+      "publisher": { "@id": "https://trycleanplate.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://trycleanplate.com/?q={search_term_string}" },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
 };
 
 // ── Per-request auth deduplication ──────────────────────────────────────────
@@ -403,6 +450,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <main className="pt-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_JSON_LD) }}
+      />
+
       {/* LocationBanner — deferred, doesn't block hero */}
       <Suspense fallback={null}>
         <LocationBannerServer />

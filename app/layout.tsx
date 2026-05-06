@@ -34,9 +34,11 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "CleanPlate",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "CleanPlate — NYC's Gluten-Free Restaurant Guide" }],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/og-image.png"],
   },
 };
 
