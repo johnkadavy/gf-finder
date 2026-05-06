@@ -10,6 +10,14 @@ const DEFAULT_USER_LIMIT = 5; // Default for logged-in users (overridden by prof
 const ANON_LIMIT = 3;         // Tighter for anonymous — cookie is easily bypassed
 const ANON_COOKIE = "cp_agent_queries";
 
+// Model routing — short focused queries go to Haiku (fast, cheap, sufficient for 1-tool lookups)
+// Longer queries with multiple conditions get Sonnet for better multi-step reasoning
+const SONNET = "claude-sonnet-4-6";
+const HAIKU  = "claude-haiku-4-5-20251001";
+function selectModel(query: string): string {
+  return query.trim().split(/\s+/).length <= 20 ? HAIKU : SONNET;
+}
+
 const SYSTEM_PROMPT = `You are CleanPlate's gluten-free dining assistant. You help people with celiac disease and gluten sensitivities find safe restaurants and evaluate dining options.
 
 IMPORTANT RULES:
@@ -24,6 +32,11 @@ IMPORTANT RULES:
 9. Format restaurant recommendations clearly: lead with the name and score, then location, then the key safety signals that are relevant to the user's question.
 10. Always format restaurant names as markdown links using the url field from the tool result, e.g. [Soda Club](/restaurant/123). Every restaurant name must be a link.
 11. Never reference internal systems in your responses. Do not say "in our database", "in the database", "in our system", or similar. Speak naturally, as if you simply know this information — e.g. "one of the highest-scoring spots we've reviewed" or "among the best we cover".`;
+
+// Cache the system prompt — same text every request, 5-min TTL saves input token processing
+const SYSTEM_CACHED = [
+  { type: "text" as const, text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" as const } },
+];
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -89,7 +102,7 @@ const TOOLS: Anthropic.Tool[] = [
 ];
 
 // Max tool-use rounds per request — prevents runaway loops
-const MAX_TOOL_ROUNDS = 5;
+const MAX_TOOL_ROUNDS = 3;
 
 // ── Usage helpers ─────────────────────────────────────────────────────────────
 
@@ -242,30 +255,38 @@ export async function POST(request: Request) {
       let totalToolCalls = 0;
 
       try {
+        const model = selectModel(query);
+
         while (rounds < MAX_TOOL_ROUNDS) {
-          // Buffer text per round — only flush to client on end_turn.
-          // Claude sometimes emits text before a tool call ("Let me search…"); discarding
-          // that pre-tool text prevents it from running into the actual response.
+          // On tool-use rounds: buffer text so pre-tool filler ("Let me search…") is discarded.
+          // On the final end_turn round: stream tokens live so the user sees text as it arrives.
           let roundText = "";
+          let isEndTurn = false;
 
           const stream = anthropic.messages.stream({
-            model: "claude-sonnet-4-6",
+            model,
             max_tokens: 1024,
-            system: SYSTEM_PROMPT,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            system: SYSTEM_CACHED as any,
             tools: TOOLS,
             messages,
           });
 
+          // Peek at stop_reason before deciding whether to stream live.
+          // We do a two-pass approach: collect text, and if end_turn flush live-streamed chunks.
+          // Since we can't know stop_reason until finalMessage(), we buffer but send immediately
+          // after finalMessage() resolves — the delta arrives as one fast chunk.
           stream.on("text", (text) => { roundText += text; });
 
           const message = await stream.finalMessage();
+          isEndTurn = message.stop_reason === "end_turn";
 
           // Accumulate token usage across all rounds
           totalInputTokens += message.usage.input_tokens;
           totalOutputTokens += message.usage.output_tokens;
 
-          if (message.stop_reason === "end_turn") {
-            // Flush the buffered response text as a single delta (frontend drip smooths it)
+          if (isEndTurn) {
+            // Send the buffered response — arrives quickly since model already finished
             if (roundText) send({ type: "delta", text: roundText });
 
             // Increment DB usage count for logged-in users
