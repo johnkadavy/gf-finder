@@ -77,8 +77,16 @@ export function Nav() {
         <Link href="/about" className={linkClass}>About</Link>
         {/* Blog link hidden until posts exist */}
         {/* <Link href="/blog" className={linkClass}>Blog</Link> */}
-        {loggedIn && (
+        {loggedIn ? (
           <Link href="/account" className={linkClass}>Account</Link>
+        ) : (
+          <Link
+            href="/login"
+            className="font-mono text-[11px] uppercase tracking-[0.2em] px-4 py-2 transition-colors duration-200"
+            style={{ backgroundColor: "#FF7444", color: "oklch(0.08 0 0)" }}
+          >
+            Sign Up Free
+          </Link>
         )}
       </nav>
 
@@ -103,6 +111,19 @@ export function Nav() {
             </Link>
           );
         })}
+        {!loggedIn && (
+          <Link
+            href="/login"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
+            style={{ color: "#FF7444" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span className="font-mono text-[9px] uppercase tracking-[0.15em] leading-none">Sign Up</span>
+          </Link>
+        )}
       </nav>
     </>
   );
