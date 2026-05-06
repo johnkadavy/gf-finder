@@ -1,6 +1,8 @@
 import { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase";
 
+export const revalidate = 86400; // regenerate sitemap at most once per 24 hours
+
 const BASE_URL = "https://trycleanplate.com";
 
 function toSlug(s: string): string {
