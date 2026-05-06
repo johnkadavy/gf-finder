@@ -4,7 +4,7 @@ import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, type VerifiedData } from "@/lib/score";
 import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 
-export const maxDuration = 60;
+export const maxDuration = 15;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,10 +56,6 @@ const DETAILS_FIELD_MASK = [
   "types",
   "regularOpeningHours",
 ].join(",");
-
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Extracts a Google Place ID from a Google Maps URL.
@@ -592,50 +588,12 @@ export async function POST(req: Request) {
 
         if (req.signal.aborted) return;
 
-        // ── Step 6: Poll Airtable for enrichment (4 × 15s = 60s) ─────────────
-        const MAX_ATTEMPTS = 4;
-        let enriched = false;
-
-        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-          send({ step: "enrichment", status: "pending", attempt, max: MAX_ATTEMPTS });
-
-          await sleep(15_000);
-          if (req.signal.aborted) return;
-
-          const fields = await fetchAirtableRecord(airtableRecordId);
-          if (fields && isEnriched(fields)) {
-            enriched = true;
-            send({ step: "enrichment", status: "done", attempt });
-            break;
-          }
-        }
-
-        if (!enriched) {
-          send({ step: "enrichment", status: "timeout" });
-          return;
-        }
-
-        if (req.signal.aborted) return;
-
-        // ── Step 7: Sync enriched data back to Supabase ───────────────────────
-        send({ step: "sync", status: "running" });
-
-        const syncFields = await fetchAirtableRecord(airtableRecordId);
-        if (!syncFields) {
-          send({ step: "sync", status: "error", message: "Could not re-fetch Airtable record for sync." });
-          return;
-        }
-
-        let score: number | null = null;
-        try {
-          score = await syncAirtableRecordToSupabase(placeId, syncFields);
-        } catch (err) {
-          send({ step: "sync", status: "error", message: err instanceof Error ? err.message : "Sync failed." });
-          return;
-        }
-
-        send({ step: "sync", status: "done", score });
-        send({ step: "complete", name: details.displayName?.text ?? "Restaurant", id: inserted.id, slug: inserted.slug ?? null, score });
+        // ── Step 6: Hand off to client-side polling ───────────────────────────
+        // Airtable enrichment takes 1–5 minutes. Rather than holding the
+        // serverless function open (costs CPU-hours), return immediately and
+        // let the client auto-poll /api/admin/sync-restaurant every 30s.
+        send({ step: "enrichment", status: "timeout" });
+        send({ step: "complete", name: details.displayName?.text ?? "Restaurant", id: inserted.id, slug: inserted.slug ?? null, score: null });
 
       } catch (err) {
         send({ step: "error", message: err instanceof Error ? err.message : "Unexpected error" });
