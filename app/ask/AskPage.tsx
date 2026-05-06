@@ -25,14 +25,18 @@ type Message = {
 // Uses `marked` for reliable parsing of all markdown patterns Claude outputs.
 
 const chatRenderer = new Renderer();
+
+// All links open in a new tab so the chat session stays intact.
+// Strip stray parentheses from hrefs — the model occasionally outputs a format
+// that marked doesn't fully parse, leaving literal ( ) characters in the href.
+chatRenderer.link = function({ href, text }: { href: string; title?: string | null; text: string }) {
+  if (!href) return text;
+  const cleanHref = href.replace(/^\(+/, "").replace(/\)+$/, "");
+  return `<a href="${cleanHref}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+};
+
 marked.use({
   renderer: chatRenderer,
-  hooks: {
-    postprocess(html: string) {
-      // Open all links in a new tab
-      return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
-    },
-  },
   gfm: true,
   breaks: false,
 });
