@@ -4,7 +4,7 @@ import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, type VerifiedData } from "@/lib/score";
 import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 
-export const maxDuration = 15;
+export const maxDuration = 30;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
