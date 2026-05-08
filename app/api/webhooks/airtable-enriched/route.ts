@@ -5,6 +5,16 @@ import {
   syncAirtableRecordToSupabase,
 } from "../../admin/add-restaurant/route";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 /**
  * Webhook called by Airtable automation when the "JSON dossier" AI field
  * finishes generating for a record. Syncs the enriched data to Supabase
@@ -32,7 +42,7 @@ export async function POST(req: Request) {
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (authHeader !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
   }
 
   // Parse body
@@ -60,19 +70,19 @@ export async function POST(req: Request) {
     // Airtable may fire the trigger slightly before all AI fields finish —
     // return 200 so Airtable doesn't retry, but log for visibility
     console.warn(`[airtable-webhook] Record ${google_place_id} not yet fully enriched`);
-    return Response.json({ status: "not_ready" });
+    return Response.json({ status: "not_ready" }, { headers: CORS_HEADERS });
   }
 
   // Sync to Supabase and calculate score
   try {
     const score = await syncAirtableRecordToSupabase(google_place_id, fields);
     console.log(`[airtable-webhook] Synced ${google_place_id} — score: ${score}`);
-    return Response.json({ status: "synced", score });
+    return Response.json({ status: "synced", score }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error(`[airtable-webhook] Sync failed for ${google_place_id}:`, err);
     return Response.json(
       { status: "error", message: err instanceof Error ? err.message : "Sync failed" },
-      { status: 500 },
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }
