@@ -16,6 +16,73 @@
   --accent: #FF7444;
   --accent-foreground: oklch(0.08 0 0);
   --radius: 0rem;
+
+  /* Surface scale — background and container fills */
+  --surface-base:     oklch(0.08 0 0);  /* page background */
+  --surface-raised:   oklch(0.10 0 0);  /* default card / input surface */
+  --surface-elevated: oklch(0.12 0 0);  /* elevated card (= --card) */
+  --surface-overlay:  oklch(0.16 0 0);  /* popovers, floating panels */
+
+  /* Border scale */
+  --border-subtle:   oklch(0.18 0 0);  /* grid lines, secondary dividers */
+  --border-default:  oklch(0.22 0 0);  /* primary border (= --border) */
+  --border-emphasis: oklch(0.28 0 0);  /* medium-emphasis separators */
+
+  /* Text scale */
+  --text-primary:   oklch(0.95 0 0);  /* primary reading text */
+  --text-secondary: oklch(0.82 0 0);  /* body copy, article text */
+  --text-tertiary:  oklch(0.72 0 0);  /* captions, secondary metadata */
+  --text-label:     oklch(0.65 0 0);  /* default label color (= --muted-foreground) */
+  --text-dim:       oklch(0.58 0 0);  /* sub-labels, de-emphasized metadata */
+  --text-disabled:  oklch(0.45 0 0);  /* inactive / placeholder */
+
+  /* Accent opacity ramp */
+  --accent-tint-xs: #FF744408;  /* 3%  — ghost hover hint */
+  --accent-tint-sm: #FF744415;  /* 8%  — active filter pill background */
+  --accent-tint-md: #FF744420;  /* 12% — active card background */
+  --accent-tint-lg: #FF744440;  /* 25% — emphasis overlay */
+  --accent-tint-xl: #FF744460;  /* 37% — decorative border / underline */
+
+  /* Signal colors — sentiment / data quality indicators */
+  --signal-positive:        #7ECF9A;
+  --signal-warning:         #D4AE62;
+  --signal-negative:        #FF8060;
+  --signal-neutral:         oklch(0.72 0 0);
+  --signal-bg-positive:     #4A7C590D;
+  --signal-bg-warning:      #C5A04A0D;
+  --signal-bg-negative:     #FF74440D;
+  --signal-bg-neutral:      oklch(0.095 0 0);
+  --signal-border-positive: #4A7C5938;
+  --signal-border-warning:  #C5A04A38;
+  --signal-border-negative: #FF744438;
+  --signal-border-neutral:  oklch(0.18 0 0);
+
+  /* Score badge colors — numeric GF safety score ranges */
+  --score-excellent: #4A7C59;  /* ≥85 */
+  --score-great:     #576A8F;  /* 75–84 */
+  --score-good:      #6B78C5;  /* 65–74 */
+  --score-caution:   #8B7BC5;  /* 55–64 */
+  --score-limited:   #C5A04A;  /* 40–54 */
+  --score-risk:      #FF7444;  /* <40 */
+  --score-no-data:   #9AA5BE;  /* null */
+
+  /* Type scale */
+  --font-size-2xs:  8px;   /* micro labels */
+  --font-size-xs:   9px;   /* small sub-labels */
+  --font-size-sm:  10px;   /* default label */
+  --font-size-md:  11px;   /* slightly larger label */
+  --font-size-lg:  13px;   /* card body text */
+  --font-size-xl:  14px;   /* input fields, paragraphs */
+  --font-size-2xl: 15px;   /* agent / chat prose */
+  --font-size-body: 16px;  /* blog body */
+
+  /* Letter-spacing scale */
+  --letter-spacing-snug:   0.08em;  /* minimal extra tracking */
+  --letter-spacing-normal: 0.10em;  /* light tracking */
+  --letter-spacing-label:  0.15em;  /* default label tracking */
+  --letter-spacing-wide:   0.18em;  /* mid-range label */
+  --letter-spacing-wider:  0.20em;  /* nav items, emphasis labels */
+  --letter-spacing-widest: 0.25em;  /* strongest emphasis */
 }
 
 @theme inline {
@@ -38,6 +105,61 @@
   --radius-xl: 0rem;
   --radius-2xl: 0rem;
   --radius-3xl: 0rem;
+
+  /* Surface colors → bg-surface-* */
+  --color-surface-base:     var(--surface-base);
+  --color-surface-raised:   var(--surface-raised);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay:  var(--surface-overlay);
+
+  /* Border colors → border-border-subtle / border-border-emphasis */
+  --color-border-subtle:   var(--border-subtle);
+  --color-border-emphasis: var(--border-emphasis);
+
+  /* Text colors → text-label / text-dim / text-disabled etc. */
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary:  var(--text-tertiary);
+  --color-text-label:     var(--text-label);
+  --color-text-dim:       var(--text-dim);
+  --color-text-disabled:  var(--text-disabled);
+
+  /* Accent tints → bg-accent-tint-* */
+  --color-accent-tint-xs: var(--accent-tint-xs);
+  --color-accent-tint-sm: var(--accent-tint-sm);
+  --color-accent-tint-md: var(--accent-tint-md);
+  --color-accent-tint-lg: var(--accent-tint-lg);
+  --color-accent-tint-xl: var(--accent-tint-xl);
+
+  /* Signal colors → text-signal-* / bg-signal-* / border-signal-* */
+  --color-signal-positive:        var(--signal-positive);
+  --color-signal-warning:         var(--signal-warning);
+  --color-signal-negative:        var(--signal-negative);
+  --color-signal-neutral:         var(--signal-neutral);
+  --color-signal-bg-positive:     var(--signal-bg-positive);
+  --color-signal-bg-warning:      var(--signal-bg-warning);
+  --color-signal-bg-negative:     var(--signal-bg-negative);
+  --color-signal-bg-neutral:      var(--signal-bg-neutral);
+  --color-signal-border-positive: var(--signal-border-positive);
+  --color-signal-border-warning:  var(--signal-border-warning);
+  --color-signal-border-negative: var(--signal-border-negative);
+  --color-signal-border-neutral:  var(--signal-border-neutral);
+
+  /* Score colors → text-score-* */
+  --color-score-excellent: var(--score-excellent);
+  --color-score-great:     var(--score-great);
+  --color-score-good:      var(--score-good);
+  --color-score-caution:   var(--score-caution);
+  --color-score-limited:   var(--score-limited);
+  --color-score-risk:      var(--score-risk);
+  --color-score-no-data:   var(--score-no-data);
+
+  /* Letter-spacing → tracking-label / tracking-wider etc. */
+  --tracking-snug:   var(--letter-spacing-snug);
+  --tracking-label:  var(--letter-spacing-label);
+  --tracking-broad:  var(--letter-spacing-wide);
+  --tracking-editorial: var(--letter-spacing-wider);
+  --tracking-stamp:  var(--letter-spacing-widest);
 }
 
 @keyframes fadeUp {

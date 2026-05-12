@@ -1,4 +1,5 @@
 import { normalizeCuisine } from "./cuisine";
+import { SCORE_COLORS } from "./tokens";
 
 /**
  * Rule-based cross-contamination risk prior derived from cuisine and place type.
@@ -234,21 +235,21 @@ export function calculateScore(
 }
 
 export function getScoreLabel(score: number | null): { label: string; color: string } {
-  if (score === null) return { label: "No Data",              color: "#9AA5BE" };
-  if (score >= 85)    return { label: "Excellent",            color: "#4A7C59" };
-  if (score >= 75)    return { label: "Great Option",         color: "#576A8F" };
-  if (score >= 65)    return { label: "Good Option",          color: "#6B78C5" };
-  if (score >= 55)    return { label: "Ask Questions",        color: "#8B7BC5" };
-  if (score >= 40)    return { label: "Limited / Inconsistent", color: "#C5A04A" };
-  return                     { label: "High Risk",            color: "#FF7444" };
+  if (score === null) return { label: "No Data",                color: SCORE_COLORS.noData    };
+  if (score >= 85)    return { label: "Excellent",              color: SCORE_COLORS.excellent };
+  if (score >= 75)    return { label: "Great Option",           color: SCORE_COLORS.great     };
+  if (score >= 65)    return { label: "Good Option",            color: SCORE_COLORS.good      };
+  if (score >= 55)    return { label: "Ask Questions",          color: SCORE_COLORS.caution   };
+  if (score >= 40)    return { label: "Limited / Inconsistent", color: SCORE_COLORS.limited   };
+  return                     { label: "High Risk",              color: SCORE_COLORS.risk      };
 }
 
 export function getGaugeColor(score: number | null): string {
-  if (score === null) return "#C5C8D6";
-  if (score >= 85)    return "#4A7C59";
-  if (score >= 75)    return "#576A8F";
-  if (score >= 65)    return "#6B78C5";
-  if (score >= 55)    return "#8B7BC5";
-  if (score >= 40)    return "#C5A04A";
-  return "#FF7444";
+  if (score === null) return SCORE_COLORS.noData;
+  if (score >= 85)    return SCORE_COLORS.excellent;
+  if (score >= 75)    return SCORE_COLORS.great;
+  if (score >= 65)    return SCORE_COLORS.good;
+  if (score >= 55)    return SCORE_COLORS.caution;
+  if (score >= 40)    return SCORE_COLORS.limited;
+  return SCORE_COLORS.risk;
 }

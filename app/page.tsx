@@ -6,11 +6,12 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
-import { SearchForm } from "./components/SearchForm";
+import { HomeAskInput } from "./components/HomeAskInput";
 import { TopRatedSection } from "./components/TopRatedSection";
 import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
+import { SIGNAL_DOT } from "@/lib/tokens";
 
 type Signal = {
   label: string;
@@ -172,9 +173,9 @@ function buildSignals(dossier: Dossier): Signal[] {
 }
 
 const signalConfig = {
-  positive: { dot: "#4ADE80" },
-  warning:  { dot: "#FACC15" },
-  error:    { dot: "#FF7444" },
+  positive: { dot: SIGNAL_DOT.positive },
+  warning:  { dot: SIGNAL_DOT.warning },
+  error:    { dot: SIGNAL_DOT.error },
 };
 
 function SignalChip({ signal }: { signal: Signal }) {
@@ -215,17 +216,6 @@ async function HeroCount() {
       {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
     </p>
   );
-}
-
-async function HeroSearchForm({ query, cityParam }: { query: string; cityParam?: string }) {
-  const [{ cityAccess }, { cityRows }] = await Promise.all([
-    getRequestAuth(),
-    getHomepageMeta(),
-  ]);
-  const allDbCities = Array.from(new Set(cityRows.map((r: { city: string }) => r.city))).sort();
-  const selectableCities = getSelectableCities(cityAccess, allDbCities);
-  const selectedCity = resolveCity(cityParam, cityAccess);
-  return <SearchForm initialQuery={query} cities={selectableCities} selectedCity={selectedCity} />;
 }
 
 async function PageContent({ query, cityParam }: { query: string; cityParam?: string }) {
@@ -460,7 +450,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <LocationBannerServer />
       </Suspense>
 
-      {/* Hero — static shell renders immediately; count + search stream in */}
+      {/* Hero — static shell renders immediately; count streams in */}
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
         <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
         <div className="max-w-3xl md:max-w-5xl lg:max-w-6xl w-full text-center space-y-6 md:space-y-8">
@@ -470,7 +460,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               className="font-[family-name:var(--font-display)] leading-none"
               style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
             >
-              Search less.
+              Ask anything.
               <br />
               <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
             </h1>
@@ -480,10 +470,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </Suspense>
           </div>
 
-          {/* Search form streams in with empty city list as fallback */}
-          <Suspense fallback={<SearchForm initialQuery={query} cities={[]} selectedCity="" />}>
-            <HeroSearchForm query={query} cityParam={params.city} />
-          </Suspense>
+          <HomeAskInput />
         </div>
       </section>
 
