@@ -356,7 +356,7 @@ export default async function LandingPage({ params }: Props) {
               </span>
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-4">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
               CleanPlate · {city}
             </p>
 
@@ -396,13 +396,13 @@ export default async function LandingPage({ params }: Props) {
                   <Link
                     key={r.id}
                     href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
-                    className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
+                    className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-surface-raised"
                     style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
                   >
                     {/* Rank */}
                     <span
                       className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
-                      style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "oklch(0.45 0 0)" }}
+                      style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "var(--text-disabled)" }}
                     >
                       {String(i + 1).padStart(2, "0")}
                     </span>
@@ -587,7 +587,7 @@ export default async function LandingPage({ params }: Props) {
             )}
           </div>
 
-          <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-4">
+          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
             CleanPlate · {city}
           </p>
 
@@ -626,13 +626,13 @@ export default async function LandingPage({ params }: Props) {
                 <Link
                   key={r.id}
                   href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
-                  className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
+                  className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-surface-raised"
                   style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
                 >
                   {/* Rank */}
                   <span
                     className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
-                    style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "oklch(0.45 0 0)" }}
+                    style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "var(--text-disabled)" }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>

@@ -48,7 +48,7 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle,
     setLoading(false);
   }
 
-  const color = saved ? "#FF7444" : hovered ? "#FF9470" : "#FF7444";
+  const color = saved ? "var(--accent)" : hovered ? "#FF9470" : "var(--accent)";
 
   return (
     <button
@@ -70,7 +70,7 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle,
         </svg>
       )}
       {showLabel && (
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em]">
+        <span className="font-mono text-ui-sm uppercase tracking-label">
           {saved ? "Saved" : "Save"}
         </span>
       )}

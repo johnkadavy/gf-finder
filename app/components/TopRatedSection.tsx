@@ -46,7 +46,7 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
       {/* Name + score row */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <span
-          className="font-[family-name:var(--font-display)] leading-tight text-white group-hover:text-[#FF7444] transition-colors"
+          className="font-[family-name:var(--font-display)] leading-tight text-white group-hover:text-accent transition-colors"
           style={{ fontSize: "clamp(1.05rem, 3vw, 1.35rem)", letterSpacing: "0.02em" }}
         >
           {r.name}

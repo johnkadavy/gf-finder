@@ -129,7 +129,7 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
         className="border p-5 text-center"
         style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
       >
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#4A7C59]">
+        <p className="font-mono text-ui-md uppercase tracking-editorial" style={{ color: "#4A7C59" }}>
           Review submitted ✓
         </p>
       </div>
@@ -141,24 +141,24 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="w-full border py-3.5 font-mono text-[11px] uppercase tracking-[0.2em] transition-colors hover:border-[oklch(0.4_0_0)] hover:text-white"
-          style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.55 0 0)" }}
+          className="w-full border py-3.5 font-mono text-ui-md uppercase tracking-editorial transition-colors hover:text-white"
+          style={{ borderColor: "var(--border-default)", color: "var(--text-dim)" }}
         >
           + Add Verified Review
         </button>
       ) : (
         <div
           className="border p-5 space-y-5"
-          style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
+          style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.55_0_0)]">
+          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
             Verified Review
           </p>
 
           {/* Button group fields */}
           {FIELDS.map((field) => (
             <div key={field.field}>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mb-2">
+              <p className="font-mono text-ui-sm uppercase tracking-editorial text-text-disabled mb-2">
                 {field.label}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -174,11 +174,11 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
                             : { ...v, [field.field]: opt.value }
                         )
                       }
-                      className="px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] border transition-colors min-w-[64px]"
+                      className="px-4 py-2.5 font-mono text-ui-md uppercase tracking-label border transition-colors min-w-[64px]"
                       style={{
-                        borderColor: active ? "#FF7444" : "oklch(0.25 0 0)",
-                        backgroundColor: active ? "#FF744420" : "transparent",
-                        color: active ? "#FF7444" : "oklch(0.65 0 0)",
+                        borderColor: active ? "var(--accent)" : "var(--border-emphasis)",
+                        backgroundColor: active ? "var(--accent-tint-md)" : "transparent",
+                        color: active ? "var(--accent)" : "var(--text-label)",
                       }}
                     >
                       {opt.label}
@@ -191,7 +191,7 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
 
           {/* Visit date */}
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mb-2">
+            <p className="font-mono text-ui-sm uppercase tracking-editorial text-text-disabled mb-2">
               Visit Date
             </p>
             <input
@@ -199,13 +199,13 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
               value={visitDate}
               onChange={(e) => setVisitDate(e.target.value)}
               className="bg-transparent border font-mono text-[12px] px-3 py-2.5 outline-none w-full md:w-auto"
-              style={{ borderColor: "oklch(0.25 0 0)", color: "oklch(0.75 0 0)", colorScheme: "dark" }}
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)", colorScheme: "dark" }}
             />
           </div>
 
           {/* Notes */}
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.45_0_0)] mb-2">
+            <p className="font-mono text-ui-sm uppercase tracking-editorial text-text-disabled mb-2">
               Notes <span className="normal-case tracking-normal opacity-50">(optional)</span>
             </p>
             <textarea
@@ -214,12 +214,12 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
               placeholder="Anything else worth noting…"
               rows={3}
               className="w-full bg-transparent border font-mono text-[12px] px-3 py-2.5 outline-none resize-none placeholder:opacity-30"
-              style={{ borderColor: "oklch(0.25 0 0)", color: "oklch(0.8 0 0)" }}
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-secondary)" }}
             />
           </div>
 
           {error && (
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+            <p className="font-mono text-ui-sm uppercase tracking-label text-accent">
               {error}
             </p>
           )}
@@ -229,14 +229,14 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 py-3 font-mono text-[11px] uppercase tracking-[0.2em] bg-white text-black hover:bg-[oklch(0.85_0_0)] disabled:opacity-40 transition-colors"
+              className="flex-1 py-3 font-mono text-ui-md uppercase tracking-editorial bg-white text-black hover:bg-[oklch(0.85_0_0)] disabled:opacity-40 transition-colors"
             >
               {submitting ? "Submitting…" : "Submit"}
             </button>
             <button
               onClick={() => setOpen(false)}
-              className="px-5 py-3 font-mono text-[11px] uppercase tracking-[0.2em] border transition-colors hover:border-[oklch(0.4_0_0)]"
-              style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.5 0 0)" }}
+              className="px-5 py-3 font-mono text-ui-md uppercase tracking-editorial border transition-colors"
+              style={{ borderColor: "var(--border-default)", color: "var(--text-disabled)" }}
             >
               Cancel
             </button>

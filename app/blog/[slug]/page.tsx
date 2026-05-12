@@ -42,30 +42,30 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Hero */}
       <section
         className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
-        style={{ borderColor: "oklch(0.22 0 0)" }}
+        style={{ borderColor: "var(--border-default)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
         />
         <div className="max-w-3xl mx-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6">
             <Link
               href="/blog"
-              className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] hover:text-white transition-colors"
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
             >
               Blog
             </Link>
-            <span className="text-[oklch(0.3_0_0)]">/</span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.75_0_0)] line-clamp-1">
+            <span style={{ color: "var(--border-emphasis)" }}>/</span>
+            <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary line-clamp-1">
               {post.title}
             </span>
           </div>
 
           <time
             dateTime={post.date}
-            className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.58_0_0)] block mb-4"
+            className="font-mono text-ui-sm uppercase tracking-editorial text-text-dim block mb-4"
           >
             {formatDate(post.date)}
           </time>
@@ -90,11 +90,11 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Footer nav */}
       <div
         className="max-w-3xl mx-auto px-4 md:px-8 pb-16 border-t pt-8"
-        style={{ borderColor: "oklch(0.22 0 0)" }}
+        style={{ borderColor: "var(--border-default)" }}
       >
         <Link
           href="/blog"
-          className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)] hover:text-white transition-colors"
+          className="font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-white transition-colors"
         >
           ← All Posts
         </Link>

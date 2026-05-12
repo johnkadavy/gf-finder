@@ -619,8 +619,8 @@ const [mapReady, setMapReady] = useState(false);
       {/* Close bar — desktop only */}
       <button
         onClick={() => setSelected(null)}
-        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-white"
-        style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.65 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
+        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-ui-sm uppercase tracking-label transition-colors hover:text-white"
+        style={{ borderColor: "var(--border-subtle)", color: "var(--text-label)", backgroundColor: "oklch(0.07 0 0)" }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -631,19 +631,19 @@ const [mapReady, setMapReady] = useState(false);
       {/* Header */}
       <div
         className="px-5 pt-4 pb-3 border-b shrink-0"
-        style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
+        style={{ borderColor: "var(--surface-overlay)", borderLeft: `3px solid ${selected.color}` }}
       >
         {/* Name row */}
         <div className="flex items-start justify-between gap-3 mb-1">
           <div className="min-w-0">
             {isNewRestaurant(selected.source, selected.ingested_at) && (
-              <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-1" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+              <span className="inline-block font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 mb-1" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                 New
               </span>
             )}
             <p
               className="font-[family-name:var(--font-display)] leading-tight"
-              style={{ fontSize: "clamp(1.3rem, 3vw, 1.7rem)", color: "oklch(0.95 0 0)" }}
+              style={{ fontSize: "clamp(1.3rem, 3vw, 1.7rem)", color: "var(--text-primary)" }}
             >
               {selected.name}
             </p>
@@ -652,7 +652,7 @@ const [mapReady, setMapReady] = useState(false);
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
             className="md:hidden shrink-0 p-2 -mr-1"
-            style={{ color: "oklch(0.55 0 0)" }}
+            style={{ color: "var(--text-dim)" }}
             aria-label="Close"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -662,7 +662,7 @@ const [mapReady, setMapReady] = useState(false);
         </div>
 
         {/* Neighborhood · Cuisine */}
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-3">
+        <p className="font-mono text-ui-sm uppercase tracking-broad text-text-label mb-3">
           {[selected.neighborhood, selected.cuisine].filter(Boolean).join(" · ")}
         </p>
 
@@ -675,13 +675,13 @@ const [mapReady, setMapReady] = useState(false);
             {selected.score ?? "—"}
           </span>
           <div className="min-w-0">
-            <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
+            <p className="font-mono text-ui-md uppercase tracking-snug" style={{ color: selected.color }}>
               {selected.scoreLabel}
             </p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">GF Score</p>
+            <p className="font-mono text-ui-xs uppercase tracking-label text-text-label">GF Score</p>
           </div>
           {openStatus !== null && (
-            <span className="ml-auto font-mono text-[9px] uppercase tracking-[0.15em] flex items-center gap-1 shrink-0">
+            <span className="ml-auto font-mono text-ui-xs uppercase tracking-label flex items-center gap-1 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openStatus ? "#4ADE80" : "oklch(0.4 0 0)" }} />
               <span style={{ color: openStatus ? "#4ADE80" : "oklch(0.5 0 0)" }}>
                 {openStatus ? "Open now" : "Closed"}
@@ -694,17 +694,17 @@ const [mapReady, setMapReady] = useState(false);
         {(selected.google_rating || priceStr(selected.price_level)) && (
           <div className="flex items-center gap-3 mb-3">
             {selected.google_rating && (
-              <span className="font-mono text-[10px] text-[oklch(0.65_0_0)]">★ {selected.google_rating}</span>
+              <span className="font-mono text-ui-sm text-text-label">★ {selected.google_rating}</span>
             )}
             {priceStr(selected.price_level) && (
-              <span className="font-mono text-[10px] text-[oklch(0.65_0_0)]">{priceStr(selected.price_level)}</span>
+              <span className="font-mono text-ui-sm text-text-label">{priceStr(selected.price_level)}</span>
             )}
           </div>
         )}
 
         {/* Short summary */}
         {selected.short_summary && (
-          <p className="font-mono text-[13px] leading-relaxed text-[oklch(0.72_0_0)]">
+          <p className="font-mono text-ui-lg leading-relaxed text-text-tertiary">
             {selected.short_summary}
           </p>
         )}
@@ -717,13 +717,13 @@ const [mapReady, setMapReady] = useState(false);
       >
         {selected.address && (
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Address</p>
-            <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{selected.address}</p>
+            <p className="font-mono text-ui-xs uppercase tracking-broad text-text-label mb-0.5">Address</p>
+            <p className="font-mono text-[12px] text-text-secondary leading-snug">{selected.address}</p>
           </div>
         )}
         {selected.website && (
           <div onClick={(e) => e.stopPropagation()}>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] mb-0.5">Website</p>
+            <p className="font-mono text-ui-xs uppercase tracking-broad text-text-label mb-0.5">Website</p>
             <a
               href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
               target="_blank"
@@ -757,16 +757,16 @@ const [mapReady, setMapReady] = useState(false);
       </div>{/* end top scrollable area */}
 
       {/* CTA buttons — shrink-0, always visible at bottom */}
-      <div className="px-5 py-3 flex gap-2.5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)", backgroundColor: "oklch(0.08 0 0)" }}>
+      <div className="px-5 py-3 flex gap-2.5 shrink-0 border-t" style={{ borderColor: "var(--surface-overlay)", backgroundColor: "var(--surface-base)" }}>
         <a
           href={directionsUrl ?? "#"}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 transition-colors"
-          style={{ backgroundColor: "#FF7444", color: "#000", border: "1px solid #FF7444" }}
+          className="flex-1 flex items-center justify-center gap-1.5 font-mono text-ui-sm uppercase tracking-snug py-2.5 transition-colors"
+          style={{ backgroundColor: "var(--accent)", color: "#000", border: "1px solid var(--accent)" }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e8643a")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FF7444")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="3 11 22 2 13 21 11 13 3 11"/>
@@ -776,19 +776,19 @@ const [mapReady, setMapReady] = useState(false);
         <Link
           href={`/restaurant/${selected.slug ?? selected.id}?from=map`}
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 border transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
-          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+          className="flex-1 flex items-center justify-center font-mono text-ui-sm uppercase tracking-snug py-2.5 border transition-colors hover:border-accent hover:text-accent"
+          style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)" }}
         >
           Details →
         </Link>
       </div>
 
       {isPreview && (
-        <div className="p-5 shrink-0 border-t" style={{ borderColor: "oklch(0.16 0 0)" }}>
+        <div className="p-5 shrink-0 border-t" style={{ borderColor: "var(--surface-overlay)" }}>
           <Link
             href="/login?next=/map"
             onClick={(e) => e.stopPropagation()}
-            className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+            className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
           >
             Sign up to save →
           </Link>
@@ -817,8 +817,8 @@ const [mapReady, setMapReady] = useState(false);
       <div
         className="hidden md:flex absolute top-16 left-0 bottom-0 z-20 w-80 flex-col border-r overflow-hidden"
         style={{
-          backgroundColor: "oklch(0.08 0 0)",
-          borderColor: "oklch(0.18 0 0)",
+          backgroundColor: "var(--surface-base)",
+          borderColor: "var(--border-subtle)",
           transform: selected ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.25s ease",
           pointerEvents: selected ? "auto" : "none",
@@ -839,7 +839,7 @@ const [mapReady, setMapReady] = useState(false);
       <div
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col overflow-hidden rounded-t-2xl cursor-pointer"
         style={{
-          backgroundColor: "oklch(0.08 0 0)",
+          backgroundColor: "var(--surface-base)",
           height: "55vh",
           transform: selected ? `translateY(${sheetDrag}px)` : "translateY(100%)",
           transition: sheetDrag > 0 ? "none" : "transform 0.3s ease",
@@ -867,8 +867,8 @@ const [mapReady, setMapReady] = useState(false);
           {isPreview && (
             <Link
               href="/login?next=/map"
-              className="absolute inset-0 z-10 flex items-center justify-center gap-2 border font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hover:border-[#FF7444] hover:text-[#FF7444]"
-              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)", color: "oklch(0.68 0 0)" }}
+              className="absolute inset-0 z-10 flex items-center justify-center gap-2 border font-mono text-ui-md uppercase tracking-label transition-colors hover:border-accent hover:text-accent"
+              style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -878,7 +878,7 @@ const [mapReady, setMapReady] = useState(false);
           )}
           <div
             className="flex items-center border"
-            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: committedSearch ? "#FF744460" : "oklch(0.28 0 0)" }}
+            style={{ backgroundColor: "var(--surface-raised)", borderColor: committedSearch ? "var(--accent-tint-xl)" : "var(--border-emphasis)" }}
           >
             <div className="flex items-center gap-2 px-3 py-3 flex-1 min-w-0">
               {isSearching ? (
@@ -919,20 +919,20 @@ const [mapReady, setMapReady] = useState(false);
                 }}
                 onFocus={() => (suggestions.length > 0 || cuisineSuggestions.length > 0) && setShowSuggestions(true)}
                 placeholder={mapCuisine ? `Filtering: ${mapCuisine}` : "Search restaurants…"}
-                className="bg-transparent outline-none w-full font-mono text-[16px] md:text-[13px] placeholder:text-[oklch(0.52_0_0)] min-w-0"
+                className="bg-transparent outline-none w-full font-mono text-[16px] md:text-ui-lg placeholder:text-[oklch(0.52_0_0)] min-w-0"
                 style={{ color: "oklch(0.88 0 0)" }}
               />
               {(search || committedSearch || mapCuisine) && (
                 <button
                   onClick={() => { setSearch(""); setSuggestions([]); setCuisineSuggestions([]); setShowSuggestions(false); setMapCuisine(""); mapCuisineRef.current = ""; commitSearch(""); }}
-                  className="text-[oklch(0.65_0_0)] hover:text-white transition-colors text-[11px] shrink-0"
+                  className="text-text-label hover:text-white transition-colors text-ui-md shrink-0"
                 >✕</button>
               )}
             </div>
             <button
               onClick={() => { setShowSuggestions(false); commitSearch(search.trim()); }}
-              className="font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-3 border-l shrink-0 transition-colors hover:text-[#FF7444]"
-              style={{ borderColor: "oklch(0.22 0 0)", color: "oklch(0.68 0 0)" }}
+              className="font-mono text-ui-sm uppercase tracking-snug px-3 py-3 border-l shrink-0 transition-colors hover:text-accent"
+              style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
             >
               Go
             </button>
@@ -942,7 +942,7 @@ const [mapReady, setMapReady] = useState(false);
           {showSuggestions && (cuisineSuggestions.length > 0 || suggestions.length > 0) && (
             <div
               className="absolute top-full left-0 right-0 z-50 border border-t-0 overflow-hidden"
-              style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
+              style={{ backgroundColor: "var(--surface-elevated)", borderColor: "var(--border-emphasis)" }}
             >
               {cuisineSuggestions.map((c, i) => (
                 <button
@@ -952,11 +952,11 @@ const [mapReady, setMapReady] = useState(false);
                   onMouseEnter={() => setActiveIndex(i)}
                   className="w-full text-left px-3 py-2.5 flex items-center gap-2 border-b transition-colors duration-100"
                   style={{
-                    borderColor: "oklch(0.18 0 0)",
-                    backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                    borderColor: "var(--border-subtle)",
+                    backgroundColor: i === activeIndex ? "var(--surface-overlay)" : "transparent",
                   }}
                 >
-                  <span className="font-mono text-[9px] uppercase tracking-[0.15em] shrink-0" style={{ color: "oklch(0.5 0 0)" }}>Cuisine</span>
+                  <span className="font-mono text-ui-xs uppercase tracking-label shrink-0" style={{ color: "oklch(0.5 0 0)" }}>Cuisine</span>
                   <span className="font-mono text-[12px] text-white truncate">
                     {highlightMatch(c, search)}
                   </span>
@@ -970,8 +970,8 @@ const [mapReady, setMapReady] = useState(false);
                   onMouseEnter={() => setActiveIndex(cuisineSuggestions.length + i)}
                   className="w-full text-left px-3 py-2.5 flex items-baseline justify-between gap-3 border-b transition-colors duration-100"
                   style={{
-                    borderColor: "oklch(0.18 0 0)",
-                    backgroundColor: cuisineSuggestions.length + i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                    borderColor: "var(--border-subtle)",
+                    backgroundColor: cuisineSuggestions.length + i === activeIndex ? "var(--surface-overlay)" : "transparent",
                   }}
                 >
                   <span className="font-mono text-[12px] text-white truncate">
@@ -987,16 +987,16 @@ const [mapReady, setMapReady] = useState(false);
         {!isPreview && (
           <div
             className="flex border divide-x"
-            style={{ borderColor: "oklch(0.28 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+            style={{ borderColor: "var(--border-emphasis)", backgroundColor: "var(--surface-raised)" }}
           >
             {/* Filters toggle */}
             <button
               onClick={() => setFiltersOpen((v) => !v)}
-              className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2.5 transition-colors duration-150 flex-1 min-w-0"
+              className="flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-snug px-3 py-2.5 transition-colors duration-150 flex-1 min-w-0"
               style={{
-                color: (hasActiveMapFilters || filtersOpen) ? "#FF7444" : "oklch(0.62 0 0)",
-                backgroundColor: hasActiveMapFilters ? "#FF744412" : "transparent",
-                borderColor: "oklch(0.28 0 0)",
+                color: (hasActiveMapFilters || filtersOpen) ? "var(--accent)" : "var(--text-dim)",
+                backgroundColor: hasActiveMapFilters ? "var(--accent-tint-xs)" : "transparent",
+                borderColor: "var(--border-emphasis)",
               }}
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
@@ -1004,7 +1004,7 @@ const [mapReady, setMapReady] = useState(false);
               </svg>
               Filters
               {hasActiveMapFilters && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
               )}
               <svg
                 width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
@@ -1017,11 +1017,11 @@ const [mapReady, setMapReady] = useState(false);
             {/* Open now */}
             <button
               onClick={() => setOpenNow((v) => !v)}
-              className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2.5 transition-colors duration-150 shrink-0"
+              className="flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-snug px-3 py-2.5 transition-colors duration-150 shrink-0"
               style={{
-                color: openNow ? "#FF7444" : "oklch(0.62 0 0)",
-                backgroundColor: openNow ? "#FF744412" : "transparent",
-                borderColor: "oklch(0.28 0 0)",
+                color: openNow ? "var(--accent)" : "var(--text-dim)",
+                backgroundColor: openNow ? "var(--accent-tint-xs)" : "transparent",
+                borderColor: "var(--border-emphasis)",
               }}
             >
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }} />
@@ -1047,14 +1047,14 @@ const [mapReady, setMapReady] = useState(false);
                   fetchViewport();
                 }
               }}
-              className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2.5 transition-colors duration-150 shrink-0"
+              className="flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-snug px-3 py-2.5 transition-colors duration-150 shrink-0"
               style={{
-                color: showSavedOnly ? "#FF7444" : "oklch(0.62 0 0)",
-                backgroundColor: showSavedOnly ? "#FF744412" : "transparent",
-                borderColor: "oklch(0.28 0 0)",
+                color: showSavedOnly ? "var(--accent)" : "var(--text-dim)",
+                backgroundColor: showSavedOnly ? "var(--accent-tint-xs)" : "transparent",
+                borderColor: "var(--border-emphasis)",
               }}
             >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill={showSavedOnly ? "#FF7444" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill={showSavedOnly ? "var(--accent)" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
               </svg>
               Saved
@@ -1066,34 +1066,34 @@ const [mapReady, setMapReady] = useState(false);
         {!isPreview && filtersOpen && (
           <div
             className="border overflow-hidden"
-            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)" }}
+            style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
           >
             {/* Active cuisine */}
             {mapCuisine && (
-              <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
-                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Cuisine</p>
+              <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-dim mb-1.5">Cuisine</p>
                 <button
                   onClick={() => { setMapCuisine(""); mapCuisineRef.current = ""; fetchViewport(); }}
-                  className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150 flex items-center gap-1.5"
-                  style={{ borderColor: "#FF744460", backgroundColor: "#FF744420", color: "#FF7444" }}
+                  className="font-mono text-ui-xs uppercase tracking-snug px-2.5 py-1 border transition-colors duration-150 flex items-center gap-1.5"
+                  style={{ borderColor: "var(--accent-tint-xl)", backgroundColor: "var(--accent-tint-md)", color: "var(--accent)" }}
                 >
                   {mapCuisine} <span className="opacity-70">×</span>
                 </button>
               </div>
             )}
             {/* Score */}
-            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Score</p>
+            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "var(--border-default)" }}>
+              <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-dim mb-1.5">Score</p>
               <div className="flex gap-1.5">
                 {[{ label: "All", value: "all" as const }, ...SCORE_FILTERS].map((f) => (
                   <button
                     key={f.value}
                     onClick={() => setScoreFilter((prev) => prev === f.value ? "all" : f.value as ScoreFilter)}
-                    className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-2 py-1 border transition-colors duration-150"
+                    className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: scoreFilter === f.value ? "#FF744460" : "oklch(0.3 0 0)",
-                      backgroundColor: scoreFilter === f.value ? "#FF744420" : "transparent",
-                      color: scoreFilter === f.value ? "#FF7444" : "oklch(0.65 0 0)",
+                      borderColor: scoreFilter === f.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      backgroundColor: scoreFilter === f.value ? "var(--accent-tint-md)" : "transparent",
+                      color: scoreFilter === f.value ? "var(--accent)" : "var(--text-label)",
                     }}
                   >
                     {f.label}
@@ -1103,18 +1103,18 @@ const [mapReady, setMapReady] = useState(false);
             </div>
 
             {/* GF Food */}
-            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">GF Food</p>
+            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "var(--border-default)" }}>
+              <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-dim mb-1.5">GF Food</p>
               <div className="flex gap-1.5 overflow-x-auto pb-0.5">
                 {[{ label: "All", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setMapGfCategory(opt.value)}
-                    className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-2 py-1 border transition-colors duration-150"
+                    className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapGfCategory === opt.value ? "#FF744460" : "oklch(0.3 0 0)",
-                      backgroundColor: mapGfCategory === opt.value ? "#FF744420" : "transparent",
-                      color: mapGfCategory === opt.value ? "#FF7444" : "oklch(0.65 0 0)",
+                      borderColor: mapGfCategory === opt.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      backgroundColor: mapGfCategory === opt.value ? "var(--accent-tint-md)" : "transparent",
+                      color: mapGfCategory === opt.value ? "var(--accent)" : "var(--text-label)",
                     }}
                   >
                     {opt.label}
@@ -1124,18 +1124,18 @@ const [mapReady, setMapReady] = useState(false);
             </div>
 
             {/* Place Type */}
-            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "oklch(0.2 0 0)" }}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[oklch(0.6_0_0)] mb-1.5">Place Type</p>
+            <div className="px-3 pt-2.5 pb-2 border-b" style={{ borderColor: "var(--border-default)" }}>
+              <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-dim mb-1.5">Place Type</p>
               <div className="flex gap-1.5 overflow-x-auto pb-0.5">
                 {[{ label: "All", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setMapPlaceType(opt.value)}
-                    className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-2 py-1 border transition-colors duration-150"
+                    className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapPlaceType === opt.value ? "#FF744460" : "oklch(0.3 0 0)",
-                      backgroundColor: mapPlaceType === opt.value ? "#FF744420" : "transparent",
-                      color: mapPlaceType === opt.value ? "#FF7444" : "oklch(0.65 0 0)",
+                      borderColor: mapPlaceType === opt.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      backgroundColor: mapPlaceType === opt.value ? "var(--accent-tint-md)" : "transparent",
+                      color: mapPlaceType === opt.value ? "var(--accent)" : "var(--text-label)",
                     }}
                   >
                     {opt.label}
@@ -1148,22 +1148,22 @@ const [mapReady, setMapReady] = useState(false);
             <div className="px-3 pt-2 pb-2.5 flex gap-2">
                   <button
                     onClick={() => setMapFryer((v) => !v)}
-                    className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150"
+                    className="font-mono text-ui-xs uppercase tracking-snug px-2.5 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapFryer ? "#FF744460" : "oklch(0.3 0 0)",
-                      backgroundColor: mapFryer ? "#FF744420" : "transparent",
-                      color: mapFryer ? "#FF7444" : "oklch(0.65 0 0)",
+                      borderColor: mapFryer ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      backgroundColor: mapFryer ? "var(--accent-tint-md)" : "transparent",
+                      color: mapFryer ? "var(--accent)" : "var(--text-label)",
                     }}
                   >
                     GF Fryer
                   </button>
                   <button
                     onClick={() => setMapLabeled((v) => !v)}
-                    className="font-mono text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 border transition-colors duration-150"
+                    className="font-mono text-ui-xs uppercase tracking-snug px-2.5 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapLabeled ? "#FF744460" : "oklch(0.3 0 0)",
-                      backgroundColor: mapLabeled ? "#FF744420" : "transparent",
-                      color: mapLabeled ? "#FF7444" : "oklch(0.65 0 0)",
+                      borderColor: mapLabeled ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      backgroundColor: mapLabeled ? "var(--accent-tint-md)" : "transparent",
+                      color: mapLabeled ? "var(--accent)" : "var(--text-label)",
                     }}
                   >
                     GF Labels
@@ -1174,7 +1174,7 @@ const [mapReady, setMapReady] = useState(false);
 
 {/* Result count — hidden in preview */}
         {!isPreview &&
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.62_0_0)] pl-0.5">
+        <p className="font-mono text-ui-sm uppercase tracking-label text-text-label pl-0.5">
           {committedSearch
             ? `${visibleCount} result${visibleCount !== 1 ? "s" : ""}`
             : `${visibleCount} in view`}
@@ -1187,7 +1187,7 @@ const [mapReady, setMapReady] = useState(false);
           {isPreview && previewSearchesUsed >= PREVIEW_SEARCH_LIMIT ? (
             <Link
               href="/login?next=/map"
-              className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg flex items-center gap-1.5"
+              className="font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors duration-150 hover:border-accent hover:text-accent shadow-lg flex items-center gap-1.5"
               style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1206,7 +1206,7 @@ const [mapReady, setMapReady] = useState(false);
                 const q = committedSearchRef.current;
                 if (q) fetchSearch(q); else fetchViewport();
               }}
-              className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] shadow-lg"
+              className="font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors duration-150 hover:border-accent hover:text-accent shadow-lg"
               style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
             >
               Search this area
@@ -1229,13 +1229,13 @@ const [mapReady, setMapReady] = useState(false);
           {/* Banner */}
           <div
             className="pointer-events-auto px-5 py-4 flex flex-col md:flex-row items-center justify-between gap-3"
-            style={{ backgroundColor: "oklch(0.08 0 0)", borderTop: "1px solid oklch(0.18 0 0)" }}
+            style={{ backgroundColor: "var(--surface-base)", borderTop: "1px solid var(--border-subtle)" }}
           >
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white text-center md:text-left">
+              <p className="font-mono text-ui-md uppercase tracking-editorial text-white text-center md:text-left">
                 Showing {PREVIEW_LIMIT} of 500+ restaurants
               </p>
-              <p className="font-mono text-[10px] text-[oklch(0.65_0_0)] mt-0.5 text-center md:text-left">
+              <p className="font-mono text-ui-sm text-text-label mt-0.5 text-center md:text-left">
                 Sign up for free to explore the full map.
               </p>
             </div>
@@ -1253,7 +1253,7 @@ const [mapReady, setMapReady] = useState(false);
       <button
         onClick={locateUser}
         aria-label="Near me"
-        className="absolute bottom-20 md:bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] rounded-full"
+        className="absolute bottom-20 md:bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-accent hover:text-accent rounded-full"
         style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -1269,8 +1269,8 @@ const [mapReady, setMapReady] = useState(false);
             left: hovered.x,
             top: hovered.y + 64,
             transform: "translate(-50%, calc(-100% - 18px))",
-            backgroundColor: "oklch(0.1 0 0)",
-            borderColor: "oklch(0.25 0 0)",
+            backgroundColor: "var(--surface-raised)",
+            borderColor: "var(--border-emphasis)",
             borderLeft: `3px solid ${hovered.r.color}`,
           }}
         >
@@ -1278,7 +1278,7 @@ const [mapReady, setMapReady] = useState(false);
             {hovered.r.name}
           </p>
           {(hovered.r.google_rating || hovered.r.cuisine) && (
-            <p className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.72_0_0)] mb-2">
+            <p className="font-mono text-ui-md tracking-snug text-text-tertiary mb-2">
               {[
                 hovered.r.google_rating ? `★ ${hovered.r.google_rating}` : null,
                 hovered.r.cuisine,
@@ -1289,7 +1289,7 @@ const [mapReady, setMapReady] = useState(false);
             <span className="font-[family-name:var(--font-display)] text-xl leading-none" style={{ color: hovered.r.color }}>
               {hovered.r.score ?? "—"}
             </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: hovered.r.color }}>
+            <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: hovered.r.color }}>
               {hovered.r.scoreLabel}
             </span>
           </div>
@@ -1306,7 +1306,7 @@ function highlightMatch(name: string, query: string) {
   return (
     <>
       {name.slice(0, idx)}
-      <span style={{ color: "#FF7444" }}>{name.slice(idx, idx + query.length)}</span>
+      <span style={{ color: "var(--accent)" }}>{name.slice(idx, idx + query.length)}</span>
       {name.slice(idx + query.length)}
     </>
   );

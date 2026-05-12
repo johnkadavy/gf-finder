@@ -189,7 +189,7 @@ function SignalChip({ signal }: { signal: Signal }) {
         className="w-1.5 h-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: cfg.dot }}
       />
-      <span className="font-mono text-ui-md uppercase tracking-[0.14em] text-text-secondary leading-normal">
+      <span className="font-mono text-ui-md uppercase tracking-label text-text-secondary leading-normal">
         {signal.label}
       </span>
     </div>
@@ -422,10 +422,10 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
 function TopRatedSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8 md:mt-12 pb-24 md:pb-32">
-      <div className="h-5 w-40 rounded bg-[oklch(0.14_0_0)] mb-6 animate-pulse" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[oklch(0.14_0_0)]">
+      <div className="h-5 w-40 rounded bg-surface-overlay mb-6 animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-surface-overlay">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-[oklch(0.08_0_0)] h-40 animate-pulse" />
+          <div key={i} className="bg-surface-base h-40 animate-pulse" />
         ))}
       </div>
     </div>

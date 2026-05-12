@@ -14,11 +14,11 @@ export function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2 border transition-colors shrink-0"
+      className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2 border transition-colors shrink-0"
       style={
         copied
           ? { borderColor: "#4A7C59", color: "#4A7C59" }
-          : { borderColor: "oklch(0.28 0 0)", color: "oklch(0.55 0 0)" }
+          : { borderColor: "var(--border-emphasis)", color: "var(--text-dim)" }
       }
     >
       {copied ? "Copied!" : "Copy link"}

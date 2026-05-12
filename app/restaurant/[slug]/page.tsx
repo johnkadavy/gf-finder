@@ -119,7 +119,7 @@ function SignalCard({ label, value, level, description }: {
     >
       <div className="flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[oklch(0.68_0_0)] leading-none">
+        <p className="font-mono text-ui-xs uppercase tracking-label text-text-label leading-none">
           {label}
         </p>
       </div>
@@ -127,7 +127,7 @@ function SignalCard({ label, value, level, description }: {
         {value}
       </p>
       {description && (
-        <p className="font-mono text-[10px] leading-relaxed" style={{ color: "oklch(0.58 0 0)" }}>
+        <p className="font-mono text-ui-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>
           {description}
         </p>
       )}
@@ -142,10 +142,10 @@ function GfMenuItemRow({ item }: { item: MenuItem }) {
     ? item.name.charAt(0) + item.name.slice(1).toLowerCase()
     : item.name;
   return (
-    <div className="py-3 border-b" style={{ borderColor: "oklch(0.17 0 0)" }}>
-      <p className="text-[14px] leading-snug" style={{ color: "oklch(0.92 0 0)" }}>{displayName}</p>
+    <div className="py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+      <p className="text-ui-xl leading-snug" style={{ color: "var(--text-primary)" }}>{displayName}</p>
       {item.description && (
-        <p className="font-mono text-[11px] mt-0.5 leading-relaxed" style={{ color: "oklch(0.52 0 0)" }}>
+        <p className="font-mono text-ui-md mt-0.5 leading-relaxed" style={{ color: "oklch(0.52 0 0)" }}>
           {item.description}
         </p>
       )}
@@ -178,7 +178,7 @@ function GfFoodTags({ categories }: { categories: string[] | null }) {
       {tags.map((cat) => (
         <span
           key={cat}
-          className="inline-flex items-center px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.15em] border"
+          className="inline-flex items-center px-2.5 py-1 font-mono text-ui-xs uppercase tracking-label border"
           style={{ borderColor: "#4A7C5945", backgroundColor: "#4A7C5912", color: "#7ECF9A" }}
         >
           {GF_FOOD_LABELS[cat]}
@@ -515,18 +515,18 @@ export default async function RestaurantPage({
       {/* ── Hero ── */}
       <section
         className="grid-bg border-b px-6 pt-8 pb-10 md:pt-12 md:pb-14 relative"
-        style={{ borderColor: "oklch(0.2 0 0)" }}
+        style={{ borderColor: "var(--border-subtle)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
         />
 
         {/* Back breadcrumb */}
         <div className="max-w-6xl mx-auto mb-6 md:mb-10">
           <Link
             href={fromMap ? "/map" : "/rankings"}
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.75_0_0)] hover:text-[oklch(0.95_0_0)] transition-colors"
+            className="inline-flex items-center gap-2 font-mono text-ui-md uppercase tracking-editorial text-text-tertiary hover:text-text-primary transition-colors"
           >
             {fromMap ? "← Map" : "← Rankings"}
           </Link>
@@ -538,7 +538,7 @@ export default async function RestaurantPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               {isNewRestaurant(r.source, r.ingested_at) && (
-                <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-2" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                <span className="inline-block font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 mb-2" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                   New
                 </span>
               )}
@@ -555,7 +555,7 @@ export default async function RestaurantPage({
           </div>
 
           {/* Neighborhood + cuisine */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)]">
+          <p className="font-mono text-ui-md uppercase tracking-broad text-text-label">
             {[r.neighborhood, cuisine].filter(Boolean).join(" · ")}
           </p>
 
@@ -563,16 +563,16 @@ export default async function RestaurantPage({
           {sickCount > 0 && (
             <div
               className="inline-flex items-center gap-2.5 px-3 py-2 border"
-              style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
+              style={{ borderColor: "var(--accent-tint-lg)", backgroundColor: "var(--accent-tint-xs)" }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
               {sickSourceUrl ? (
                 <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
-                  className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline">
+                  className="font-mono text-ui-sm uppercase tracking-label text-accent hover:underline">
                   {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
                 </a>
               ) : (
-                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+                <span className="font-mono text-ui-sm uppercase tracking-label text-accent">
                   {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
                 </span>
               )}
@@ -581,7 +581,7 @@ export default async function RestaurantPage({
 
           {/* Summary */}
           {d?.summary?.short_summary && (
-            <p className="text-[14px] leading-[1.65] text-[oklch(0.82_0_0)]">
+            <p className="text-ui-xl leading-[1.65] text-text-secondary">
               {d.summary.short_summary}
             </p>
           )}
@@ -609,16 +609,16 @@ export default async function RestaurantPage({
             <div className="flex justify-center mb-5">
               <div
                 className="inline-flex items-center gap-2.5 px-4 py-2 border"
-                style={{ borderColor: "#FF744440", backgroundColor: "#FF744408" }}
+                style={{ borderColor: "var(--accent-tint-lg)", backgroundColor: "var(--accent-tint-xs)" }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                 {sickSourceUrl ? (
                   <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
-                    className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline">
+                    className="font-mono text-ui-md uppercase tracking-label text-accent hover:underline">
                     {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
                   </a>
                 ) : (
-                  <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444]">
+                  <span className="font-mono text-ui-md uppercase tracking-label text-accent">
                     {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
                   </span>
                 )}
@@ -630,7 +630,7 @@ export default async function RestaurantPage({
           <div className="flex items-center justify-center gap-3 mb-5">
             <div className="text-center">
               {isNewRestaurant(r.source, r.ingested_at) && (
-                <span className="inline-block font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 mb-2" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                <span className="inline-block font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 mb-2" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                   New
                 </span>
               )}
@@ -652,22 +652,22 @@ export default async function RestaurantPage({
           {/* Meta row */}
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {r.google_rating && (
-              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
+              <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">
                 ★ {r.google_rating.toFixed(1)} Google
               </span>
             )}
-            {price && <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>}
+            {price && <span className="font-mono text-ui-lg text-text-label">·</span>}
             {price && (
-              <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{price}</span>
+              <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">{price}</span>
             )}
             {cuisine && (
               <>
-                <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>
-                <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">{cuisine}</span>
+                <span className="font-mono text-ui-lg text-text-label">·</span>
+                <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">{cuisine}</span>
               </>
             )}
-            <span className="font-mono text-[13px] text-[oklch(0.65_0_0)]">·</span>
-            <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-[oklch(0.8_0_0)]">
+            <span className="font-mono text-ui-lg text-text-label">·</span>
+            <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">
               {formatLocation(r.neighborhood, r.city, r.region, ", ")}
             </span>
           </div>
@@ -686,14 +686,14 @@ export default async function RestaurantPage({
             {d?.summary?.short_summary && (
               <div className="hidden md:block">
                 <div className="flex items-center gap-4 mb-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                  <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
                     Overview
                   </p>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
                 </div>
                 <p
                   className="text-[19px] leading-[1.65] max-w-xl"
-                  style={{ color: "oklch(0.92 0 0)" }}
+                  style={{ color: "var(--text-primary)" }}
                 >
                   {d.summary.short_summary}
                 </p>
@@ -704,10 +704,10 @@ export default async function RestaurantPage({
             {r.gf_food_categories && r.gf_food_categories.length > 0 && (
               <div className="hidden md:block">
                 <div className="flex items-center gap-4 mb-4">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                  <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
                     GF Options
                   </p>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
                 </div>
                 <GfFoodTags categories={r.gf_food_categories} />
               </div>
@@ -717,10 +717,10 @@ export default async function RestaurantPage({
             {d && (
               <div>
                 <div className="flex items-center gap-4 mb-5">
-                  <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                  <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-label">
                     Signal Breakdown
                   </h2>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                   <SignalCard label="GF Labeling" value={labelingText} level={labelingLevel}
@@ -773,10 +773,10 @@ export default async function RestaurantPage({
             {/* Reviews section */}
             <div className="space-y-5">
               <div className="flex items-center gap-4">
-                <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.65_0_0)]">
+                <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-label">
                   Reviews
                 </h2>
-                <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
+                <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
               </div>
 
               {visit ? (
@@ -790,25 +790,25 @@ export default async function RestaurantPage({
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
-                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#4A7C59]">
+                      <span className="font-mono text-ui-sm uppercase tracking-editorial" style={{ color: "#4A7C59" }}>
                         Verified Visit
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
                       {visit.overall_sentiment && (
                         <span
-                          className="font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border"
+                          className="font-mono text-ui-sm uppercase tracking-label px-2.5 py-1 border"
                           style={{
-                            borderColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5940" : visit.overall_sentiment === "mixed" ? "#D4AE6240" : "#FF744440",
-                            color: visit.overall_sentiment === "mostly_positive" ? "#4A7C59" : visit.overall_sentiment === "mixed" ? "#D4AE62" : "#FF7444",
-                            backgroundColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5910" : visit.overall_sentiment === "mixed" ? "#D4AE6210" : "#FF744410",
+                            borderColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5940" : visit.overall_sentiment === "mixed" ? "#D4AE6240" : "var(--accent-tint-lg)",
+                            color: visit.overall_sentiment === "mostly_positive" ? "#4A7C59" : visit.overall_sentiment === "mixed" ? "#D4AE62" : "var(--accent)",
+                            backgroundColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5910" : visit.overall_sentiment === "mixed" ? "#D4AE6210" : "var(--accent-tint-xs)",
                           }}
                         >
                           {visit.overall_sentiment === "mostly_positive" ? "Positive" : visit.overall_sentiment === "mixed" ? "Mixed" : "Negative"}
                         </span>
                       )}
                       {visit.visit_date && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[oklch(0.58_0_0)]">
+                        <span className="font-mono text-ui-sm uppercase tracking-snug text-text-dim">
                           {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                         </span>
                       )}
@@ -817,7 +817,7 @@ export default async function RestaurantPage({
 
                   {/* Notes */}
                   {visit.notes && (
-                    <p className="text-[15px] leading-[1.7] text-[oklch(0.85_0_0)]">
+                    <p className="text-ui-2xl leading-[1.7] text-text-secondary">
                       {visit.notes}
                     </p>
                   )}
@@ -846,7 +846,7 @@ export default async function RestaurantPage({
                           return (
                             <span
                               key={label}
-                              className="font-mono text-[11px] uppercase tracking-[0.08em] px-2.5 py-1 border"
+                              className="font-mono text-ui-md uppercase tracking-snug px-2.5 py-1 border"
                               style={{
                                 borderColor: `${signalColor(level)}40`,
                                 color: signalColor(level),
@@ -862,7 +862,7 @@ export default async function RestaurantPage({
                   })()}
                 </div>
               ) : (
-                <p className="font-mono text-[11px] text-[oklch(0.58_0_0)]">
+                <p className="font-mono text-ui-md text-text-dim">
                   No verified reviews yet.
                 </p>
               )}
@@ -879,10 +879,10 @@ export default async function RestaurantPage({
             {/* Data confidence notice */}
             {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
               <p
-                className="font-mono text-[10px] uppercase tracking-[0.2em] border-l-2 pl-4 py-1"
+                className="font-mono text-ui-sm uppercase tracking-editorial border-l-2 pl-4 py-1"
                 style={{
-                  borderColor: "oklch(0.45 0 0)",
-                  color: "oklch(0.72 0 0)",
+                  borderColor: "var(--text-disabled)",
+                  color: "var(--text-tertiary)",
                 }}
               >
                 {d.data_quality.confidence === "low"
@@ -893,8 +893,8 @@ export default async function RestaurantPage({
 
             {/* ── Exploration layer — GF menu items + About ── */}
             {(gfSections.length > 0 || r.restaurant_description) && (
-              <div className="pt-6 mt-2 border-t" style={{ borderColor: "oklch(0.15 0 0)" }}>
-                <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-8" style={{ color: "oklch(0.35 0 0)" }}>
+              <div className="pt-6 mt-2 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                <p className="font-mono text-ui-xs uppercase tracking-stamp mb-8" style={{ color: "oklch(0.35 0 0)" }}>
                   More about this restaurant
                 </p>
 
@@ -903,25 +903,25 @@ export default async function RestaurantPage({
                   {gfSections.length > 0 && (
                     <div>
                       <div className="flex items-center gap-4 mb-1">
-                        <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">
+                        <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-dim">
                           Gluten-Free Items
                         </h2>
-                        <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.17 0 0)" }} />
-                        <span className="font-mono text-[9px] uppercase tracking-[0.15em]" style={{ color: "#7ECF9A" }}>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
+                        <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "#7ECF9A" }}>
                           {gfItemCount} item{gfItemCount !== 1 ? "s" : ""}
                         </span>
                       </div>
                       {menuData?.menu_source && (
                         <div className="flex items-center justify-between gap-4 mb-4 mt-2">
-                          <p className="font-mono text-[10px] text-[oklch(0.42_0_0)] leading-relaxed">
+                          <p className="font-mono text-ui-sm text-[oklch(0.42_0_0)] leading-relaxed">
                             Menu snapshot — items and availability may have changed.
                           </p>
                           <a
                             href={menuData.menu_source}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-2 border transition-colors text-[oklch(0.72_0_0)] hover:text-[oklch(0.95_0_0)]"
-                            style={{ borderColor: "oklch(0.26 0 0)", backgroundColor: "oklch(0.11 0 0)" }}
+                            className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors text-text-tertiary hover:text-text-primary"
+                            style={{ borderColor: "var(--border-emphasis)", backgroundColor: "var(--surface-elevated)" }}
                           >
                             View full menu →
                           </a>
@@ -932,8 +932,8 @@ export default async function RestaurantPage({
                           <div key={si} className={si > 0 ? "mt-5" : ""}>
                             {section.section && (
                               <p
-                                className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1 pb-2 border-b"
-                                style={{ color: "oklch(0.58 0 0)", borderColor: "oklch(0.18 0 0)" }}
+                                className="font-mono text-ui-xs uppercase tracking-editorial mb-1 pb-2 border-b"
+                                style={{ color: "var(--text-dim)", borderColor: "var(--border-subtle)" }}
                               >
                                 {section.section}
                               </p>
@@ -951,15 +951,15 @@ export default async function RestaurantPage({
                   {r.restaurant_description && (
                     <div>
                       <div className="flex items-center gap-4 mb-4">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">
+                        <p className="font-mono text-ui-sm uppercase tracking-label text-text-dim">
                           About {r.name}
                         </p>
-                        <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.17 0 0)" }} />
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
                       </div>
                       <CollapsibleText
                         text={r.restaurant_description.replace(/\[(high|medium|low)\]\s*$/i, "").trim()}
-                        className="text-[15px] leading-[1.75]"
-                        style={{ color: "oklch(0.68 0 0)" }}
+                        className="text-ui-2xl leading-[1.75]"
+                        style={{ color: "var(--text-label)" }}
                       />
                     </div>
                   )}
@@ -971,19 +971,19 @@ export default async function RestaurantPage({
           {/* ── Right sidebar ── */}
           <div
             className="border p-6 space-y-6 md:sticky md:top-24"
-            style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.095 0 0)" }}
+            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
           >
-            <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.72_0_0)]">
+            <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-tertiary">
               Info
             </h2>
 
             {/* Address */}
             {r.address && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconPin /></span>
+                <span className="text-text-label mt-0.5 shrink-0"><IconPin /></span>
                 <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Location</p>
-                  <p className="font-mono text-[13px] text-[oklch(0.82_0_0)] leading-relaxed">{r.address}</p>
+                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Location</p>
+                  <p className="font-mono text-ui-lg text-text-secondary leading-relaxed">{r.address}</p>
                 </div>
               </div>
             )}
@@ -991,12 +991,12 @@ export default async function RestaurantPage({
             {/* Phone */}
             {r.phone && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconPhone /></span>
+                <span className="text-text-label mt-0.5 shrink-0"><IconPhone /></span>
                 <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Phone</p>
+                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Phone</p>
                   <a
                     href={`tel:${r.phone}`}
-                    className="font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
+                    className="font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
                   >
                     {r.phone}
                   </a>
@@ -1007,15 +1007,15 @@ export default async function RestaurantPage({
             {/* Links */}
             {(r.website_url || r.google_maps_url) && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconGlobe /></span>
+                <span className="text-text-label mt-0.5 shrink-0"><IconGlobe /></span>
                 <div className="space-y-1.5">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-1">Links</p>
+                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Links</p>
                   {r.website_url && (
                     <a
                       href={r.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
+                      className="block font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
                     >
                       Website ↗
                     </a>
@@ -1025,7 +1025,7 @@ export default async function RestaurantPage({
                       href={r.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block font-mono text-[13px] text-[oklch(0.82_0_0)] hover:text-[#FF7444] transition-colors"
+                      className="block font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
                     >
                       Google Maps ↗
                     </a>
@@ -1037,18 +1037,18 @@ export default async function RestaurantPage({
             {/* Hours */}
             {hours && hours.length > 0 && (
               <div className="flex gap-3">
-                <span className="text-[oklch(0.65_0_0)] mt-0.5 shrink-0"><IconClock /></span>
+                <span className="text-text-label mt-0.5 shrink-0"><IconClock /></span>
                 <div className="w-full">
-                  <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-[oklch(0.72_0_0)] mb-3">Hours</h3>
+                  <h3 className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-3">Hours</h3>
                   <div className="space-y-2">
                     {hours.map((line) => {
                       const [day, ...rest] = line.split(": ");
                       return (
                         <div key={line} className="flex justify-between gap-4">
-                          <span className="font-mono text-[11px] tracking-[0.02em] text-[oklch(0.82_0_0)]">
+                          <span className="font-mono text-ui-md tracking-[0.02em] text-text-secondary">
                             {day}
                           </span>
-                          <span className="font-mono text-[11px] text-[oklch(0.78_0_0)] text-right">
+                          <span className="font-mono text-ui-md text-text-secondary text-right">
                             {rest.join(": ")}
                           </span>
                         </div>
@@ -1065,19 +1065,19 @@ export default async function RestaurantPage({
 
       {/* ── Neighborhood links (S6b) ── */}
       {r.neighborhood && (
-        <section className="px-6 py-8 border-t" style={{ borderColor: "oklch(0.18 0 0)" }}>
+        <section className="px-6 py-8 border-t" style={{ borderColor: "var(--border-subtle)" }}>
           <div className="max-w-6xl mx-auto flex flex-wrap gap-3">
             <Link
               href={`/gluten-free/${r.city.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}/${r.neighborhood.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`}
-              className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-              style={{ borderColor: "oklch(0.26 0 0)", color: "oklch(0.65 0 0)" }}
+              className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
             >
               More GF restaurants in {r.neighborhood} →
             </Link>
             <Link
               href={`/rankings?city=${encodeURIComponent(r.city)}`}
-              className="font-mono text-[10px] uppercase tracking-[0.2em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-              style={{ borderColor: "oklch(0.26 0 0)", color: "oklch(0.65 0 0)" }}
+              className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
             >
               All GF restaurants in {r.city} →
             </Link>

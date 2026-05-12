@@ -8,7 +8,7 @@ const MapView = dynamic(() => import("./MapView").then((m) => ({ default: m.MapV
   loading: () => (
     <div
       className="w-full h-full"
-      style={{ backgroundColor: "oklch(0.12 0 0)" }}
+      style={{ backgroundColor: "var(--surface-elevated)" }}
     />
   ),
 });

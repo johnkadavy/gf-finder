@@ -24,12 +24,12 @@ export function DisplayNameForm({ current }: { current: string | null }) {
   if (!editing) {
     return (
       <div className="flex items-center gap-3">
-        <p className="font-mono text-[13px]" style={{ color: value ? "oklch(0.78 0 0)" : "oklch(0.38 0 0)" }}>
+        <p className="font-mono text-ui-lg" style={{ color: value ? "var(--text-secondary)" : "oklch(0.38 0 0)" }}>
           {value || "Not set"}
         </p>
         <button
           onClick={() => { setDraft(value); setEditing(true); setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 0); }}
-          className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors hover:text-[#FF7444]"
+          className="font-mono text-ui-sm uppercase tracking-editorial transition-colors hover:text-accent"
           style={{ color: "oklch(0.42 0 0)" }}
         >
           {value ? "Edit" : "Set"}
@@ -47,29 +47,29 @@ export function DisplayNameForm({ current }: { current: string | null }) {
           defaultValue={value}
           maxLength={40}
           placeholder="e.g. John"
-          className="font-mono text-[13px] outline-none px-3 py-2 border w-48"
+          className="font-mono text-ui-lg outline-none px-3 py-2 border w-48"
           style={{
             backgroundColor: "oklch(0.09 0 0)",
-            borderColor: "oklch(0.3 0 0)",
+            borderColor: "var(--border-emphasis)",
             color: "oklch(0.88 0 0)",
           }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "#FF7444")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.3 0 0)")}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-emphasis)")}
           onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
           onChange={(e) => setDraft(e.target.value)}
         />
         <button
           type="submit"
           disabled={pending}
-          className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-2 border transition-colors disabled:opacity-40"
-          style={{ borderColor: "#FF7444", color: "#FF7444" }}
+          className="font-mono text-ui-sm uppercase tracking-editorial px-3 py-2 border transition-colors disabled:opacity-40"
+          style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
         >
           {pending ? "Saving…" : "Save"}
         </button>
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors hover:text-white"
+          className="font-mono text-ui-sm uppercase tracking-editorial transition-colors hover:text-white"
           style={{ color: "oklch(0.4 0 0)" }}
         >
           Cancel
@@ -77,9 +77,9 @@ export function DisplayNameForm({ current }: { current: string | null }) {
       </div>
 
       {/* Live preview */}
-      <p className="font-mono text-[11px]" style={{ color: "oklch(0.38 0 0)" }}>
+      <p className="font-mono text-ui-md" style={{ color: "oklch(0.38 0 0)" }}>
         Preview:{" "}
-        <span style={{ color: draft.trim() ? "oklch(0.58 0 0)" : "oklch(0.32 0 0)" }}>
+        <span style={{ color: draft.trim() ? "var(--text-dim)" : "oklch(0.32 0 0)" }}>
           {draft.trim() ? `${draft.trim()}'s Gluten-Free Spots` : "Your Gluten-Free Spots"}
         </span>
       </p>

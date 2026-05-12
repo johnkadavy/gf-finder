@@ -65,7 +65,7 @@ export default function RootLayout({
         {/* Nav */}
         <header
           className="fixed top-0 w-full z-50 border-b"
-          style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.08 0 0)" }}
+          style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-base)" }}
         >
           <div className="flex justify-between items-center px-4 md:px-8 h-16">
             <Link href="/" className="flex items-center gap-1.5">
@@ -78,8 +78,8 @@ export default function RootLayout({
                   priority
                 />
                 <div className="absolute left-0 top-full mt-2 px-3 py-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
-                  style={{ backgroundColor: "oklch(0.18 0 0)", border: "1px solid oklch(0.28 0 0)" }}>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.7_0_0)]">
+                  style={{ backgroundColor: "var(--surface-overlay)", border: "1px solid var(--border-emphasis)" }}>
+                  <span className="font-mono text-ui-sm uppercase tracking-label text-text-tertiary">
                     Guanacos eat gluten-free
                   </span>
                 </div>

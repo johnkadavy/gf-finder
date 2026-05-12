@@ -166,14 +166,14 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       {/* Hero */}
       <section
         className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"
-        style={{ borderColor: "oklch(0.22 0 0)" }}
+        style={{ borderColor: "var(--border-default)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
         />
         <div className="max-w-6xl mx-auto">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.65_0_0)] mb-6">
+          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-label mb-6">
             CleanPlate Rankings
           </p>
           <h1
@@ -181,15 +181,15 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
           >
             {filters.neighborhood !== "all" ? (
-              <>Best Gluten-Free Restaurants<br /><span style={{ color: "#FF7444" }}>in {filters.neighborhood}</span></>
+              <>Best Gluten-Free Restaurants<br /><span style={{ color: "var(--accent)" }}>in {filters.neighborhood}</span></>
             ) : filters.city !== "all" ? (
-              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants in {filters.city}</span></>
+              <>Top Gluten-Free<br /><span style={{ color: "var(--accent)" }}>Restaurants in {filters.city}</span></>
             ) : filters.region !== "all" ? (
-              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants in {filters.region}</span></>
+              <>Top Gluten-Free<br /><span style={{ color: "var(--accent)" }}>Restaurants in {filters.region}</span></>
             ) : filters.gfCategory !== "all" ? (
-              <>{GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory)?.label ?? "GF Food"}<br /><span style={{ color: "#FF7444" }}>in NYC</span></>
+              <>{GF_CATEGORY_OPTIONS.find((o) => o.value === filters.gfCategory)?.label ?? "GF Food"}<br /><span style={{ color: "var(--accent)" }}>in NYC</span></>
             ) : (
-              <>Top Gluten-Free<br /><span style={{ color: "#FF7444" }}>Restaurants</span></>
+              <>Top Gluten-Free<br /><span style={{ color: "var(--accent)" }}>Restaurants</span></>
             )}
           </h1>
 

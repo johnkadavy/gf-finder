@@ -15,7 +15,7 @@ export function CollapsibleText({ text, className, style }: { text: string; clas
       {isLong && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="font-mono text-[10px] uppercase tracking-[0.15em] mt-2 transition-colors text-[oklch(0.48_0_0)] hover:text-[oklch(0.72_0_0)]"
+          className="font-mono text-ui-sm uppercase tracking-label mt-2 transition-colors text-text-disabled hover:text-text-tertiary"
         >
           {expanded ? "Show less ↑" : "Read more ↓"}
         </button>

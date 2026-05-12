@@ -652,7 +652,7 @@ export function RankingsSecondaryFilters({
               />
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
               Price
             </p>
             <div className="flex gap-2 mb-7">
@@ -674,7 +674,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
               Place Type
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -696,7 +696,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
               GF Food
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -718,7 +718,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
               Cuisine
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -753,7 +753,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
               Experience
             </p>
             <div className="flex flex-col gap-2 mb-8">

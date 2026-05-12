@@ -22,7 +22,7 @@ function Preloader() {
           }}
         />
       ))}
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[oklch(0.58_0_0)] ml-3">
+      <span className="font-mono text-ui-sm uppercase tracking-editorial text-text-dim ml-3">
         Scanning
       </span>
       <style>{`
@@ -168,7 +168,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
         <div className="flex-1 relative">
           <form onSubmit={handleSubmit}>
             <div
-              className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-[#FF7444]"
+              className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-accent"
               style={{ backgroundColor: "oklch(0.12 0 0)", borderColor: isOpen ? "oklch(0.35 0 0)" : "oklch(0.28 0 0)" }}
             >
               <input
@@ -184,7 +184,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
               <button
                 type="submit"
                 disabled={isPending}
-                className={`font-mono text-[11px] uppercase tracking-[0.2em] px-6 py-2.5 border border-[#FF7444] text-[#FF7444] hover:bg-[#FF7444] hover:text-black transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
+                className={`font-mono text-ui-md uppercase tracking-editorial px-6 py-2.5 border border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
               >
                 Search
               </button>
@@ -195,7 +195,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
           {(isOpen || (isLoading && showPreloader)) && (
             <div
               className="absolute top-full left-0 right-0 z-50 border border-t-0 overflow-hidden"
-              style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
+              style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
             >
           {showPreloader && isLoading ? (
             <Preloader />
@@ -208,15 +208,15 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                 onMouseEnter={() => setActiveIndex(i)}
                 className="w-full text-left px-5 py-3 flex items-baseline justify-between gap-4 border-b transition-colors duration-100"
                 style={{
-                  borderColor: "oklch(0.18 0 0)",
-                  backgroundColor: i === activeIndex ? "oklch(0.16 0 0)" : "transparent",
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: i === activeIndex ? "var(--surface-overlay)" : "transparent",
                 }}
               >
                 <span className="font-mono text-sm text-white truncate">
                   {/* Highlight matching portion */}
                   {highlightMatch(s.name, value)}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.60_0_0)] shrink-0">
+                <span className="font-mono text-ui-sm uppercase tracking-label text-text-dim shrink-0">
                   {[s.neighborhood, s.city].filter(Boolean).join(" · ")}
                 </span>
               </button>
@@ -232,11 +232,11 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
             <button
               type="button"
               onClick={() => { setCityOpen((o) => !o); if (!cityOpen) setCitySearch(""); }}
-              className="w-full md:w-auto py-3 md:py-0 md:h-full flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 border transition-colors duration-150 whitespace-nowrap"
+              className="w-full md:w-auto py-3 md:py-0 md:h-full flex items-center gap-2 font-mono text-ui-md uppercase tracking-label px-4 border transition-colors duration-150 whitespace-nowrap"
               style={{
-                borderColor: selectedCity !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-                backgroundColor: selectedCity !== "all" ? "#FF744410" : "oklch(0.12 0 0)",
-                color: selectedCity !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+                borderColor: selectedCity !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                backgroundColor: selectedCity !== "all" ? "var(--accent-tint-xs)" : "var(--surface-elevated)",
+                color: selectedCity !== "all" ? "var(--accent)" : "var(--text-label)",
               }}
             >
               {selectedCity === "all" ? "All Cities" : selectedCity}
@@ -255,17 +255,17 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                 <div className="fixed inset-0 z-10" onClick={() => setCityOpen(false)} />
                 <div
                   className="absolute right-0 top-full z-20 min-w-[180px] border mt-px"
-                  style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
+                  style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
                 >
                   {cities.length > 5 && (
-                    <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+                    <div className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
                       <input
                         autoFocus
                         type="text"
                         placeholder="Search cities…"
                         value={citySearch}
                         onChange={(e) => setCitySearch(e.target.value)}
-                        className="w-full bg-transparent font-mono text-[11px] px-4 py-2 outline-none placeholder:opacity-40"
+                        className="w-full bg-transparent font-mono text-ui-md px-4 py-2 outline-none placeholder:opacity-40"
                         style={{ color: "oklch(0.85 0 0)" }}
                       />
                     </div>
@@ -277,8 +277,8 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                         onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), "all"))); setCityOpen(false); }}
                         onMouseEnter={() => setHoveredCity("all")}
                         onMouseLeave={() => setHoveredCity(null)}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === "all" || hoveredCity === "all" ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === "all" ? "#FF744410" : hoveredCity === "all" ? "#FF744408" : "transparent" }}
+                        className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors"
+                        style={{ borderColor: "var(--border-subtle)", color: selectedCity === "all" || hoveredCity === "all" ? "var(--accent)" : "var(--text-tertiary)", backgroundColor: selectedCity === "all" ? "var(--accent-tint-xs)" : hoveredCity === "all" ? "var(--accent-tint-xs)" : "transparent" }}
                       >
                         All Cities
                       </button>
@@ -290,8 +290,8 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                         onClick={() => { startTransition(() => router.push(buildUrl(value.trim(), city))); setCityOpen(false); setCitySearch(""); }}
                         onMouseEnter={() => setHoveredCity(city)}
                         onMouseLeave={() => setHoveredCity(null)}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
-                        style={{ borderColor: "oklch(0.18 0 0)", color: selectedCity === city || hoveredCity === city ? "#FF7444" : "oklch(0.72 0 0)", backgroundColor: selectedCity === city ? "#FF744410" : hoveredCity === city ? "#FF744408" : "transparent" }}
+                        className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors"
+                        style={{ borderColor: "var(--border-subtle)", color: selectedCity === city || hoveredCity === city ? "var(--accent)" : "var(--text-tertiary)", backgroundColor: selectedCity === city ? "var(--accent-tint-xs)" : hoveredCity === city ? "var(--accent-tint-xs)" : "transparent" }}
                       >
                         {city}
                       </button>
@@ -315,7 +315,7 @@ function highlightMatch(name: string, query: string) {
   return (
     <>
       {name.slice(0, idx)}
-      <span style={{ color: "#FF7444" }}>{name.slice(idx, idx + query.length)}</span>
+      <span style={{ color: "var(--accent)" }}>{name.slice(idx, idx + query.length)}</span>
       {name.slice(idx + query.length)}
     </>
   );

@@ -71,7 +71,7 @@ function LoginForm() {
             </div>
 
             {error && (
-              <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#FF7444] text-center">
+              <p className="font-mono text-ui-md uppercase tracking-label text-accent text-center">
                 {error}
               </p>
             )}

@@ -248,7 +248,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "oklch(0.16 0 0)" }}>
         <Link
           href={`/restaurant/${selected.slug ?? selected.id}`}
-          className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 border transition-colors hover:bg-[#FF7444] hover:text-black hover:border-[#FF7444]"
+          className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 border transition-colors hover:bg-accent hover:text-accent-foreground hover:border-accent"
           style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
         >
           View Full Details →
@@ -291,7 +291,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
           <Link
             href="/login"
             className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border transition-colors"
-            style={{ borderColor: "#FF7444", color: "#FF7444" }}
+            style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
           >
             Create yours →
           </Link>
@@ -396,7 +396,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
           <Link
             href="/login"
             className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-2.5"
-            style={{ backgroundColor: "#FF7444", color: "#111" }}
+            style={{ backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }}
           >
             Sign up free →
           </Link>
