@@ -3,6 +3,25 @@
 ## What this is
 CleanPlate is a gluten-free restaurant discovery and safety-ranking app. Restaurants are scored 0–100 for GF safety based on reviews, menu labeling, and operational practices. The main surfaces are a ranked list page and an interactive map.
 
+## Design system
+
+Before making any visual change — new component, layout tweak, color, spacing, anything — read `DESIGN_SYSTEM.md`.
+
+**Rules that are not negotiable:**
+- Never write a raw hex color. Use `var(--accent)`, `var(--signal-positive)`, `var(--score-excellent)`, etc. Score and signal colors come from `lib/tokens.ts` via `getGaugeColor()` / `getScoreLabel()` — never inline them in a component.
+- Never write a magic pixel value for font size or letter spacing. Use `var(--font-size-sm)`, `var(--letter-spacing-label)`, or the Tailwind classes registered in `@theme inline` (`tracking-label`, `tracking-editorial`, etc.).
+- Never write an inline OKLCH value. Every surface, border, and text color has a named token in `app/globals.css`. Use it.
+- If you need something the system doesn't cover — a new color, a new size, a new spacing value — stop and ask instead of inventing a one-off. One-offs become the next audit's drift list.
+
+**Before finishing any visual task, check your own work:**
+- Grep the files you touched for `#[0-9a-fA-F]` and `oklch(` — any hits that aren't in `globals.css` or `tokens.ts` are mistakes.
+- Grep for `text-\[[0-9]` and `tracking-\[` — these should not appear in new code.
+
+The token files:
+- CSS variables + Tailwind theme: `app/globals.css`
+- JS/TS color constants: `lib/tokens.ts`
+- Full reference with intent: `DESIGN_SYSTEM.md`
+
 ## Stack
 - **Framework**: Next.js 16 App Router, React 19, TypeScript
 - **Styling**: Tailwind CSS v4
