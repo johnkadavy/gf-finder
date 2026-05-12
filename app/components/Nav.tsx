@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 
 const linkClass =
-  "font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.68_0_0)] hover:text-white transition-colors duration-200";
+  "font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-white transition-colors duration-200";
 
 function SearchIcon() {
   return (
@@ -82,8 +82,8 @@ export function Nav() {
         ) : (
           <Link
             href="/login"
-            className="font-mono text-[11px] uppercase tracking-[0.2em] px-4 py-2 transition-colors duration-200"
-            style={{ backgroundColor: "#FF7444", color: "oklch(0.08 0 0)" }}
+            className="font-mono text-ui-md uppercase tracking-editorial px-4 py-2 transition-colors duration-200"
+            style={{ backgroundColor: "var(--accent)", color: "var(--surface-base)" }}
           >
             Sign Up Free
           </Link>
@@ -93,7 +93,7 @@ export function Nav() {
       {/* Mobile bottom tab bar */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
-        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)" }}
+        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)" }}
       >
         {TABS.map(({ href, label, Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -102,10 +102,10 @@ export function Nav() {
               key={href}
               href={href}
               className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
-              style={{ color: active ? "#FF7444" : "oklch(0.65 0 0)" }}
+              style={{ color: active ? "var(--accent)" : "var(--text-label)" }}
             >
               <Icon />
-              <span className="font-mono text-[9px] uppercase tracking-[0.15em] leading-none">
+              <span className="font-mono text-ui-xs uppercase tracking-label leading-none">
                 {label}
               </span>
             </Link>
@@ -115,13 +115,13 @@ export function Nav() {
           <Link
             href="/login"
             className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
-            style={{ color: "#FF7444" }}
+            style={{ color: "var(--accent)" }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
-            <span className="font-mono text-[9px] uppercase tracking-[0.15em] leading-none">Sign Up</span>
+            <span className="font-mono text-ui-xs uppercase tracking-label leading-none">Sign Up</span>
           </Link>
         )}
       </nav>

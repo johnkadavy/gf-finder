@@ -7,7 +7,7 @@ const sizes = {
   xs: { ring: "w-20 h-20",  numSize: "text-2xl",  labelSize: "text-[5px]",  inset: "inset-[3px]"  },
   sm: { ring: "w-24 h-24",  numSize: "text-3xl",  labelSize: "text-[5px]",  inset: "inset-[4px]"  },
   md: { ring: "w-40 h-40",  numSize: "text-5xl",  labelSize: "text-[7px]",  inset: "inset-[6px]"  },
-  lg: { ring: "w-56 h-56",  numSize: "text-7xl",  labelSize: "text-[9px]",  inset: "inset-[8px]"  },
+  lg: { ring: "w-56 h-56",  numSize: "text-7xl",  labelSize: "text-ui-xs",  inset: "inset-[8px]"  },
 };
 
 export function SafetyGauge({ score, size = "md", showDescriptor = true }: { score: number | null; size?: "xs" | "sm" | "md" | "lg"; showDescriptor?: boolean }) {
@@ -51,13 +51,13 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
           className="absolute inset-0 rounded-full"
           style={{
             background: score
-              ? `conic-gradient(from 180deg at 50% 50%, ${gaugeColor} 0%, ${gaugeColor} ${currentPct}%, oklch(0.2 0 0) ${currentPct}%)`
-              : "oklch(0.2 0 0)",
+              ? `conic-gradient(from 180deg at 50% 50%, ${gaugeColor} 0%, ${gaugeColor} ${currentPct}%, var(--border-subtle) ${currentPct}%)`
+              : "var(--border-subtle)",
           }}
         />
         <div
           className={`absolute ${s.inset} rounded-full flex flex-col items-center justify-center`}
-          style={{ backgroundColor: "oklch(0.08 0 0)" }}
+          style={{ backgroundColor: "var(--surface-base)" }}
         >
           {score !== null ? (
             <>
@@ -67,12 +67,12 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
               >
                 {displayNumber}
               </span>
-              <span className={`font-mono ${s.labelSize} uppercase tracking-[0.2em] mt-1.5 text-[oklch(0.68_0_0)]`}>
+              <span className={`font-mono ${s.labelSize} uppercase tracking-editorial mt-1.5 text-text-label`}>
                 GF Score
               </span>
             </>
           ) : (
-            <span className="font-mono text-xs text-[oklch(0.60_0_0)]">No data</span>
+            <span className="font-mono text-xs text-text-dim">No data</span>
           )}
         </div>
       </div>
@@ -84,7 +84,7 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
           style={{ borderColor: `${gaugeColor}40` }}
         >
           <span
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]"
+            className="font-mono text-ui-md font-semibold uppercase tracking-label"
             style={{ color: gaugeColor }}
           >
             {label}

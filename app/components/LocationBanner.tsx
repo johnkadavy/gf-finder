@@ -57,21 +57,21 @@ export function LocationBanner({ cities }: { cities: string[] }) {
   return (
     <div
       className="md:hidden fixed bottom-[4.5rem] left-3 right-3 z-40 border flex items-center gap-3 px-4 py-3 transition-all"
-      style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.26 0 0)" }}
+      style={{ backgroundColor: "var(--surface-elevated)", borderColor: "var(--border-emphasis)" }}
     >
-      <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.78_0_0)] leading-snug">
+      <p className="flex-1 font-mono text-ui-sm uppercase tracking-label text-text-secondary leading-snug">
         Find GF restaurants near you
       </p>
       <button
         onClick={handleAllow}
-        className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
-        style={{ borderColor: "#FF7444", color: "#FF7444" }}
+        className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
+        style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
       >
         Allow
       </button>
       <button
         onClick={dismiss}
-        className="shrink-0 font-mono text-[10px] text-[oklch(0.4_0_0)] hover:text-[oklch(0.65_0_0)] transition-colors"
+        className="shrink-0 font-mono text-ui-sm text-[oklch(0.4_0_0)] hover:text-text-label transition-colors"
       >
         ✕
       </button>

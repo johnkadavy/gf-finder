@@ -34,16 +34,16 @@ export function HomeAskInput() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask about GF dining in NYC…"
           autoComplete="off"
-          className="flex-1 border px-4 py-3 font-mono text-[13px] placeholder:text-[oklch(0.38_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150"
-          style={{ backgroundColor: "oklch(0.11 0 0)", borderColor: "oklch(0.28 0 0)" }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(0.45 0 0)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.28 0 0)")}
+          className="flex-1 border px-4 py-3 font-mono text-ui-lg placeholder:text-[oklch(0.38_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150"
+          style={{ backgroundColor: "var(--surface-elevated)", borderColor: "var(--border-emphasis)" }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--text-disabled)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-emphasis)")}
         />
         <button
           type="submit"
           disabled={!query.trim()}
-          className="shrink-0 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.15em] transition-colors duration-150 disabled:opacity-40"
-          style={{ backgroundColor: "#FF7444", color: "oklch(0.08 0 0)" }}
+          className="shrink-0 px-5 py-3 font-mono text-ui-md uppercase tracking-label transition-colors duration-150 disabled:opacity-40"
+          style={{ backgroundColor: "var(--accent)", color: "var(--surface-base)" }}
         >
           Ask
         </button>
@@ -55,10 +55,10 @@ export function HomeAskInput() {
           <button
             key={q}
             onClick={() => handleExample(q)}
-            className="font-mono text-[10px] tracking-[0.08em] px-3 py-1.5 border transition-colors duration-150 text-left"
-            style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.1 0 0)", color: "oklch(0.55 0 0)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FF744450"; e.currentTarget.style.color = "oklch(0.82 0 0)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "oklch(0.22 0 0)"; e.currentTarget.style.color = "oklch(0.55 0 0)"; }}
+            className="font-mono text-ui-sm tracking-snug px-3 py-1.5 border transition-colors duration-150 text-left"
+            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)", color: "var(--text-dim)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-tint-lg)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-dim)"; }}
           >
             {q}
           </button>

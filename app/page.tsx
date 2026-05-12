@@ -183,13 +183,13 @@ function SignalChip({ signal }: { signal: Signal }) {
   return (
     <div
       className="flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-r"
-      style={{ borderColor: "oklch(0.16 0 0)" }}
+      style={{ borderColor: "var(--surface-overlay)" }}
     >
       <span
         className="w-1.5 h-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: cfg.dot }}
       />
-      <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[oklch(0.78_0_0)] leading-normal">
+      <span className="font-mono text-ui-md uppercase tracking-[0.14em] text-text-secondary leading-normal">
         {signal.label}
       </span>
     </div>
@@ -212,7 +212,7 @@ async function HeroCount() {
   const { totalCount } = await getHomepageMeta();
   const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
   return (
-    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[oklch(0.62_0_0)] mt-5">
+    <p className="font-mono text-ui-md uppercase tracking-broad text-text-dim mt-5">
       {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
     </p>
   );
@@ -254,7 +254,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
       <section className="max-w-4xl mx-auto px-4 md:px-8 pb-24 md:pb-32 mt-6 md:mt-8">
         {restaurants.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.65_0_0)]">
+            <p className="font-mono text-ui-md uppercase tracking-editorial text-text-label">
               No results for &ldquo;{query}&rdquo;
             </p>
           </div>
@@ -262,9 +262,9 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
           <div className="space-y-0">
             <div
               className="flex items-center justify-between px-0 py-4 border-b"
-              style={{ borderColor: "oklch(0.22 0 0)" }}
+              style={{ borderColor: "var(--border-default)" }}
             >
-              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.7_0_0)]">
+              <span className="font-mono text-ui-md uppercase tracking-stamp text-text-tertiary">
                 {restaurants.length} Result{restaurants.length !== 1 ? "s" : ""} — &ldquo;{query}&rdquo;
               </span>
             </div>
@@ -282,7 +282,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                   key={restaurant.id}
                   className="border-b"
                   style={{
-                    borderColor: "oklch(0.22 0 0)",
+                    borderColor: "var(--border-default)",
                     animation: `fadeUp 0.4s ease-out ${index * 0.07}s both`,
                     borderLeft: `2px solid ${accentColor}`,
                   }}
@@ -293,20 +293,20 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                       {sickCount > 0 && (
                         <div
                           className="flex items-center gap-3 mb-4 md:mb-6 px-4 py-2.5 border"
-                          style={{ borderColor: "#FF744430", backgroundColor: "#FF744806" }}
+                          style={{ borderColor: "var(--accent-tint-md)", backgroundColor: "var(--accent-tint-xs)" }}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF7444] shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                           {sickSourceUrl ? (
                             <a
                               href={sickSourceUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444] hover:underline"
+                              className="font-mono text-ui-sm uppercase tracking-label text-accent hover:underline"
                             >
                               {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
                             </a>
                           ) : (
-                            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#FF7444]">
+                            <span className="font-mono text-ui-sm uppercase tracking-label text-accent">
                               {sickCount} illness report{sickCount > 1 ? "s" : ""} — past 6 months
                             </span>
                           )}
@@ -314,7 +314,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                       )}
 
                       <div className="flex items-start justify-between gap-4 mb-3 md:mb-0">
-                        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[oklch(0.65_0_0)] md:mb-4">
+                        <p className="font-mono text-ui-md uppercase tracking-stamp text-text-label md:mb-4">
                           {[restaurant.neighborhood, restaurant.city].filter(Boolean).join(" / ")}
                         </p>
                         <div className="flex items-center gap-2 shrink-0 -mt-1">
@@ -326,11 +326,11 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
 
                       <Link
                         href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
-                        className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-4 md:mb-5 hover:text-[#FF7444] transition-colors duration-150"
+                        className="group/name relative inline-block font-[family-name:var(--font-display)] leading-none mb-4 md:mb-5 hover:text-accent transition-colors duration-150"
                         style={{
                           fontSize: "clamp(1.6rem, 5vw, 2.75rem)",
                           letterSpacing: "0.02em",
-                          color: "oklch(0.95 0 0)",
+                          color: "var(--text-primary)",
                         }}
                       >
                         {restaurant.name}
@@ -346,7 +346,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                             href={restaurant.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-ui-md uppercase tracking-label text-text-label hover:text-accent transition-colors"
                           >
                             Website ↗
                           </a>
@@ -356,7 +356,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                             href={restaurant.google_maps_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono text-[11px] uppercase tracking-[0.15em] text-[oklch(0.68_0_0)] hover:text-[#FF7444] transition-colors"
+                            className="font-mono text-ui-md uppercase tracking-label text-text-label hover:text-accent transition-colors"
                           >
                             Google Maps ↗
                           </a>
@@ -369,7 +369,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                       </div>
 
                       {summary && (
-                        <p className="text-[14px] leading-[1.75] text-[oklch(0.82_0_0)] max-w-[520px]">
+                        <p className="text-ui-xl leading-[1.75] text-text-secondary max-w-[520px]">
                           {summary}
                         </p>
                       )}
@@ -383,7 +383,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
                   {signals.length > 0 && (
                     <div
                       className="grid grid-cols-1 md:grid-cols-3 border-t"
-                      style={{ borderColor: "oklch(0.16 0 0)" }}
+                      style={{ borderColor: "var(--surface-overlay)" }}
                     >
                       {signals.map((signal, i) => (
                         <SignalChip key={i} signal={signal} />
@@ -452,7 +452,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {/* Hero — static shell renders immediately; count streams in */}
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
-        <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }} />
+        <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }} />
         <div className="max-w-3xl md:max-w-5xl lg:max-w-6xl w-full text-center space-y-6 md:space-y-8">
           <div>
             {/* h1 is fully static — paints on first byte */}
@@ -462,7 +462,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             >
               Ask anything.
               <br />
-              <span style={{ color: "#FF7444" }}>Eat gluten-free with confidence.</span>
+              <span style={{ color: "var(--accent)" }}>Eat gluten-free with confidence.</span>
             </h1>
             {/* Count streams in — placeholder holds space */}
             <Suspense fallback={<p className="mt-5 h-4 opacity-0">placeholder</p>}>

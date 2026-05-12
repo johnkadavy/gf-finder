@@ -328,35 +328,35 @@ export default async function LandingPage({ params }: Props) {
         {/* ── Hero ── */}
         <section
           className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
-          style={{ borderColor: "oklch(0.22 0 0)" }}
+          style={{ borderColor: "var(--border-default)" }}
         >
           <div
             className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-            style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+            style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
           />
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 flex-wrap mb-6">
               <Link
                 href="/rankings"
-                className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
               >
                 Rankings
               </Link>
               <span className="text-[oklch(0.3_0_0)]">/</span>
               <Link
                 href={`/rankings?city=${encodeURIComponent(city)}`}
-                className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
               >
                 {city}
               </Link>
               <span className="text-[oklch(0.3_0_0)]">/</span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.75_0_0)]">
+              <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
                 {catDef.label}
               </span>
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.58_0_0)] mb-4">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-4">
               CleanPlate · {city}
             </p>
 
@@ -368,7 +368,7 @@ export default async function LandingPage({ params }: Props) {
             </h1>
 
             {/* Editorial intro */}
-            <p className="text-[15px] leading-[1.8] text-[oklch(0.78_0_0)] max-w-2xl">
+            <p className="text-ui-2xl leading-[1.8] text-text-secondary max-w-2xl">
               {catDef.editorialIntro}
             </p>
           </div>
@@ -379,9 +379,9 @@ export default async function LandingPage({ params }: Props) {
           <div className="max-w-4xl mx-auto">
             <div
               className="flex items-center justify-between py-3 border-b mb-1"
-              style={{ borderColor: "oklch(0.22 0 0)" }}
+              style={{ borderColor: "var(--border-default)" }}
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)]">
+              <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
                 {restaurants.length} Restaurant{restaurants.length !== 1 ? "s" : ""} — Ranked by GF Safety
               </span>
             </div>
@@ -397,7 +397,7 @@ export default async function LandingPage({ params }: Props) {
                     key={r.id}
                     href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
                     className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
-                    style={{ borderColor: "oklch(0.18 0 0)", borderLeft: `2px solid ${color}` }}
+                    style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
                   >
                     {/* Rank */}
                     <span
@@ -412,22 +412,22 @@ export default async function LandingPage({ params }: Props) {
                       <div className="flex items-baseline gap-2 flex-wrap">
                         <span
                           className="font-[family-name:var(--font-display)] leading-tight"
-                          style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "oklch(0.95 0 0)", letterSpacing: "0.02em" }}
+                          style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
                         >
                           {r.name}
                         </span>
                         {isNewRestaurant(r.source, r.ingested_at) && (
-                          <span className="font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                          <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                             New
                           </span>
                         )}
                       </div>
                       {/* Show neighborhood + cuisine on city-level pages */}
-                      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.58_0_0)] mt-1">
+                      <p className="font-mono text-ui-sm uppercase tracking-broad text-text-dim mt-1">
                         {[r.neighborhood, r.cuisine].filter(Boolean).join(" · ")}
                       </p>
                       {summary && (
-                        <p className="text-[13px] leading-[1.6] text-[oklch(0.72_0_0)] mt-1.5 max-w-lg line-clamp-2">
+                        <p className="text-ui-lg leading-[1.6] text-text-tertiary mt-1.5 max-w-lg line-clamp-2">
                           {summary}
                         </p>
                       )}
@@ -442,7 +442,7 @@ export default async function LandingPage({ params }: Props) {
                         {Math.round(r.score)}
                       </span>
                       <span
-                        className="hidden md:block font-mono text-[9px] uppercase tracking-[0.15em] mt-1"
+                        className="hidden md:block font-mono text-ui-xs uppercase tracking-label mt-1"
                         style={{ color: `${color}cc` }}
                       >
                         {label}
@@ -454,9 +454,9 @@ export default async function LandingPage({ params }: Props) {
             </div>
 
             {/* ── Internal links ── */}
-            <div className="mt-14 pt-8 border-t space-y-8" style={{ borderColor: "oklch(0.22 0 0)" }}>
+            <div className="mt-14 pt-8 border-t space-y-8" style={{ borderColor: "var(--border-default)" }}>
               <div>
-                <h2 className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] mb-4">
+                <h2 className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
                   More GF Features in {city}
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -464,8 +464,8 @@ export default async function LandingPage({ params }: Props) {
                     <Link
                       key={cs}
                       href={`/gluten-free/${s0}/${cs}`}
-                      className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-2 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-                      style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                      className="font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors duration-150 hover:border-accent hover:text-accent"
+                      style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
                     >
                       {def.label}
                     </Link>
@@ -475,8 +475,8 @@ export default async function LandingPage({ params }: Props) {
               <div>
                 <Link
                   href={`/rankings?city=${encodeURIComponent(city)}`}
-                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] inline-block"
-                  style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                  className="font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent inline-block"
+                  style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
                 >
                   ← Explore All {city} Rankings
                 </Link>
@@ -549,18 +549,18 @@ export default async function LandingPage({ params }: Props) {
       {/* ── Hero ── */}
       <section
         className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
-        style={{ borderColor: "oklch(0.22 0 0)" }}
+        style={{ borderColor: "var(--border-default)" }}
       >
         <div
           className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, oklch(0.08 0 0))" }}
+          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
         />
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <Link
               href="/rankings"
-              className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] hover:text-white transition-colors"
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
             >
               Rankings
             </Link>
@@ -568,26 +568,26 @@ export default async function LandingPage({ params }: Props) {
             {categorySlug ? (
               <Link
                 href={`/gluten-free/${citySlug}/${neighborhoodSlug}`}
-                className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
               >
                 {neighborhood}
               </Link>
             ) : (
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.75_0_0)]">
+              <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
                 {neighborhood}
               </span>
             )}
             {catDef && (
               <>
                 <span className="text-[oklch(0.3_0_0)]">/</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.75_0_0)]">
+                <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
                   {catDef.label}
                 </span>
               </>
             )}
           </div>
 
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.58_0_0)] mb-4">
+          <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-4">
             CleanPlate · {city}
           </p>
 
@@ -598,7 +598,7 @@ export default async function LandingPage({ params }: Props) {
             {h1}
           </h1>
 
-          <p className="font-mono text-[13px] leading-[1.7] text-[oklch(0.72_0_0)] max-w-2xl">
+          <p className="font-mono text-ui-lg leading-[1.7] text-text-tertiary max-w-2xl">
             {intro}
           </p>
         </div>
@@ -609,9 +609,9 @@ export default async function LandingPage({ params }: Props) {
         <div className="max-w-4xl mx-auto">
           <div
             className="flex items-center justify-between py-3 border-b mb-1"
-            style={{ borderColor: "oklch(0.22 0 0)" }}
+            style={{ borderColor: "var(--border-default)" }}
           >
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)]">
+            <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
               {restaurants.length} Restaurant{restaurants.length !== 1 ? "s" : ""} — Ranked by GF Safety
             </span>
           </div>
@@ -627,7 +627,7 @@ export default async function LandingPage({ params }: Props) {
                   key={r.id}
                   href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
                   className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
-                  style={{ borderColor: "oklch(0.18 0 0)", borderLeft: `2px solid ${color}` }}
+                  style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
                 >
                   {/* Rank */}
                   <span
@@ -642,23 +642,23 @@ export default async function LandingPage({ params }: Props) {
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span
                         className="font-[family-name:var(--font-display)] leading-tight"
-                        style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "oklch(0.95 0 0)", letterSpacing: "0.02em" }}
+                        style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
                       >
                         {r.name}
                       </span>
                       {isNewRestaurant(r.source, r.ingested_at) && (
-                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "#FF744420", color: "#FF7444", border: "1px solid #FF744450" }}>
+                        <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                           New
                         </span>
                       )}
                     </div>
                     {r.cuisine && (
-                      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.58_0_0)] mt-1">
+                      <p className="font-mono text-ui-sm uppercase tracking-broad text-text-dim mt-1">
                         {r.cuisine}
                       </p>
                     )}
                     {summary && (
-                      <p className="text-[13px] leading-[1.6] text-[oklch(0.72_0_0)] mt-1.5 max-w-lg line-clamp-2">
+                      <p className="text-ui-lg leading-[1.6] text-text-tertiary mt-1.5 max-w-lg line-clamp-2">
                         {summary}
                       </p>
                     )}
@@ -673,7 +673,7 @@ export default async function LandingPage({ params }: Props) {
                       {Math.round(r.score)}
                     </span>
                     <span
-                      className="hidden md:block font-mono text-[9px] uppercase tracking-[0.15em] mt-1"
+                      className="hidden md:block font-mono text-ui-xs uppercase tracking-label mt-1"
                       style={{ color: `${color}cc` }}
                     >
                       {label}
@@ -685,12 +685,12 @@ export default async function LandingPage({ params }: Props) {
           </div>
 
           {/* ── Internal links ── */}
-          <div className="mt-14 pt-8 border-t space-y-8" style={{ borderColor: "oklch(0.22 0 0)" }}>
+          <div className="mt-14 pt-8 border-t space-y-8" style={{ borderColor: "var(--border-default)" }}>
 
             {/* Other GF options in this neighborhood (base neighborhood page) */}
             {!categorySlug && (
               <div>
-                <h2 className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] mb-4">
+                <h2 className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
                   More GF Options in {neighborhood}
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -698,8 +698,8 @@ export default async function LandingPage({ params }: Props) {
                     <Link
                       key={cs}
                       href={`/gluten-free/${citySlug}/${neighborhoodSlug}/${cs}`}
-                      className="font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-2 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444]"
-                      style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                      className="font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors duration-150 hover:border-accent hover:text-accent"
+                      style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
                     >
                       {def.label}
                     </Link>
@@ -712,25 +712,25 @@ export default async function LandingPage({ params }: Props) {
             {categorySlug && catDef && (
               <>
                 <div>
-                  <h2 className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] mb-4">
+                  <h2 className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
                     All GF Restaurants in {neighborhood}
                   </h2>
                   <Link
                     href={`/gluten-free/${citySlug}/${neighborhoodSlug}`}
-                    className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] inline-block"
-                    style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                    className="font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent inline-block"
+                    style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
                   >
                     View All GF Restaurants →
                   </Link>
                 </div>
                 <div>
-                  <h2 className="font-mono text-[10px] uppercase tracking-[0.25em] text-[oklch(0.58_0_0)] mb-4">
+                  <h2 className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
                     {catDef.cityLabelPlural} in {city}
                   </h2>
                   <Link
                     href={`/gluten-free/${citySlug}/${categorySlug}`}
-                    className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] inline-block"
-                    style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                    className="font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent inline-block"
+                    style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
                   >
                     See All {city} → {catDef.label}
                   </Link>
@@ -742,8 +742,8 @@ export default async function LandingPage({ params }: Props) {
             <div>
               <Link
                 href={`/rankings?city=${encodeURIComponent(city)}`}
-                className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors duration-150 hover:border-[#FF7444] hover:text-[#FF7444] inline-block"
-                style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.65_0_0)" }}
+                className="font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent inline-block"
+                style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
               >
                 ← Explore {city} Rankings
               </Link>

@@ -35,29 +35,29 @@ function LocationDropdown({
   return (
     <div className="relative">
       {label && (
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1" style={{ color: "oklch(0.5 0 0)" }}>
+        <p className="font-mono text-ui-xs uppercase tracking-editorial mb-1" style={{ color: "oklch(0.5 0 0)" }}>
           {label}
         </p>
       )}
       <div
         className="flex items-center border"
         style={{
-          borderColor: isActive ? "#FF744460" : "oklch(0.28 0 0)",
-          backgroundColor: isActive ? "#FF744410" : "oklch(0.1 0 0)",
+          borderColor: isActive ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+          backgroundColor: isActive ? "var(--accent-tint-xs)" : "var(--surface-raised)",
         }}
       >
         <button
           onClick={() => { setOpen((o) => !o); if (!open) setSearch(""); }}
-          className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 transition-colors"
-          style={{ color: isActive ? "#FF7444" : "oklch(0.72 0 0)" }}
+          className="font-mono text-ui-md uppercase tracking-label px-4 py-2.5 transition-colors"
+          style={{ color: isActive ? "var(--accent)" : "var(--text-tertiary)" }}
         >
           {value === "all" ? allLabel : value}
-          <span className="ml-2 text-[9px] opacity-40">{open ? "▲" : "▼"}</span>
+          <span className="ml-2 text-ui-xs opacity-40">{open ? "▲" : "▼"}</span>
         </button>
         <button
           onClick={onClear}
           className={`pr-3 pl-1 py-2.5 transition-colors hover:opacity-100 ${!isActive ? "invisible" : ""}`}
-          style={{ color: "oklch(0.68 0 0)" }}
+          style={{ color: "var(--text-label)" }}
         >
           ✕
         </button>
@@ -68,17 +68,17 @@ function LocationDropdown({
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div
             className="absolute left-0 top-full z-20 min-w-[200px] border"
-            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+            style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
           >
-            <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+            <div className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
               <input
                 autoFocus
                 type="text"
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
-                style={{ color: "oklch(0.85 0 0)" }}
+                className="w-full bg-transparent font-mono text-ui-md px-4 py-2.5 outline-none placeholder:opacity-40"
+                style={{ color: "var(--text-secondary)" }}
               />
             </div>
             <div className="max-h-[280px] overflow-y-auto">
@@ -87,11 +87,11 @@ function LocationDropdown({
                   onClick={() => { onSelect("all"); setOpen(false); }}
                   onMouseEnter={() => setHovered("all")}
                   onMouseLeave={() => setHovered(null)}
-                  className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                  className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors"
                   style={{
-                    borderColor: "oklch(0.18 0 0)",
-                    color: value === "all" || hovered === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                    backgroundColor: value === "all" ? "#FF744410" : hovered === "all" ? "#FF744408" : "transparent",
+                    borderColor: "var(--border-subtle)",
+                    color: value === "all" || hovered === "all" ? "var(--accent)" : "var(--text-tertiary)",
+                    backgroundColor: value === "all" ? "var(--accent-tint-xs)" : hovered === "all" ? "var(--accent-tint-xs)" : "transparent",
                   }}
                 >
                   {allLabel}
@@ -103,11 +103,11 @@ function LocationDropdown({
                   onClick={() => { onSelect(opt); setOpen(false); setSearch(""); }}
                   onMouseEnter={() => setHovered(opt)}
                   onMouseLeave={() => setHovered(null)}
-                  className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors"
+                  className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors"
                   style={{
-                    borderColor: "oklch(0.18 0 0)",
-                    color: value === opt || hovered === opt ? "#FF7444" : "oklch(0.72 0 0)",
-                    backgroundColor: value === opt ? "#FF744410" : hovered === opt ? "#FF744408" : "transparent",
+                    borderColor: "var(--border-subtle)",
+                    color: value === opt || hovered === opt ? "var(--accent)" : "var(--text-tertiary)",
+                    backgroundColor: value === opt ? "var(--accent-tint-xs)" : hovered === opt ? "var(--accent-tint-xs)" : "transparent",
                   }}
                 >
                   {opt}
@@ -249,7 +249,7 @@ export function RankingsSecondaryFilters({
   return (
     <div>
       {/* Desktop filter bar */}
-      <div className="hidden md:flex items-center flex-wrap gap-x-0 gap-y-0 border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+      <div className="hidden md:flex items-center flex-wrap gap-x-0 gap-y-0 border-b" style={{ borderColor: "var(--border-subtle)" }}>
 
         {/* Boolean toggles */}
         <FilterToggle
@@ -264,11 +264,11 @@ export function RankingsSecondaryFilters({
           href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
         />
 
-        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "oklch(0.22 0 0)" }} />
+        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "var(--border-default)" }} />
 
         {/* Price filter */}
         <div className="flex items-center">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-3" style={{ color: "oklch(0.6 0 0)" }}>Price:</span>
+          <span className="font-mono text-ui-sm uppercase tracking-editorial px-3 py-3" style={{ color: "var(--text-dim)" }}>Price:</span>
           {[1, 2, 3, 4].map((level) => {
             const isMax = filters.priceLevel === level;
             const isActive = filters.priceLevel >= level && filters.priceLevel > 0;
@@ -279,8 +279,8 @@ export function RankingsSecondaryFilters({
                 scroll={false}
                 className="font-mono text-[12px] px-2 py-3 transition-colors duration-150"
                 style={{
-                  color: isActive ? "#FF7444" : "oklch(0.45 0 0)",
-                  backgroundColor: isMax ? "#FF744415" : "transparent",
+                  color: isActive ? "var(--accent)" : "var(--text-disabled)",
+                  backgroundColor: isMax ? "var(--accent-tint-sm)" : "transparent",
                   fontWeight: isMax ? 600 : 400,
                 }}
               >
@@ -290,21 +290,21 @@ export function RankingsSecondaryFilters({
           })}
         </div>
 
-        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "oklch(0.22 0 0)" }} />
+        <div className="w-px self-stretch mx-1" style={{ backgroundColor: "var(--border-default)" }} />
 
         {/* GF Food dropdown */}
         <div className="relative">
           <button
             onClick={() => { setGfCategoryOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); setExpOpen(false); }}
-            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            className="flex items-center gap-2 font-mono text-ui-md uppercase tracking-label px-4 py-3 transition-colors duration-150"
             style={{
-              color: filters.gfCategory !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
-              backgroundColor: filters.gfCategory !== "all" ? "#FF744415" : "transparent",
+              color: filters.gfCategory !== "all" ? "var(--accent)" : "var(--text-tertiary)",
+              backgroundColor: filters.gfCategory !== "all" ? "var(--accent-tint-sm)" : "transparent",
             }}
           >
-            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">GF Food:</span>
+            <span className="text-ui-sm text-text-dim tracking-editorial">GF Food:</span>
             {filters.gfCategory === "all" ? "All" : (currentGfCategory?.label ?? filters.gfCategory)}
-            <span className="text-[9px] opacity-50">{gfCategoryOpen ? "▲" : "▼"}</span>
+            <span className="text-ui-xs opacity-50">{gfCategoryOpen ? "▲" : "▼"}</span>
           </button>
 
           {gfCategoryOpen && (
@@ -312,7 +312,7 @@ export function RankingsSecondaryFilters({
               <div className="fixed inset-0 z-10" onClick={() => setGfCategoryOpen(false)} />
               <div
                 className="absolute left-0 top-full z-20 min-w-[180px] border"
-                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+                style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
               >
                 {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
                   <button
@@ -320,11 +320,11 @@ export function RankingsSecondaryFilters({
                     onClick={() => { router.push(rankingsUrl(filters, { gfCategory: opt.value, limit: 25 }), { scroll: false }); setGfCategoryOpen(false); }}
                     onMouseEnter={() => setHoveredGfCategory(opt.value)}
                     onMouseLeave={() => setHoveredGfCategory(null)}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                    className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors duration-150"
                     style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.gfCategory === opt.value || hoveredGfCategory === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.gfCategory === opt.value ? "#FF744410" : hoveredGfCategory === opt.value ? "#FF744408" : "transparent",
+                      borderColor: "var(--border-subtle)",
+                      color: filters.gfCategory === opt.value || hoveredGfCategory === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      backgroundColor: filters.gfCategory === opt.value ? "var(--accent-tint-xs)" : hoveredGfCategory === opt.value ? "var(--accent-tint-xs)" : "transparent",
                     }}
                   >
                     {opt.label}
@@ -339,15 +339,15 @@ export function RankingsSecondaryFilters({
         <div className="relative">
           <button
             onClick={() => { setCuisineOpen((o) => !o); setExpOpen(false); setGfCategoryOpen(false); setPlaceTypeOpen(false); if (!cuisineOpen) setCuisineSearch(""); }}
-            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            className="flex items-center gap-2 font-mono text-ui-md uppercase tracking-label px-4 py-3 transition-colors duration-150"
             style={{
-              color: filters.cuisine !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
-              backgroundColor: filters.cuisine !== "all" ? "#FF744415" : "transparent",
+              color: filters.cuisine !== "all" ? "var(--accent)" : "var(--text-tertiary)",
+              backgroundColor: filters.cuisine !== "all" ? "var(--accent-tint-sm)" : "transparent",
             }}
           >
-            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">Cuisine:</span>
+            <span className="text-ui-sm text-text-dim tracking-editorial">Cuisine:</span>
             {filters.cuisine === "all" ? "All" : filters.cuisine}
-            <span className="text-[9px] opacity-50">{cuisineOpen ? "▲" : "▼"}</span>
+            <span className="text-ui-xs opacity-50">{cuisineOpen ? "▲" : "▼"}</span>
           </button>
 
           {cuisineOpen && (
@@ -355,18 +355,18 @@ export function RankingsSecondaryFilters({
               <div className="fixed inset-0 z-10" onClick={() => setCuisineOpen(false)} />
               <div
                 className="absolute left-0 top-full z-20 min-w-[220px] border"
-                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+                style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
               >
                 {/* Search input */}
-                <div className="border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+                <div className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
                   <input
                     autoFocus
                     type="text"
                     placeholder="Search cuisines…"
                     value={cuisineSearch}
                     onChange={(e) => setCuisineSearch(e.target.value)}
-                    className="w-full bg-transparent font-mono text-[11px] px-4 py-2.5 outline-none placeholder:opacity-40"
-                    style={{ color: "oklch(0.85 0 0)" }}
+                    className="w-full bg-transparent font-mono text-ui-md px-4 py-2.5 outline-none placeholder:opacity-40"
+                    style={{ color: "var(--text-secondary)" }}
                   />
                 </div>
                 <div className="max-h-[280px] overflow-y-auto">
@@ -375,11 +375,11 @@ export function RankingsSecondaryFilters({
                       onClick={() => { router.push(rankingsUrl(filters, { cuisine: "all", limit: 25 }), { scroll: false }); setCuisineOpen(false); }}
                       onMouseEnter={() => setHoveredCuisine("all")}
                       onMouseLeave={() => setHoveredCuisine(null)}
-                      className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                      className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors duration-150"
                       style={{
-                        borderColor: "oklch(0.18 0 0)",
-                        color: filters.cuisine === "all" || hoveredCuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
-                        backgroundColor: filters.cuisine === "all" ? "#FF744410" : hoveredCuisine === "all" ? "#FF744408" : "transparent",
+                        borderColor: "var(--border-subtle)",
+                        color: filters.cuisine === "all" || hoveredCuisine === "all" ? "var(--accent)" : "var(--text-tertiary)",
+                        backgroundColor: filters.cuisine === "all" ? "var(--accent-tint-xs)" : hoveredCuisine === "all" ? "var(--accent-tint-xs)" : "transparent",
                       }}
                     >
                       All Cuisines
@@ -393,11 +393,11 @@ export function RankingsSecondaryFilters({
                         onClick={() => { router.push(rankingsUrl(filters, { cuisine: c, limit: 25 }), { scroll: false }); setCuisineOpen(false); setCuisineSearch(""); }}
                         onMouseEnter={() => setHoveredCuisine(c)}
                         onMouseLeave={() => setHoveredCuisine(null)}
-                        className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                        className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors duration-150"
                         style={{
-                          borderColor: "oklch(0.18 0 0)",
-                          color: filters.cuisine === c || hoveredCuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
-                          backgroundColor: filters.cuisine === c ? "#FF744410" : hoveredCuisine === c ? "#FF744408" : "transparent",
+                          borderColor: "var(--border-subtle)",
+                          color: filters.cuisine === c || hoveredCuisine === c ? "var(--accent)" : "var(--text-tertiary)",
+                          backgroundColor: filters.cuisine === c ? "var(--accent-tint-xs)" : hoveredCuisine === c ? "var(--accent-tint-xs)" : "transparent",
                         }}
                       >
                         {c}
@@ -413,15 +413,15 @@ export function RankingsSecondaryFilters({
         <div className="relative">
           <button
             onClick={() => { setPlaceTypeOpen((o) => !o); setCuisineOpen(false); setExpOpen(false); setGfCategoryOpen(false); }}
-            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            className="flex items-center gap-2 font-mono text-ui-md uppercase tracking-label px-4 py-3 transition-colors duration-150"
             style={{
-              color: filters.placeType !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
-              backgroundColor: filters.placeType !== "all" ? "#FF744415" : "transparent",
+              color: filters.placeType !== "all" ? "var(--accent)" : "var(--text-tertiary)",
+              backgroundColor: filters.placeType !== "all" ? "var(--accent-tint-sm)" : "transparent",
             }}
           >
-            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">Type:</span>
+            <span className="text-ui-sm text-text-dim tracking-editorial">Type:</span>
             {filters.placeType === "all" ? "All" : (currentPlaceType?.label ?? filters.placeType)}
-            <span className="text-[9px] opacity-50">{placeTypeOpen ? "▲" : "▼"}</span>
+            <span className="text-ui-xs opacity-50">{placeTypeOpen ? "▲" : "▼"}</span>
           </button>
 
           {placeTypeOpen && (
@@ -429,7 +429,7 @@ export function RankingsSecondaryFilters({
               <div className="fixed inset-0 z-10" onClick={() => setPlaceTypeOpen(false)} />
               <div
                 className="absolute left-0 top-full z-20 min-w-[180px] border"
-                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+                style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
               >
                 {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
                   <button
@@ -437,11 +437,11 @@ export function RankingsSecondaryFilters({
                     onClick={() => { router.push(rankingsUrl(filters, { placeType: opt.value, limit: 25 }), { scroll: false }); setPlaceTypeOpen(false); }}
                     onMouseEnter={() => setHoveredPlaceType(opt.value)}
                     onMouseLeave={() => setHoveredPlaceType(null)}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                    className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors duration-150"
                     style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.placeType === opt.value || hoveredPlaceType === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.placeType === opt.value ? "#FF744410" : hoveredPlaceType === opt.value ? "#FF744408" : "transparent",
+                      borderColor: "var(--border-subtle)",
+                      color: filters.placeType === opt.value || hoveredPlaceType === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      backgroundColor: filters.placeType === opt.value ? "var(--accent-tint-xs)" : hoveredPlaceType === opt.value ? "var(--accent-tint-xs)" : "transparent",
                     }}
                   >
                     {opt.label}
@@ -456,15 +456,15 @@ export function RankingsSecondaryFilters({
         <div className="relative">
           <button
             onClick={() => { setExpOpen((o) => !o); setCuisineOpen(false); setPlaceTypeOpen(false); setGfCategoryOpen(false); }}
-            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+            className="flex items-center gap-2 font-mono text-ui-md uppercase tracking-label px-4 py-3 transition-colors duration-150"
             style={{
-              color: filters.experience !== "all" ? "#FF7444" : "oklch(0.7 0 0)",
-              backgroundColor: filters.experience !== "all" ? "#FF744415" : "transparent",
+              color: filters.experience !== "all" ? "var(--accent)" : "var(--text-tertiary)",
+              backgroundColor: filters.experience !== "all" ? "var(--accent-tint-sm)" : "transparent",
             }}
           >
-            <span className="text-[10px] text-[oklch(0.6_0_0)] tracking-[0.2em]">Experience:</span>
+            <span className="text-ui-sm text-text-dim tracking-editorial">Experience:</span>
             {currentExp.label}
-            <span className="text-[9px] opacity-50">{expOpen ? "▲" : "▼"}</span>
+            <span className="text-ui-xs opacity-50">{expOpen ? "▲" : "▼"}</span>
           </button>
 
           {expOpen && (
@@ -472,7 +472,7 @@ export function RankingsSecondaryFilters({
               <div className="fixed inset-0 z-10" onClick={() => setExpOpen(false)} />
               <div
                 className="absolute left-0 top-full z-20 min-w-[180px] border"
-                style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.22 0 0)" }}
+                style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
               >
                 {EXPERIENCE_OPTIONS.map((opt) => (
                   <button
@@ -480,11 +480,11 @@ export function RankingsSecondaryFilters({
                     onClick={() => { router.push(rankingsUrl(filters, { experience: opt.value, limit: 25 }), { scroll: false }); setExpOpen(false); }}
                     onMouseEnter={() => setHoveredExp(opt.value)}
                     onMouseLeave={() => setHoveredExp(null)}
-                    className="w-full text-left font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 border-b transition-colors duration-150"
+                    className="w-full text-left font-mono text-ui-md uppercase tracking-label px-4 py-2.5 border-b transition-colors duration-150"
                     style={{
-                      borderColor: "oklch(0.18 0 0)",
-                      color: filters.experience === opt.value || hoveredExp === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
-                      backgroundColor: filters.experience === opt.value ? "#FF744410" : hoveredExp === opt.value ? "#FF744408" : "transparent",
+                      borderColor: "var(--border-subtle)",
+                      color: filters.experience === opt.value || hoveredExp === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      backgroundColor: filters.experience === opt.value ? "var(--accent-tint-xs)" : hoveredExp === opt.value ? "var(--accent-tint-xs)" : "transparent",
                     }}
                   >
                     {opt.label}
@@ -499,24 +499,24 @@ export function RankingsSecondaryFilters({
 
       {/* Active filter pills — second row, desktop only */}
       {activePills.length > 0 && (
-        <div className="hidden md:flex items-center gap-2 py-2.5 border-b" style={{ borderColor: "oklch(0.18 0 0)" }}>
+        <div className="hidden md:flex items-center gap-2 py-2.5 border-b" style={{ borderColor: "var(--border-subtle)" }}>
           {activePills.map((pill) => (
             <Link
               key={pill.label}
               href={pill.clear}
               scroll={false}
-              className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
-              style={{ borderColor: "#FF744460", backgroundColor: "#FF744415", color: "#FF7444" }}
+              className="flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-label px-2.5 py-1 border transition-colors duration-150 hover:opacity-80"
+              style={{ borderColor: "var(--accent-tint-xl)", backgroundColor: "var(--accent-tint-sm)", color: "var(--accent)" }}
             >
               {pill.label}
-              <span className="text-[9px] opacity-60">✕</span>
+              <span className="text-ui-xs opacity-60">✕</span>
             </Link>
           ))}
           <Link
             href={clearAll}
             scroll={false}
-            className="font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-150 hover:text-white ml-1"
-            style={{ color: "oklch(0.55 0 0)" }}
+            className="font-mono text-ui-sm uppercase tracking-editorial transition-colors duration-150 hover:text-white ml-1"
+            style={{ color: "var(--text-dim)" }}
           >
             Clear all
           </Link>
@@ -526,7 +526,7 @@ export function RankingsSecondaryFilters({
       {/* Mobile filter chips row */}
       <div
         className="md:hidden flex items-center gap-2 overflow-x-auto py-2.5 border-b"
-        style={{ scrollbarWidth: "none", borderColor: "oklch(0.2 0 0)" }}
+        style={{ scrollbarWidth: "none", borderColor: "var(--border-subtle)" }}
       >
         {/* Boolean toggles — always visible */}
         <MobileChip
@@ -543,71 +543,71 @@ export function RankingsSecondaryFilters({
         {/* Price pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
           style={{
-            borderColor: filters.priceLevel > 0 ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.priceLevel > 0 ? "#FF744415" : "transparent",
-            color: filters.priceLevel > 0 ? "#FF7444" : "oklch(0.65 0 0)",
+            borderColor: filters.priceLevel > 0 ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: filters.priceLevel > 0 ? "var(--accent-tint-sm)" : "transparent",
+            color: filters.priceLevel > 0 ? "var(--accent)" : "var(--text-label)",
           }}
         >
           {filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Price"}
-          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
         </button>
 
         {/* Place Type pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
           style={{
-            borderColor: filters.placeType !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.placeType !== "all" ? "#FF744415" : "transparent",
-            color: filters.placeType !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+            borderColor: filters.placeType !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: filters.placeType !== "all" ? "var(--accent-tint-sm)" : "transparent",
+            color: filters.placeType !== "all" ? "var(--accent)" : "var(--text-label)",
           }}
         >
           {filters.placeType === "all" ? "Type" : (currentPlaceType?.label ?? filters.placeType)}
-          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
         </button>
 
         {/* GF Category pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
           style={{
-            borderColor: filters.gfCategory !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.gfCategory !== "all" ? "#FF744415" : "transparent",
-            color: filters.gfCategory !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+            borderColor: filters.gfCategory !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: filters.gfCategory !== "all" ? "var(--accent-tint-sm)" : "transparent",
+            color: filters.gfCategory !== "all" ? "var(--accent)" : "var(--text-label)",
           }}
         >
           {filters.gfCategory === "all" ? "GF Food" : (currentGfCategory?.label ?? filters.gfCategory)}
-          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
         </button>
 
         {/* Cuisine pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
           style={{
-            borderColor: filters.cuisine !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.cuisine !== "all" ? "#FF744415" : "transparent",
-            color: filters.cuisine !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+            borderColor: filters.cuisine !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: filters.cuisine !== "all" ? "var(--accent-tint-sm)" : "transparent",
+            color: filters.cuisine !== "all" ? "var(--accent)" : "var(--text-label)",
           }}
         >
           {filters.cuisine === "all" ? "Cuisine" : filters.cuisine}
-          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
         </button>
 
         {/* Experience pill → opens sheet */}
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
           style={{
-            borderColor: filters.experience !== "all" ? "#FF744460" : "oklch(0.28 0 0)",
-            backgroundColor: filters.experience !== "all" ? "#FF744415" : "transparent",
-            color: filters.experience !== "all" ? "#FF7444" : "oklch(0.65 0 0)",
+            borderColor: filters.experience !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: filters.experience !== "all" ? "var(--accent-tint-sm)" : "transparent",
+            color: filters.experience !== "all" ? "var(--accent)" : "var(--text-label)",
           }}
         >
           {filters.experience === "all" ? "Experience" : currentExp.label}
-          <span className="ml-1.5 text-[8px] opacity-40">▼</span>
+          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
         </button>
 
         {/* Clear all */}
@@ -615,8 +615,8 @@ export function RankingsSecondaryFilters({
           <Link
             href={clearAll}
             scroll={false}
-            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1.5 whitespace-nowrap transition-colors"
-            style={{ color: "oklch(0.65 0 0)" }}
+            className="shrink-0 font-mono text-ui-sm uppercase tracking-editorial px-2 py-1.5 whitespace-nowrap transition-colors"
+            style={{ color: "var(--text-label)" }}
           >
             Clear all
           </Link>
@@ -633,9 +633,9 @@ export function RankingsSecondaryFilters({
           />
           <div
             className="absolute bottom-0 left-0 right-0 border-t px-6 pt-6 pb-10 max-h-[85vh] overflow-y-auto"
-            style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.28 0 0)" }}
+            style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
           >
-            <div className="w-8 h-px mx-auto mb-7" style={{ backgroundColor: "oklch(0.3 0 0)" }} />
+            <div className="w-8 h-px mx-auto mb-7" style={{ backgroundColor: "var(--border-emphasis)" }} />
 
             <div className="flex flex-col gap-2 mb-7">
               <SheetToggle
@@ -652,7 +652,7 @@ export function RankingsSecondaryFilters({
               />
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
               Price
             </p>
             <div className="flex gap-2 mb-7">
@@ -662,11 +662,11 @@ export function RankingsSecondaryFilters({
                   href={rankingsUrl(filters, { priceLevel: opt.value, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
-                  className="font-mono text-[11px] tracking-[0.1em] px-3 py-2.5 border transition-colors duration-150 text-center"
+                  className="font-mono text-ui-md tracking-snug px-3 py-2.5 border transition-colors duration-150 text-center"
                   style={{
-                    borderColor: filters.priceLevel === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
-                    backgroundColor: filters.priceLevel === opt.value ? "#FF744420" : "transparent",
-                    color: filters.priceLevel === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                    borderColor: filters.priceLevel === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                    backgroundColor: filters.priceLevel === opt.value ? "var(--accent-tint-md)" : "transparent",
+                    color: filters.priceLevel === opt.value ? "var(--accent)" : "var(--text-tertiary)",
                   }}
                 >
                   {opt.label}
@@ -674,7 +674,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
               Place Type
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -684,11 +684,11 @@ export function RankingsSecondaryFilters({
                   href={rankingsUrl(filters, { placeType: opt.value, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
-                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
                   style={{
-                    borderColor: filters.placeType === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
-                    backgroundColor: filters.placeType === opt.value ? "#FF744420" : "transparent",
-                    color: filters.placeType === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                    borderColor: filters.placeType === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                    backgroundColor: filters.placeType === opt.value ? "var(--accent-tint-md)" : "transparent",
+                    color: filters.placeType === opt.value ? "var(--accent)" : "var(--text-tertiary)",
                   }}
                 >
                   {opt.label}
@@ -696,7 +696,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
               GF Food
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -706,11 +706,11 @@ export function RankingsSecondaryFilters({
                   href={rankingsUrl(filters, { gfCategory: opt.value, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
-                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
                   style={{
-                    borderColor: filters.gfCategory === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
-                    backgroundColor: filters.gfCategory === opt.value ? "#FF744420" : "transparent",
-                    color: filters.gfCategory === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                    borderColor: filters.gfCategory === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                    backgroundColor: filters.gfCategory === opt.value ? "var(--accent-tint-md)" : "transparent",
+                    color: filters.gfCategory === opt.value ? "var(--accent)" : "var(--text-tertiary)",
                   }}
                 >
                   {opt.label}
@@ -718,7 +718,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
               Cuisine
             </p>
             <div className="flex flex-col gap-2 mb-7">
@@ -726,11 +726,11 @@ export function RankingsSecondaryFilters({
                 href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
                 scroll={false}
                 onClick={() => setSheetOpen(false)}
-                className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
                 style={{
-                  borderColor: filters.cuisine === "all" ? "#FF744460" : "oklch(0.26 0 0)",
-                  backgroundColor: filters.cuisine === "all" ? "#FF744420" : "transparent",
-                  color: filters.cuisine === "all" ? "#FF7444" : "oklch(0.72 0 0)",
+                  borderColor: filters.cuisine === "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                  backgroundColor: filters.cuisine === "all" ? "var(--accent-tint-md)" : "transparent",
+                  color: filters.cuisine === "all" ? "var(--accent)" : "var(--text-tertiary)",
                 }}
               >
                 All Cuisines
@@ -741,11 +741,11 @@ export function RankingsSecondaryFilters({
                   href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
-                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
                   style={{
-                    borderColor: filters.cuisine === c ? "#FF744460" : "oklch(0.26 0 0)",
-                    backgroundColor: filters.cuisine === c ? "#FF744420" : "transparent",
-                    color: filters.cuisine === c ? "#FF7444" : "oklch(0.72 0 0)",
+                    borderColor: filters.cuisine === c ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                    backgroundColor: filters.cuisine === c ? "var(--accent-tint-md)" : "transparent",
+                    color: filters.cuisine === c ? "var(--accent)" : "var(--text-tertiary)",
                   }}
                 >
                   {c}
@@ -753,7 +753,7 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[oklch(0.6_0_0)] mb-3">
+            <p className="font-mono text-ui-sm uppercase tracking-[0.3em] text-text-dim mb-3">
               Experience
             </p>
             <div className="flex flex-col gap-2 mb-8">
@@ -763,11 +763,11 @@ export function RankingsSecondaryFilters({
                   href={rankingsUrl(filters, { experience: opt.value, limit: 25 })}
                   scroll={false}
                   onClick={() => setSheetOpen(false)}
-                  className="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
                   style={{
-                    borderColor: filters.experience === opt.value ? "#FF744460" : "oklch(0.26 0 0)",
-                    backgroundColor: filters.experience === opt.value ? "#FF744420" : "transparent",
-                    color: filters.experience === opt.value ? "#FF7444" : "oklch(0.72 0 0)",
+                    borderColor: filters.experience === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                    backgroundColor: filters.experience === opt.value ? "var(--accent-tint-md)" : "transparent",
+                    color: filters.experience === opt.value ? "var(--accent)" : "var(--text-tertiary)",
                   }}
                 >
                   {opt.label}
@@ -780,16 +780,16 @@ export function RankingsSecondaryFilters({
                 href={clearAll}
                 scroll={false}
                 onClick={() => setSheetOpen(false)}
-                className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.2em] py-3 border mb-3 transition-colors"
-                style={{ borderColor: "#FF744440", color: "#FF7444", backgroundColor: "#FF744408" }}
+                className="block w-full text-center font-mono text-ui-md uppercase tracking-editorial py-3 border mb-3 transition-colors"
+                style={{ borderColor: "var(--accent-tint-lg)", color: "var(--accent)", backgroundColor: "var(--accent-tint-xs)" }}
               >
                 Clear all filters
               </Link>
             )}
             <button
               onClick={() => setSheetOpen(false)}
-              className="w-full font-mono text-[11px] uppercase tracking-[0.2em] py-3 border transition-colors"
-              style={{ borderColor: "oklch(0.28 0 0)", color: "oklch(0.75 0 0)" }}
+              className="w-full font-mono text-ui-md uppercase tracking-editorial py-3 border transition-colors"
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)" }}
             >
               Done
             </button>
@@ -807,20 +807,20 @@ function FilterToggle({ label, active, href }: { label: string; active: boolean;
     <Link
       href={href}
       scroll={false}
-      className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 transition-colors duration-150"
+      className="flex items-center gap-2.5 font-mono text-ui-md uppercase tracking-label px-4 py-3 transition-colors duration-150"
       style={{
-        backgroundColor: active ? "#FF744415" : "transparent",
-        color: active ? "#FF7444" : "oklch(0.72 0 0)",
+        backgroundColor: active ? "var(--accent-tint-sm)" : "transparent",
+        color: active ? "var(--accent)" : "var(--text-tertiary)",
       }}
     >
       <span
         className="w-3.5 h-3.5 border flex items-center justify-center shrink-0 transition-colors duration-150"
         style={{
-          borderColor: active ? "#FF7444" : "oklch(0.45 0 0)",
-          backgroundColor: active ? "#FF7444" : "transparent",
+          borderColor: active ? "var(--accent)" : "var(--text-disabled)",
+          backgroundColor: active ? "var(--accent)" : "transparent",
         }}
       >
-        {active && <span className="text-[8px] leading-none" style={{ color: "oklch(0.08 0 0)", fontWeight: 700 }}>✓</span>}
+        {active && <span className="text-ui-2xs leading-none" style={{ color: "var(--surface-base)", fontWeight: 700 }}>✓</span>}
       </span>
       {label}
     </Link>
@@ -832,19 +832,19 @@ function MobileChip({ label, active, href }: { label: string; active: boolean; h
     <Link
       href={href}
       scroll={false}
-      className="shrink-0 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-1.5 border transition-colors"
+      className="shrink-0 flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
       style={{
-        borderColor: active ? "#FF744460" : "oklch(0.28 0 0)",
-        backgroundColor: active ? "#FF744415" : "transparent",
-        color: active ? "#FF7444" : "oklch(0.65 0 0)",
+        borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+        backgroundColor: active ? "var(--accent-tint-sm)" : "transparent",
+        color: active ? "var(--accent)" : "var(--text-label)",
       }}
     >
       {active && (
         <span
           className="w-2.5 h-2.5 border flex items-center justify-center shrink-0"
-          style={{ borderColor: "#FF7444", backgroundColor: "#FF7444" }}
+          style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent)" }}
         >
-          <span className="text-[7px] leading-none font-bold" style={{ color: "oklch(0.08 0 0)" }}>✓</span>
+          <span className="text-[7px] leading-none font-bold" style={{ color: "var(--surface-base)" }}>✓</span>
         </span>
       )}
       {label}
@@ -860,21 +860,21 @@ function SheetToggle({ label, active, href, onNavigate }: {
       href={href}
       scroll={false}
       onClick={onNavigate}
-      className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 border transition-colors duration-150"
+      className="flex items-center gap-3 font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
       style={{
-        borderColor: active ? "#FF744460" : "oklch(0.26 0 0)",
-        backgroundColor: active ? "#FF744420" : "transparent",
-        color: active ? "#FF7444" : "oklch(0.72 0 0)",
+        borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+        backgroundColor: active ? "var(--accent-tint-md)" : "transparent",
+        color: active ? "var(--accent)" : "var(--text-tertiary)",
       }}
     >
       <span
         className="w-3.5 h-3.5 border flex items-center justify-center shrink-0"
         style={{
-          borderColor: active ? "#FF7444" : "oklch(0.45 0 0)",
-          backgroundColor: active ? "#FF7444" : "transparent",
+          borderColor: active ? "var(--accent)" : "var(--text-disabled)",
+          backgroundColor: active ? "var(--accent)" : "transparent",
         }}
       >
-        {active && <span className="text-[8px] leading-none font-bold" style={{ color: "oklch(0.08 0 0)" }}>✓</span>}
+        {active && <span className="text-ui-2xs leading-none font-bold" style={{ color: "var(--surface-base)" }}>✓</span>}
       </span>
       {label}
     </Link>

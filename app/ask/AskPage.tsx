@@ -54,7 +54,7 @@ function CPAvatar() {
   return (
     <div
       className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full overflow-hidden"
-      style={{ backgroundColor: "#FF744420", border: "1px solid #FF744440" }}
+      style={{ backgroundColor: "var(--accent-tint-md)", border: "1px solid var(--accent-tint-lg)" }}
     >
       <Image src="/guanaco_logo.svg" alt="CleanPlate" width={14} height={14} />
     </div>
@@ -69,13 +69,13 @@ function TypingIndicator() {
       <CPAvatar />
       <div
         className="flex items-center gap-1 px-3 py-2.5 rounded-sm"
-        style={{ backgroundColor: "oklch(0.12 0 0)" }}
+        style={{ backgroundColor: "var(--surface-elevated)" }}
       >
         {[0, 1, 2].map((i) => (
           <span
             key={i}
             className="block w-1.5 h-1.5 rounded-full animate-bounce"
-            style={{ backgroundColor: "oklch(0.45 0 0)", animationDelay: `${i * 0.15}s` }}
+            style={{ backgroundColor: "var(--text-disabled)", animationDelay: `${i * 0.15}s` }}
           />
         ))}
       </div>
@@ -90,17 +90,17 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
     <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">
       <div
         className="w-10 h-10 flex items-center justify-center rounded-full mb-5"
-        style={{ backgroundColor: "#FF744415", border: "1px solid #FF744430" }}
+        style={{ backgroundColor: "var(--accent-tint-sm)", border: "1px solid var(--accent-tint-md)" }}
       >
-        <span className="font-[family-name:var(--font-display)]" style={{ color: "#FF7444", fontSize: "1.1rem" }}>C</span>
+        <span className="font-[family-name:var(--font-display)]" style={{ color: "var(--accent)", fontSize: "1.1rem" }}>C</span>
       </div>
       <p
         className="font-[family-name:var(--font-display)] mb-1"
-        style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "oklch(0.9 0 0)", letterSpacing: "0.02em" }}
+        style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
       >
         Ask CleanPlate
       </p>
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.48_0_0)] mb-8">
+      <p className="font-mono text-ui-md uppercase tracking-editorial text-text-disabled mb-8">
         GF safety data for 3,500+ NYC restaurants
       </p>
       <div className="flex flex-wrap gap-2 justify-center max-w-lg">
@@ -108,10 +108,10 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
           <button
             key={s}
             onClick={() => onSelect(s)}
-            className="font-mono text-[10px] tracking-[0.08em] px-3 py-2 border transition-colors duration-150 text-left"
-            style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.1 0 0)", color: "oklch(0.6 0 0)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "oklch(0.35 0 0)"; e.currentTarget.style.color = "oklch(0.82 0 0)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "oklch(0.2 0 0)"; e.currentTarget.style.color = "oklch(0.6 0 0)"; }}
+            className="font-mono text-ui-sm tracking-snug px-3 py-2 border transition-colors duration-150 text-left"
+            style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--surface-raised)", color: "var(--text-dim)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "oklch(0.35 0 0)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-dim)"; }}
           >
             {s}
           </button>
@@ -326,10 +326,10 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                 // User bubble — right aligned
                 <div key={i} className="flex justify-end pt-3 pb-1">
                   <div
-                    className="max-w-[80%] px-4 py-3 text-[13px] leading-relaxed font-mono"
+                    className="max-w-[80%] px-4 py-3 text-ui-lg leading-relaxed font-mono"
                     style={{
-                      backgroundColor: "#FF744412",
-                      border: "1px solid #FF744430",
+                      backgroundColor: "var(--accent-tint-xs)",
+                      border: "1px solid var(--accent-tint-md)",
                       color: "oklch(0.88 0 0)",
                     }}
                   >
@@ -342,15 +342,15 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                   <CPAvatar />
                   <div
                     className="flex-1 px-4 py-4 border text-center space-y-2"
-                    style={{ borderColor: "oklch(0.22 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+                    style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
                   >
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.7_0_0)]">
+                    <p className="font-mono text-ui-md uppercase tracking-editorial text-text-tertiary">
                       You&apos;ve used your 5 free queries
                     </p>
-                    <p className="font-mono text-[10px] text-[oklch(0.48_0_0)]">
+                    <p className="font-mono text-ui-sm text-text-disabled">
                       Upgrade to CleanPlate Premium for unlimited access.
                     </p>
-                    <p className="font-mono text-[11px] uppercase tracking-[0.15em]" style={{ color: "#FF7444" }}>
+                    <p className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--accent)" }}>
                       $7 / month — coming soon
                     </p>
                   </div>
@@ -363,8 +363,8 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div
-                      className="text-[15px] leading-[1.7]"
-                      style={{ color: "oklch(0.92 0 0)" }}
+                      className="text-ui-2xl leading-[1.7]"
+                      style={{ color: "var(--text-primary)" }}
                     >
                       {renderContent(msg.content)}
                     </div>
@@ -381,7 +381,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
       {/* ── Input bar ── */}
       <div
         className="shrink-0 border-t px-4 md:px-6 pt-3 pb-20 md:pb-4"
-        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)" }}
+        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)" }}
       >
         <div className="max-w-2xl mx-auto">
           <div className="flex items-end gap-2">
@@ -393,15 +393,15 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
               placeholder={limitReached ? "Upgrade to ask more questions" : "Ask about GF dining in NYC…"}
               rows={1}
               disabled={loading || limitReached}
-              className="flex-1 resize-none border px-3 py-2.5 font-mono text-[13px] leading-relaxed placeholder:text-[oklch(0.35_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150 disabled:opacity-40"
+              className="flex-1 resize-none border px-3 py-2.5 font-mono text-ui-lg leading-relaxed placeholder:text-[oklch(0.35_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150 disabled:opacity-40"
               style={{
-                backgroundColor: "oklch(0.11 0 0)",
-                borderColor: "oklch(0.22 0 0)",
+                backgroundColor: "var(--surface-elevated)",
+                borderColor: "var(--border-default)",
                 maxHeight: "120px",
                 overflowY: "auto",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(0.38 0 0)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.22 0 0)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-default)")}
               onInput={(e) => {
                 // Auto-grow textarea
                 const el = e.currentTarget;
@@ -413,7 +413,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
               onClick={() => submit(input)}
               disabled={!input.trim() || loading || limitReached}
               className="shrink-0 w-9 h-9 flex items-center justify-center border transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ borderColor: "#FF7444", backgroundColor: "#FF744420", color: "#FF7444" }}
+              style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-tint-md)", color: "var(--accent)" }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19V5M5 12l7-7 7 7" />
@@ -422,7 +422,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
           </div>
 
           {/* Usage counter */}
-          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.36_0_0)] mt-2">
+          <p className="font-mono text-ui-xs uppercase tracking-broad text-[oklch(0.36_0_0)] mt-2">
             {limitReached
               ? "Query limit reached"
               : queriesRemaining !== null

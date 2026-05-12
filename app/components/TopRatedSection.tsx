@@ -39,9 +39,9 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
     <Link
       href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
       className="group flex flex-col justify-between p-4 md:p-5 border transition-colors duration-150"
-      style={{ borderColor: "oklch(0.2 0 0)", backgroundColor: "oklch(0.1 0 0)" }}
+      style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--surface-raised)" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = color)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.2 0 0)")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
     >
       {/* Name + score row */}
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -58,13 +58,13 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
           >
             {r.score}
           </span>
-          <span className="font-mono text-[8px] uppercase tracking-[0.12em] mt-0.5" style={{ color: `${color}bb` }}>
+          <span className="font-mono text-ui-2xs uppercase tracking-[0.12em] mt-0.5" style={{ color: `${color}bb` }}>
             GF Score
           </span>
         </div>
       </div>
       {/* Neighborhood / cuisine */}
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.65_0_0)] leading-snug">
+      <span className="font-mono text-ui-sm uppercase tracking-broad text-text-label leading-snug">
         {[r.neighborhood, r.cuisine].filter(Boolean).join(" · ")}
       </span>
     </Link>
@@ -82,8 +82,8 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
   return (
     <section className="max-w-5xl mx-auto px-4 md:px-8 pt-4 md:pt-10 pb-10">
       <h2
-        className="font-mono text-[11px] uppercase tracking-[0.25em] mb-5"
-        style={{ color: "oklch(0.65 0 0)" }}
+        className="font-mono text-ui-md uppercase tracking-stamp mb-5"
+        style={{ color: "var(--text-label)" }}
       >
         Top Rated in {city}
       </h2>
@@ -98,7 +98,7 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
           if (visibleChips.length === 0) return null;
           return (
             <div key={rowIdx}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-1.5" style={{ color: "oklch(0.52 0 0)" }}>
+              <p className="font-mono text-ui-xs uppercase tracking-stamp mb-1.5" style={{ color: "oklch(0.52 0 0)" }}>
                 {label}
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
@@ -109,16 +109,16 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
                       key={chip.id}
                       type="button"
                       onClick={() => setActiveChip(isActive ? null : chip.id)}
-                      className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 border font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-150"
+                      className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 border font-mono text-ui-sm uppercase tracking-label transition-all duration-150"
                       style={{
-                        borderColor: isActive ? "#FF7444" : "oklch(0.28 0 0)",
-                        backgroundColor: isActive ? "#FF744430" : "oklch(0.1 0 0)",
-                        color: isActive ? "#FF7444" : "oklch(0.68 0 0)",
+                        borderColor: isActive ? "var(--accent)" : "var(--border-emphasis)",
+                        backgroundColor: isActive ? "var(--accent-tint-md)" : "var(--surface-raised)",
+                        color: isActive ? "var(--accent)" : "var(--text-label)",
                         fontWeight: isActive ? 600 : 400,
                       }}
                     >
                       {chip.label}
-                      {isActive && <span className="text-[9px] opacity-70">×</span>}
+                      {isActive && <span className="text-ui-xs opacity-70">×</span>}
                     </button>
                   );
                 })}
@@ -134,7 +134,7 @@ export function TopRatedSection({ restaurants, city }: { restaurants: TopRestaur
           {filtered.map((r) => <RestaurantCard key={r.id} r={r} />)}
         </div>
       ) : (
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.58_0_0)] py-8 text-center">
+        <p className="font-mono text-ui-md uppercase tracking-editorial text-text-dim py-8 text-center">
           No results for this filter
         </p>
       )}
