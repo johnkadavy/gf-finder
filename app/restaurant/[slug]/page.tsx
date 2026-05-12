@@ -15,6 +15,8 @@ import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
 import { StickyInfoBar } from "@/app/components/StickyInfoBar";
 import { isNewRestaurant, formatLocation } from "@/lib/utils";
+import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
+import { CollapsibleText } from "./CollapsibleText";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -22,6 +24,24 @@ type OpeningHours = {
 
 type Dossier = ScoringDossier & {
   summary?: { short_summary?: string };
+};
+
+type MenuItem = {
+  name: string;
+  description?: string;
+  gf: boolean | null;
+};
+
+type MenuSection = {
+  section: string | null;
+  items: MenuItem[];
+};
+
+type MenuData = {
+  menu_sections?: MenuSection[];
+  menu_items?: MenuItem[];
+  menu_source?: string;
+  confidence?: string;
 };
 
 type Restaurant = {
@@ -45,6 +65,8 @@ type Restaurant = {
   ingested_at: string | null;
   slug: string | null;
   gf_food_categories: string[] | null;
+  restaurant_description: string | null;
+  menu_items: MenuData | null;
 };
 
 type VerifiedVisit = {
@@ -69,41 +91,25 @@ function priceSymbol(level: number | null): string {
 
 type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
 
-// Value text — bright so it reads as the primary info
 function signalColor(level: SignalLevel): string {
-  switch (level) {
-    case "positive": return "#7ECF9A";
-    case "neutral":  return "oklch(0.72 0 0)";
-    case "warning":  return "#D4AE62";
-    case "negative": return "#FF8060";
-    default:         return "oklch(0.62 0 0)";
-  }
+  return SIGNAL_COLORS[level] ?? SIGNAL_COLORS.unknown;
 }
 
 function signalBg(level: SignalLevel): string {
-  switch (level) {
-    case "positive": return "#4A7C590D";
-    case "negative": return "#FF74440D";
-    case "warning":  return "#C5A04A0D";
-    default:         return "oklch(0.095 0 0)";
-  }
+  return SIGNAL_BG[level] ?? SIGNAL_BG.unknown;
 }
 
 function signalBorder(level: SignalLevel): string {
-  switch (level) {
-    case "positive": return "#4A7C5938";
-    case "negative": return "#FF744438";
-    case "warning":  return "#C5A04A38";
-    default:         return "oklch(0.18 0 0)";
-  }
+  return SIGNAL_BORDER[level] ?? SIGNAL_BORDER.unknown;
 }
 
 // ── Signal card ────────────────────────────────────────────────────────────
 
-function SignalCard({ label, value, level }: {
+function SignalCard({ label, value, level, description }: {
   label: string;
   value: string;
   level: SignalLevel;
+  description?: string;
 }) {
   const color = signalColor(level);
   return (
@@ -120,6 +126,29 @@ function SignalCard({ label, value, level }: {
       <p className="font-mono text-[12px] uppercase tracking-[0.04em] leading-snug" style={{ color }}>
         {value}
       </p>
+      {description && (
+        <p className="font-mono text-[10px] leading-relaxed" style={{ color: "oklch(0.58 0 0)" }}>
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── GF menu item row ───────────────────────────────────────────────────────
+
+function GfMenuItemRow({ item }: { item: MenuItem }) {
+  const displayName = item.name === item.name.toUpperCase()
+    ? item.name.charAt(0) + item.name.slice(1).toLowerCase()
+    : item.name;
+  return (
+    <div className="py-3 border-b" style={{ borderColor: "oklch(0.17 0 0)" }}>
+      <p className="text-[14px] leading-snug" style={{ color: "oklch(0.92 0 0)" }}>{displayName}</p>
+      {item.description && (
+        <p className="font-mono text-[11px] mt-0.5 leading-relaxed" style={{ color: "oklch(0.52 0 0)" }}>
+          {item.description}
+        </p>
+      )}
     </div>
   );
 }
@@ -263,7 +292,7 @@ async function resolveRestaurant(slugOrId: string) {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories")
+    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items")
     .eq("slug", slugOrId)
     .single();
 
@@ -342,6 +371,15 @@ export default async function RestaurantPage({
   const color = getGaugeColor(score);
   const d = r.dossier;
   const cuisine = r.cuisine;
+  const menuData = r.menu_items;
+  // Normalize legacy flat format into sections, then filter to verified-GF items only
+  const allSections: MenuSection[] = menuData?.confidence !== "low"
+    ? (menuData?.menu_sections ?? (menuData?.menu_items ? [{ section: null, items: menuData.menu_items }] : []))
+    : [];
+  const gfSections: MenuSection[] = allSections
+    .map((s) => ({ ...s, items: s.items.filter((item) => item.gf === true) }))
+    .filter((s) => s.items.length > 0);
+  const gfItemCount = gfSections.flatMap((s) => s.items).length;
   const sickCount = d?.reviews?.sick_reports_recent ?? 0;
   const sickSourceUrl = d?.reviews?.sick_reports_details?.find((r) => r.source_url)?.source_url ?? null;
   const price = priceSymbol(r.price_level);
@@ -685,15 +723,48 @@ export default async function RestaurantPage({
                   <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.2 0 0)" }} />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-                  <SignalCard label="GF Labeling" value={labelingText} level={labelingLevel} />
-                  <SignalCard label="GF Options" value={optionsText} level={optionsLevel} />
-                  <SignalCard label="Cross-Contamination" value={contamText} level={contamLevel} />
-                  <SignalCard label="Staff Knowledge" value={staffText} level={staffLevel} />
-                  <SignalCard label="GF Sentiment" value={sentimentText} level={sentimentLevel} />
+                  <SignalCard label="GF Labeling" value={labelingText} level={labelingLevel}
+                    description={
+                      labelingLevel === "positive" ? "Menu clearly identifies gluten-free dishes." :
+                      labelingLevel === "neutral"  ? "Some GF items labeled, but not consistently." :
+                      labelingLevel === "negative" ? "No gluten-free labeling on menu." : undefined
+                    }
+                  />
+                  <SignalCard label="GF Options" value={optionsText} level={optionsLevel}
+                    description={
+                      optionsLevel === "positive" ? "Plenty of GF choices across the menu." :
+                      optionsLevel === "warning"  ? "Limited GF options — ask staff for guidance." :
+                      optionsLevel === "negative" ? "Few to no GF options available." : undefined
+                    }
+                  />
+                  <SignalCard label="Cross-Contamination" value={contamText} level={contamLevel}
+                    description={
+                      contamLevel === "positive" ? "Low risk of cross-contamination reported." :
+                      contamLevel === "warning"  ? "Possible cross-contamination — confirm prep practices." :
+                      contamLevel === "negative" ? "High cross-contamination risk in this kitchen." : undefined
+                    }
+                  />
+                  <SignalCard label="Staff Knowledge" value={staffText} level={staffLevel}
+                    description={
+                      staffLevel === "positive" ? "Staff are knowledgeable about gluten-free needs." :
+                      staffLevel === "neutral"  ? "Staff have some GF awareness." :
+                      staffLevel === "negative" ? "Limited staff knowledge reported — ask for a manager." : undefined
+                    }
+                  />
+                  <SignalCard label="GF Sentiment" value={sentimentText} level={sentimentLevel}
+                    description={
+                      sentimentLevel === "positive" ? "Recent reviews highlight positive GF experiences." :
+                      sentimentLevel === "neutral"  ? "Mixed GF experiences reported by diners." :
+                      sentimentLevel === "negative" ? "Recent reviews flag concerns for GF diners." : undefined
+                    }
+                  />
                   <SignalCard
                     label="Illness Reports"
                     value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
                     level={sickCount > 0 ? "negative" : "positive"}
+                    description={sickCount > 0
+                      ? `${sickCount} gluten-related illness report${sickCount !== 1 ? "s" : ""} in the past 6 months.`
+                      : "No recent gluten-related illness reports."}
                   />
                 </div>
               </div>
@@ -818,6 +889,82 @@ export default async function RestaurantPage({
                   ? "Limited data — scores are based on partial information and may not fully reflect this restaurant's practices."
                   : "Moderate confidence — some signals are inferred. Confirm details directly with the restaurant."}
               </p>
+            )}
+
+            {/* ── Exploration layer — GF menu items + About ── */}
+            {(gfSections.length > 0 || r.restaurant_description) && (
+              <div className="pt-6 mt-2 border-t" style={{ borderColor: "oklch(0.15 0 0)" }}>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-8" style={{ color: "oklch(0.35 0 0)" }}>
+                  More about this restaurant
+                </p>
+
+                <div className="space-y-10">
+                  {/* Verified GF menu items */}
+                  {gfSections.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-4 mb-1">
+                        <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">
+                          Gluten-Free Items
+                        </h2>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.17 0 0)" }} />
+                        <span className="font-mono text-[9px] uppercase tracking-[0.15em]" style={{ color: "#7ECF9A" }}>
+                          {gfItemCount} item{gfItemCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      {menuData?.menu_source && (
+                        <div className="flex items-center justify-between gap-4 mb-4 mt-2">
+                          <p className="font-mono text-[10px] text-[oklch(0.42_0_0)] leading-relaxed">
+                            Menu snapshot — items and availability may have changed.
+                          </p>
+                          <a
+                            href={menuData.menu_source}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] px-3 py-2 border transition-colors text-[oklch(0.72_0_0)] hover:text-[oklch(0.95_0_0)]"
+                            style={{ borderColor: "oklch(0.26 0 0)", backgroundColor: "oklch(0.11 0 0)" }}
+                          >
+                            View full menu →
+                          </a>
+                        </div>
+                      )}
+                      <div>
+                        {gfSections.map((section, si) => (
+                          <div key={si} className={si > 0 ? "mt-5" : ""}>
+                            {section.section && (
+                              <p
+                                className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1 pb-2 border-b"
+                                style={{ color: "oklch(0.58 0 0)", borderColor: "oklch(0.18 0 0)" }}
+                              >
+                                {section.section}
+                              </p>
+                            )}
+                            {section.items.map((item, i) => (
+                              <GfMenuItemRow key={i} item={item} />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* About — collapsible */}
+                  {r.restaurant_description && (
+                    <div>
+                      <div className="flex items-center gap-4 mb-4">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[oklch(0.55_0_0)]">
+                          About {r.name}
+                        </p>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "oklch(0.17 0 0)" }} />
+                      </div>
+                      <CollapsibleText
+                        text={r.restaurant_description.replace(/\[(high|medium|low)\]\s*$/i, "").trim()}
+                        className="text-[15px] leading-[1.75]"
+                        style={{ color: "oklch(0.68 0 0)" }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 

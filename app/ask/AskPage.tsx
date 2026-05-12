@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { marked, Renderer } from "marked";
 
@@ -123,7 +123,7 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function AskPage() {
+export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -131,6 +131,9 @@ export function AskPage() {
   const [queriesRemaining, setQueriesRemaining] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Always-current ref so submit() reads live history without a stale closure
+  const messagesRef = useRef<Message[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   // Character drip queue — smooths out chunky SSE bursts into a continuous typing effect
   const pendingCharsRef = useRef<string>("");
@@ -180,12 +183,12 @@ export function AskPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
-  async function submit(text: string) {
+  const submit = useCallback(async function submit(text: string) {
     const trimmed = text.trim();
     if (!trimmed || loading || limitReached) return;
 
     // Snapshot history before adding the new user message (sent to API for context)
-    const history = messages
+    const history = messagesRef.current
       .filter((m) => m.content !== "__limit_reached__")
       .map((m) => ({ role: m.role, content: m.content }));
 
@@ -283,7 +286,19 @@ export function AskPage() {
     } finally {
       setLoading(false);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limitReached]);
+
+  // Auto-submit when navigated from homepage with a pre-filled query.
+  // Ref guard prevents double-fire in React StrictMode (dev only).
+  const autoSubmittedRef = useRef(false);
+  useEffect(() => {
+    if (initialQuery && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true;
+      submit(initialQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {

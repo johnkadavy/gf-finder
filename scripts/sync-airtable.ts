@@ -46,6 +46,8 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "place_type");
     url.searchParams.append("fields[]", "gf_food_categories");
     url.searchParams.append("fields[]", "cc_risk_json");
+    url.searchParams.append("fields[]", "restaurant_description");
+    url.searchParams.append("fields[]", "menu_items");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -157,6 +159,23 @@ async function sync() {
     const placeTypes = parseCsv(record.fields["place_type"]);
     const gfFoodCategories = parseCsv(record.fields["gf_food_categories"]);
 
+    const parseAiText = (field: unknown): string | null => {
+      const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
+      return raw?.trim() || null;
+    };
+
+    const restaurantDescription = parseAiText(record.fields["restaurant_description"]);
+
+    const menuItemsRaw = parseAiText(record.fields["menu_items"]);
+    let menuItems: unknown = null;
+    if (menuItemsRaw) {
+      try {
+        menuItems = JSON.parse(menuItemsRaw);
+      } catch {
+        console.warn(`  Could not parse menu_items JSON for ${googlePlaceId} — skipping`);
+      }
+    }
+
     const { error } = await supabase
       .from("restaurants")
       .update({
@@ -165,6 +184,8 @@ async function sync() {
         ...(cuisine ? { cuisine } : {}),
         ...(placeTypes ? { place_type: placeTypes } : {}),
         ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
+        ...(restaurantDescription ? { restaurant_description: restaurantDescription } : {}),
+        ...(menuItems ? { menu_items: menuItems } : {}),
       })
       .eq("google_place_id", googlePlaceId);
 
