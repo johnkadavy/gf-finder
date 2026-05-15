@@ -2,9 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { marked, Renderer } from "marked";
-import { getGaugeColor } from "@/lib/score";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -15,21 +13,9 @@ const SUGGESTED_QUERIES = [
   "Quick GF lunch options in Midtown",
 ];
 
-type RestaurantRef = {
-  id: number;
-  name: string;
-  url: string;
-  score: number | null;
-  score_label: string;
-  cuisine: string | null;
-  neighborhood: string | null;
-  price_level: number | null;
-};
-
 type Message = {
   role: "user" | "assistant";
   content: string;
-  restaurants?: RestaurantRef[];
 };
 
 // ── Markdown renderer ────────────────────────────────────────────────────────
@@ -132,60 +118,6 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
   );
 }
 
-// ── Restaurant cards ─────────────────────────────────────────────────────────
-
-const PRICE = ["Free", "$", "$$", "$$$", "$$$$"];
-
-function RestaurantCards({ restaurants }: { restaurants: RestaurantRef[] }) {
-  if (restaurants.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-2 mt-3">
-      {restaurants.map((r) => {
-        const color = getGaugeColor(r.score);
-        const meta = [r.cuisine, r.neighborhood, r.price_level != null ? PRICE[r.price_level] : null]
-          .filter(Boolean)
-          .join(" · ");
-        return (
-          <Link
-            key={r.id}
-            href={r.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block border px-4 py-3 transition-colors duration-150"
-            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; e.currentTarget.style.backgroundColor = "var(--surface-elevated)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.backgroundColor = "var(--surface-raised)"; }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-ui-lg" style={{ color: "var(--text-primary)" }}>
-                {r.name}
-              </span>
-              {r.score !== null && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className="font-[family-name:var(--font-display)] text-2xl leading-none"
-                    style={{ color }}
-                  >
-                    {Math.round(r.score)}
-                  </span>
-                  <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color }}>
-                    {r.score_label}
-                  </span>
-                </div>
-              )}
-            </div>
-            {meta && (
-              <p className="font-mono text-ui-sm uppercase tracking-label mt-1" style={{ color: "var(--text-dim)" }}>
-                {meta}
-              </p>
-            )}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
@@ -203,8 +135,6 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
   // Character drip queue — smooths out chunky SSE bursts into a continuous typing effect
   const pendingCharsRef = useRef<string>("");
   const isDrippingRef = useRef(false);
-  // Restaurants held here until drip finishes so inline links appear after text is complete
-  const pendingRestaurantsRef = useRef<RestaurantRef[] | null>(null);
 
   function scheduleDrip() {
     if (isDrippingRef.current) return;
@@ -213,18 +143,6 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
       const pending = pendingCharsRef.current;
       if (pending.length === 0) {
         isDrippingRef.current = false;
-        // Drip finished — attach any queued restaurants now that full text is rendered
-        if (pendingRestaurantsRef.current) {
-          const restaurants = pendingRestaurantsRef.current;
-          pendingRestaurantsRef.current = null;
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant") {
-              return [...prev.slice(0, -1), { ...last, restaurants }];
-            }
-            return prev;
-          });
-        }
         return;
       }
       // Drain faster when queue is large (catching up after a big chunk)
@@ -261,7 +179,6 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
     setInput("");
     setLoading(true);
     pendingCharsRef.current = "";
-    pendingRestaurantsRef.current = null;
     // Scroll to show the user's message
     setTimeout(scrollToBottom, 50);
 
@@ -302,7 +219,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
 
         for (const part of parts) {
           if (!part.startsWith("data: ")) continue;
-          let event: { type: string; text?: string; referenced_restaurants?: RestaurantRef[]; queries_remaining?: number; message?: string };
+          let event: { type: string; text?: string; queries_remaining?: number; message?: string };
           try {
             event = JSON.parse(part.slice(6));
           } catch {
@@ -322,21 +239,6 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
             pendingCharsRef.current += event.text;
             scheduleDrip();
           } else if (event.type === "done") {
-            // Queue restaurants to attach once drip finishes (so links apply to complete text)
-            if (event.referenced_restaurants?.length) {
-              if (isDrippingRef.current) {
-                pendingRestaurantsRef.current = event.referenced_restaurants;
-              } else {
-                // Drip already done — attach immediately
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === "assistant") {
-                    return [...prev.slice(0, -1), { ...last, restaurants: event.referenced_restaurants }];
-                  }
-                  return prev;
-                });
-              }
-            }
             if (event.queries_remaining !== null && event.queries_remaining !== undefined) {
               setQueriesRemaining(event.queries_remaining);
             }
@@ -433,9 +335,6 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                     >
                       {renderContent(msg.content)}
                     </div>
-                    {msg.restaurants && msg.restaurants.length > 0 && (
-                      <RestaurantCards restaurants={msg.restaurants} />
-                    )}
                   </div>
                 </div>
               )

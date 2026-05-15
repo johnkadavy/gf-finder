@@ -45,7 +45,12 @@ RULES:
 11. When a request is too vague to return useful results (only a location, no cuisine or meal type), use the clarify tool to ask ONE short question before searching. If the request already includes a cuisine, meal type, food type, or restaurant name, skip clarify and search immediately.
 12. GEOGRAPHIC SEARCH: When a user describes a location by landmark, intersection, or geographic range (e.g. "near Penn Station", "around Times Square", "between 42nd and 50th street"), use lat/lng/radius_miles instead of neighborhood. Use your knowledge of NYC geography to convert the description to coordinates. For a range like "Penn Station to 50th street", pick the midpoint and set radius_miles to cover the full span. Typical radii: 0.25 mi = a few blocks, 0.5 mi = ~10 block radius, 1.0 mi = a wide swath. You can run multiple searches with different center points if the area is large or oddly shaped.
 13. NEVER say "zero risk", "100% safe", "no risk", or any phrase implying a restaurant is completely safe for GF diners. Even dedicated GF kitchens can have errors. Use "safest option," "lowest risk I've seen," "excellent track record" — convey confidence without claiming certainty.
-14. FORMATTING RESPONSES WITH RESTAURANTS: After each restaurant recommendation, the UI will automatically display a card showing the name, score, cuisine, neighborhood, and price. Do not repeat those facts in your prose. Instead, write 1–2 sentences per restaurant focused purely on the WHY — what makes it stand out, what to watch out for, or why it fits this specific request. Let the card carry the factual metadata.`;
+14. FORMATTING RESTAURANTS IN TEXT: When listing multiple restaurants, use this format for each entry — name as a markdown link, then metadata on the same line, then one sentence below:
+
+**[Name](url)** · Cuisine · Neighborhood · $$
+One sentence on why it fits this request — the key safety signal or standout detail.
+
+Put a blank line between restaurants. The metadata line uses · as a separator. Omit any field that's unknown. Price uses $/$$/$$$/$$$$. Keep the description sentence tight — lead with the most relevant safety signal or reason it fits the request.`;
 
 // Cache the system prompt — same text every request, 5-min TTL saves input token processing
 const SYSTEM_CACHED = [
@@ -241,43 +246,17 @@ export async function POST(request: Request) {
     { role: "user", content: query },
   ];
 
-  type RestaurantRef = {
-    id: number;
-    name: string;
-    url: string;
-    score: number | null;
-    score_label: string;
-    cuisine: string | null;
-    neighborhood: string | null;
-    price_level: number | null;
-  };
-
-  const referencedRestaurants: RestaurantRef[] = [];
+  // Restaurant references are no longer rendered as cards — text formatting carries the metadata.
+  // We keep a minimal list for the done event (used for future analytics/tracking).
+  const referencedIds = new Set<number>();
 
   function trackRestaurants(toolName: string, result: unknown) {
     if (toolName === "search_restaurants") {
-      const r = result as { results?: RestaurantRef[] };
-      r.results?.forEach((item) => {
-        if (!referencedRestaurants.find((x) => x.id === item.id)) {
-          referencedRestaurants.push({
-            id: item.id, name: item.name, url: item.url,
-            score: item.score, score_label: item.score_label,
-            cuisine: item.cuisine, neighborhood: item.neighborhood,
-            price_level: item.price_level,
-          });
-        }
-      });
+      const r = result as { results?: Array<{ id: number }> };
+      r.results?.forEach((item) => referencedIds.add(item.id));
     } else if (toolName === "get_restaurant_details") {
-      const r = result as { restaurant?: RestaurantRef | null };
-      if (r.restaurant && !referencedRestaurants.find((x) => x.id === r.restaurant!.id)) {
-        const item = r.restaurant;
-        referencedRestaurants.push({
-          id: item.id, name: item.name, url: item.url,
-          score: item.score, score_label: item.score_label,
-          cuisine: item.cuisine, neighborhood: item.neighborhood,
-          price_level: item.price_level,
-        });
-      }
+      const r = result as { restaurant?: { id: number } | null };
+      if (r.restaurant) referencedIds.add(r.restaurant.id);
     }
   }
 
@@ -353,7 +332,6 @@ export async function POST(request: Request) {
 
             send({
               type: "done",
-              referenced_restaurants: referencedRestaurants,
               queries_remaining: queriesRemaining,
             });
             controller.close();
@@ -377,7 +355,7 @@ export async function POST(request: Request) {
               }
               await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: false });
               const newCount = isUnlimited ? null : queriesUsed + 1;
-              send({ type: "done", referenced_restaurants: [], queries_remaining: isUnlimited ? null : queryLimit - (newCount ?? 0) });
+              send({ type: "done", queries_remaining: isUnlimited ? null : queryLimit - (newCount ?? 0) });
               controller.close();
               return;
             }

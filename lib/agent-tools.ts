@@ -39,6 +39,7 @@ export type RestaurantSummary = {
   score: number | null;
   score_label: string;
   price_level: number | null;
+  price_display: string | null;
   summary: string | null;
   place_type: string[] | null;
   gf_food_categories: string[] | null;
@@ -114,6 +115,8 @@ const DB_SELECT =
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+const PRICE_DISPLAY = ["Free", "$", "$$", "$$$", "$$$$"];
+
 function toSummary(r: DbRow): RestaurantSummary {
   const { label } = getScoreLabel(r.score);
   return {
@@ -125,6 +128,7 @@ function toSummary(r: DbRow): RestaurantSummary {
     score: r.score,
     score_label: label,
     price_level: r.price_level,
+    price_display: r.price_level != null ? (PRICE_DISPLAY[r.price_level] ?? null) : null,
     summary: r.dossier?.summary?.short_summary ?? null,
     place_type: r.place_type,
     gf_food_categories: r.gf_food_categories,
