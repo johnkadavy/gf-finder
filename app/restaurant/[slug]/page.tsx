@@ -103,56 +103,6 @@ function signalBorder(level: SignalLevel): string {
   return SIGNAL_BORDER[level] ?? SIGNAL_BORDER.unknown;
 }
 
-// ── Signal card ────────────────────────────────────────────────────────────
-
-function SignalCard({ label, value, level, description }: {
-  label: string;
-  value: string;
-  level: SignalLevel;
-  description?: string;
-}) {
-  const color = signalColor(level);
-  return (
-    <div
-      className="border p-3 flex flex-col gap-2"
-      style={{ borderColor: signalBorder(level), backgroundColor: signalBg(level) }}
-    >
-      <div className="flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-        <p className="font-mono text-ui-xs uppercase tracking-label text-text-label leading-none">
-          {label}
-        </p>
-      </div>
-      <p className="font-mono text-[12px] uppercase tracking-[0.04em] leading-snug" style={{ color }}>
-        {value}
-      </p>
-      {description && (
-        <p className="font-mono text-ui-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>
-          {description}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── GF menu item row ───────────────────────────────────────────────────────
-
-function GfMenuItemRow({ item }: { item: MenuItem }) {
-  const displayName = item.name === item.name.toUpperCase()
-    ? item.name.charAt(0) + item.name.slice(1).toLowerCase()
-    : item.name;
-  return (
-    <div className="py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-      <p className="text-ui-xl leading-snug" style={{ color: "var(--text-primary)" }}>{displayName}</p>
-      {item.description && (
-        <p className="font-mono text-ui-md mt-0.5 leading-relaxed" style={{ color: "oklch(0.52 0 0)" }}>
-          {item.description}
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ── GF food category tags ─────────────────────────────────────────────────
 
 const GF_FOOD_LABELS: Record<string, string> = {
@@ -179,7 +129,11 @@ function GfFoodTags({ categories }: { categories: string[] | null }) {
         <span
           key={cat}
           className="inline-flex items-center px-2.5 py-1 font-mono text-ui-xs uppercase tracking-label border"
-          style={{ borderColor: "#4A7C5945", backgroundColor: "#4A7C5912", color: "#7ECF9A" }}
+          style={{
+            borderColor: SIGNAL_BORDER.positive,
+            backgroundColor: SIGNAL_BG.positive,
+            color: SIGNAL_COLORS.positive,
+          }}
         >
           {GF_FOOD_LABELS[cat]}
         </span>
@@ -187,36 +141,6 @@ function GfFoodTags({ categories }: { categories: string[] | null }) {
     </div>
   );
 }
-
-// ── Icons ──────────────────────────────────────────────────────────────────
-
-const IconPin = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-    <circle cx="12" cy="10" r="3"/>
-  </svg>
-);
-
-const IconPhone = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.13 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-  </svg>
-);
-
-const IconGlobe = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
-  </svg>
-);
-
-const IconClock = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
 
 // ── Metadata ───────────────────────────────────────────────────────────────
 
@@ -238,8 +162,6 @@ function buildSignalSummary(d: ScoringDossier | null): string {
 
 // ── Auth — deferred behind Suspense so it never blocks the page shell ───────
 
-// Per-request dedup: getUser() is called at most once even if SaveState
-// renders in multiple Suspense boundaries (mobile + desktop).
 const getRestaurantAuth = cache(async (restaurantId: number) => {
   const serverClient = await createClient();
   const { data: { user } } = await serverClient.auth.getUser();
@@ -274,8 +196,6 @@ async function SaveState({
 }
 
 // ── Slug resolution ────────────────────────────────────────────────────────
-// Supports both slug-based URLs (/restaurant/wild-west-village) and legacy
-// numeric IDs (/restaurant/5) — the latter 301-redirects to the slug URL.
 
 async function resolveRestaurant(slugOrId: string) {
   const isNumericId = /^\d+$/.test(slugOrId);
@@ -353,7 +273,6 @@ export default async function RestaurantPage({
 
   const r = data as Restaurant;
 
-  // Fetch verified visit if one exists
   const { data: visitData } = r.google_place_id
     ? await supabase
         .from("verified_visits")
@@ -372,7 +291,6 @@ export default async function RestaurantPage({
   const d = r.dossier;
   const cuisine = r.cuisine;
   const menuData = r.menu_items;
-  // Normalize legacy flat format into sections, then filter to verified-GF items only
   const allSections: MenuSection[] = menuData?.confidence !== "low"
     ? (menuData?.menu_sections ?? (menuData?.menu_items ? [{ section: null, items: menuData.menu_items }] : []))
     : [];
@@ -439,12 +357,10 @@ export default async function RestaurantPage({
     d?.reviews?.recent_sentiment === "mixed"           ? "Mixed" :
     d?.reviews?.recent_sentiment === "mostly_negative" ? "Mostly negative" : "Unknown";
 
-  // ── JSON-LD structured data ──────────────────────────────────────────────
+  // ── JSON-LD ──────────────────────────────────────────────────────────────
   const reviewCount = (d?.reviews?.positive_count ?? 0) + (d?.reviews?.negative_count ?? 0);
   const summary = d?.summary?.short_summary;
 
-  // Convert opening hours from Google's "Monday: 9:00 AM – 10:00 PM" format
-  // to schema.org "Mo 09:00-22:00" format (best-effort, skip if unparseable)
   const openingHoursSpec: string[] = [];
   const dayMap: Record<string, string> = {
     Monday: "Mo", Tuesday: "Tu", Wednesday: "We", Thursday: "Th",
@@ -457,7 +373,6 @@ export default async function RestaurantPage({
     if (!day) continue;
     const times = m[2].trim();
     if (times.toLowerCase() === "closed") continue;
-    // Handle "9:00 AM – 10:00 PM" → "09:00-22:00"
     const rangeParts = times.split(/\s*[–-]\s*/);
     if (rangeParts.length !== 2) continue;
     const toH = (t: string) => {
@@ -492,17 +407,18 @@ export default async function RestaurantPage({
     ...(r.cuisine        ? { "servesCuisine": r.cuisine }                : {}),
     ...(r.price_level    ? { "priceRange": priceSymbol(r.price_level) }  : {}),
     ...(openingHoursSpec.length > 0 ? { "openingHours": openingHoursSpec } : {}),
-    // Only include aggregateRating when we have real review signal data
     ...(score !== null && reviewCount >= 3 ? {
       "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": (score / 20).toFixed(1),   // convert 0-100 → 0-5 scale
+        "ratingValue": (score / 20).toFixed(1),
         "bestRating": "5",
         "worstRating": "1",
         "reviewCount": reviewCount,
       },
     } : {}),
   };
+
+  const redirectPath = `/restaurant/${r.slug ?? r.id}`;
 
   return (
     <main className="pt-16">
@@ -512,317 +428,458 @@ export default async function RestaurantPage({
       />
       <StickyInfoBar name={r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
-      {/* ── Hero ── */}
-      <section
-        className="grid-bg border-b px-6 pt-8 pb-10 md:pt-12 md:pb-14 relative"
-        style={{ borderColor: "var(--border-subtle)" }}
-      >
-        <div
-          className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
-        />
+      <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
-        {/* Back breadcrumb */}
-        <div className="max-w-6xl mx-auto mb-6 md:mb-10">
+        {/* ── Utility row ── */}
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <Link
             href={fromMap ? "/map" : "/rankings"}
-            className="inline-flex items-center gap-2 font-mono text-ui-md uppercase tracking-editorial text-text-tertiary hover:text-text-primary transition-colors"
+            className="font-mono text-ui-sm uppercase tracking-label transition-colors"
+            style={{ color: "var(--text-dim)" }}
           >
             {fromMap ? "← Map" : "← Rankings"}
           </Link>
+          <div className="flex flex-wrap gap-2">
+            <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={redirectPath} showLabel />}>
+              <SaveState restaurantId={r.id} redirectPath={redirectPath} showLabel />
+            </Suspense>
+            {r.google_maps_url && (
+              <a
+                href={r.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
+                style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
+              >
+                Directions <span style={{ opacity: 0.7 }}>↗</span>
+              </a>
+            )}
+            {r.website_url && (
+              <a
+                href={r.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
+                style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
+              >
+                Website <span style={{ opacity: 0.7 }}>↗</span>
+              </a>
+            )}
+          </div>
         </div>
 
-        {/* ── Mobile layout ── */}
-        <div className="md:hidden max-w-6xl mx-auto space-y-3">
-          {/* Name + gauge inline */}
-          <div className="flex items-start justify-between gap-3">
-            <div>
+        {/* ── Hero ── */}
+        <div
+          className="border mb-12 relative overflow-hidden"
+          style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
+        >
+          {/* Radial gradient decoration */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(circle at 70% 50%, color-mix(in oklch, var(--score-good) 6%, transparent), transparent 60%)" }}
+          />
+
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 p-8 md:p-14">
+
+            {/* Left */}
+            <div className="flex flex-col">
+
+              {/* Meta row */}
+              <div
+                className="flex flex-wrap items-center gap-3 mb-6 font-mono text-ui-sm uppercase tracking-label"
+                style={{ color: "var(--text-dim)" }}
+              >
+                {cuisine && <span>{cuisine}</span>}
+                {cuisine && <span style={{ color: "var(--text-disabled)" }}>·</span>}
+                <span>{formatLocation(r.neighborhood, r.city, r.region, ", ")}</span>
+                {price && (
+                  <>
+                    <span style={{ color: "var(--text-disabled)" }}>·</span>
+                    <span>{price}</span>
+                  </>
+                )}
+                {r.google_rating && (
+                  <>
+                    <span style={{ color: "var(--text-disabled)" }}>·</span>
+                    <span style={{ color: "var(--text-tertiary)" }}>
+                      ★ {r.google_rating.toFixed(1)} Google
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* New badge */}
               {isNewRestaurant(r.source, r.ingested_at) && (
-                <span className="inline-block font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 mb-2" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
+                <span
+                  className="self-start font-mono text-ui-xs uppercase tracking-label px-1.5 py-0.5 mb-3 border"
+                  style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", borderColor: "var(--accent-tint-lg)" }}
+                >
                   New
                 </span>
               )}
+
+              {/* Restaurant name */}
               <h1
-                className="font-[family-name:var(--font-display)] leading-none"
-                style={{ fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "0.02em" }}
+                className="font-[family-name:var(--font-display)] leading-none mb-7"
+                style={{ fontSize: "clamp(3rem, 7vw, 5.5rem)", letterSpacing: "0.01em", color: "var(--text-primary)" }}
               >
                 {r.name}
               </h1>
-            </div>
-            <div className="shrink-0">
-              <SafetyGauge score={score} size="xs" showDescriptor={false} />
-            </div>
-          </div>
 
-          {/* Neighborhood + cuisine */}
-          <p className="font-mono text-ui-md uppercase tracking-broad text-text-label">
-            {[r.neighborhood, cuisine].filter(Boolean).join(" · ")}
-          </p>
-
-          {/* Illness warning */}
-          {sickCount > 0 && (
-            <div
-              className="inline-flex items-center gap-2.5 px-3 py-2 border"
-              style={{ borderColor: "var(--accent-tint-lg)", backgroundColor: "var(--accent-tint-xs)" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-              {sickSourceUrl ? (
-                <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
-                  className="font-mono text-ui-sm uppercase tracking-label text-accent hover:underline">
-                  {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
-                </a>
-              ) : (
-                <span className="font-mono text-ui-sm uppercase tracking-label text-accent">
-                  {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Summary */}
-          {d?.summary?.short_summary && (
-            <p className="text-ui-xl leading-[1.65] text-text-secondary">
-              {d.summary.short_summary}
-            </p>
-          )}
-
-          {/* GF food tags */}
-          <GfFoodTags categories={r.gf_food_categories} />
-
-          {/* Save button */}
-          <div>
-            <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />}>
-              <SaveState restaurantId={r.id} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />
-            </Suspense>
-          </div>
-        </div>
-
-        {/* ── Desktop layout (unchanged) ── */}
-        <div className="hidden md:block max-w-4xl mx-auto text-center">
-          {/* Gauge */}
-          <div className="flex justify-center mb-6">
-            <SafetyGauge score={score} size="lg" />
-          </div>
-
-          {/* Illness warning */}
-          {sickCount > 0 && (
-            <div className="flex justify-center mb-5">
-              <div
-                className="inline-flex items-center gap-2.5 px-4 py-2 border"
-                style={{ borderColor: "var(--accent-tint-lg)", backgroundColor: "var(--accent-tint-xs)" }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                {sickSourceUrl ? (
-                  <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
-                    className="font-mono text-ui-md uppercase tracking-label text-accent hover:underline">
-                    {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
-                  </a>
-                ) : (
-                  <span className="font-mono text-ui-md uppercase tracking-label text-accent">
-                    {sickCount} illness report{sickCount !== 1 ? "s" : ""} in the past 6 months
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Name + save */}
-          <div className="flex items-center justify-center gap-3 mb-5">
-            <div className="text-center">
-              {isNewRestaurant(r.source, r.ingested_at) && (
-                <span className="inline-block font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 mb-2" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
-                  New
-                </span>
-              )}
-              <p
-                aria-hidden="true"
-                className="font-[family-name:var(--font-display)] leading-none"
-                style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "0.02em" }}
-              >
-                {r.name}
-              </p>
-            </div>
-            <div className="mt-2 shrink-0">
-              <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />}>
-                <SaveState restaurantId={r.id} redirectPath={`/restaurant/${r.slug ?? r.id}`} showLabel />
-              </Suspense>
-            </div>
-          </div>
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            {r.google_rating && (
-              <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">
-                ★ {r.google_rating.toFixed(1)} Google
-              </span>
-            )}
-            {price && <span className="font-mono text-ui-lg text-text-label">·</span>}
-            {price && (
-              <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">{price}</span>
-            )}
-            {cuisine && (
-              <>
-                <span className="font-mono text-ui-lg text-text-label">·</span>
-                <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">{cuisine}</span>
-              </>
-            )}
-            <span className="font-mono text-ui-lg text-text-label">·</span>
-            <span className="font-mono text-ui-lg uppercase tracking-snug text-text-secondary">
-              {formatLocation(r.neighborhood, r.city, r.region, ", ")}
-            </span>
-          </div>
-        </div>
-
-      </section>
-
-      {/* ── Body — two-column ── */}
-      <section className="px-6 pb-32 mt-10">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_300px] gap-10 items-start">
-
-          {/* ── Left column ── */}
-          <div className="space-y-10">
-
-            {/* Summary — hidden on mobile (shown in hero) */}
-            {d?.summary?.short_summary && (
-              <div className="hidden md:block">
-                <div className="flex items-center gap-4 mb-5">
-                  <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-                    Overview
-                  </p>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
+              {/* Illness warning */}
+              {sickCount > 0 && (
+                <div
+                  className="self-start inline-flex items-center gap-2.5 px-3 py-2 border mb-5"
+                  style={{ borderColor: "var(--accent-tint-lg)", backgroundColor: "var(--accent-tint-xs)" }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                  {sickSourceUrl ? (
+                    <a href={sickSourceUrl} target="_blank" rel="noopener noreferrer"
+                      className="font-mono text-ui-sm uppercase tracking-label text-accent hover:underline">
+                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
+                    </a>
+                  ) : (
+                    <span className="font-mono text-ui-sm uppercase tracking-label text-accent">
+                      {sickCount} illness report{sickCount !== 1 ? "s" : ""} — past 6 months
+                    </span>
+                  )}
                 </div>
+              )}
+
+              {/* Verdict block */}
+              {score !== null && (
+                <div
+                  className="flex flex-wrap items-baseline gap-5 py-5 border-y mb-6"
+                  style={{ borderColor: "var(--border-default)" }}
+                >
+                  <span
+                    className="font-[family-name:var(--font-display)] text-4xl"
+                    style={{ color, letterSpacing: "0.02em" }}
+                  >
+                    {scoreLabel}
+                  </span>
+                  {d?.data_quality?.confidence && (
+                    <span
+                      className="font-mono text-ui-sm uppercase tracking-label flex items-center gap-2"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: d.data_quality.confidence === "high"
+                            ? "var(--signal-positive)"
+                            : "var(--signal-warning)",
+                        }}
+                      />
+                      {d.data_quality.confidence} confidence
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Summary */}
+              {d?.summary?.short_summary && (
                 <p
-                  className="text-[19px] leading-[1.65] max-w-xl"
-                  style={{ color: "var(--text-primary)" }}
+                  className="font-sans text-base leading-[1.55] mb-7"
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {d.summary.short_summary}
                 </p>
-              </div>
-            )}
+              )}
 
-            {/* GF food tags — desktop */}
-            {r.gf_food_categories && r.gf_food_categories.length > 0 && (
-              <div className="hidden md:block">
-                <div className="flex items-center gap-4 mb-4">
-                  <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-                    GF Options
+              {/* GF food tags */}
+              {r.gf_food_categories && r.gf_food_categories.length > 0 && (
+                <div className="border-t pt-5 mt-auto" style={{ borderColor: "var(--border-subtle)" }}>
+                  <p
+                    className="font-mono text-ui-xs uppercase tracking-label mb-3 flex items-center gap-2"
+                    style={{ color: "var(--text-dim)" }}
+                  >
+                    <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: "var(--signal-positive)" }} />
+                    Gluten-Free Offerings
                   </p>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
+                  <GfFoodTags categories={r.gf_food_categories} />
                 </div>
-                <GfFoodTags categories={r.gf_food_categories} />
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Signal grid */}
-            {d && (
-              <div>
-                <div className="flex items-center gap-4 mb-5">
-                  <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-                    Signal Breakdown
-                  </h2>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-                  <SignalCard label="GF Labeling" value={labelingText} level={labelingLevel}
-                    description={
-                      labelingLevel === "positive" ? "Menu clearly identifies gluten-free dishes." :
-                      labelingLevel === "neutral"  ? "Some GF items labeled, but not consistently." :
-                      labelingLevel === "negative" ? "No gluten-free labeling on menu." : undefined
-                    }
-                  />
-                  <SignalCard label="GF Options" value={optionsText} level={optionsLevel}
-                    description={
-                      optionsLevel === "positive" ? "Plenty of GF choices across the menu." :
-                      optionsLevel === "warning"  ? "Limited GF options — ask staff for guidance." :
-                      optionsLevel === "negative" ? "Few to no GF options available." : undefined
-                    }
-                  />
-                  <SignalCard label="Cross-Contamination" value={contamText} level={contamLevel}
-                    description={
-                      contamLevel === "positive" ? "Low risk of cross-contamination reported." :
-                      contamLevel === "warning"  ? "Possible cross-contamination — confirm prep practices." :
-                      contamLevel === "negative" ? "High cross-contamination risk in this kitchen." : undefined
-                    }
-                  />
-                  <SignalCard label="Staff Knowledge" value={staffText} level={staffLevel}
-                    description={
-                      staffLevel === "positive" ? "Staff are knowledgeable about gluten-free needs." :
-                      staffLevel === "neutral"  ? "Staff have some GF awareness." :
-                      staffLevel === "negative" ? "Limited staff knowledge reported — ask for a manager." : undefined
-                    }
-                  />
-                  <SignalCard label="GF Sentiment" value={sentimentText} level={sentimentLevel}
-                    description={
-                      sentimentLevel === "positive" ? "Recent reviews highlight positive GF experiences." :
-                      sentimentLevel === "neutral"  ? "Mixed GF experiences reported by diners." :
-                      sentimentLevel === "negative" ? "Recent reviews flag concerns for GF diners." : undefined
-                    }
-                  />
-                  <SignalCard
-                    label="Illness Reports"
-                    value={sickCount > 0 ? `${sickCount} reported` : "None reported"}
-                    level={sickCount > 0 ? "negative" : "positive"}
-                    description={sickCount > 0
-                      ? `${sickCount} gluten-related illness report${sickCount !== 1 ? "s" : ""} in the past 6 months.`
-                      : "No recent gluten-related illness reports."}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Right — score gauge */}
+            <div className="flex items-center justify-center py-4 md:py-0 order-first md:order-last">
+              <SafetyGauge score={score} size="lg" showDescriptor={false} />
+            </div>
+          </div>
+        </div>
 
-            {/* Reviews section */}
+        {/* ── Risk strip — 3 primary signals ── */}
+        {d && (
+          <div
+            className="grid grid-cols-1 md:grid-cols-3 border mb-px"
+            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
+          >
+            {/* Cross-contamination */}
+            <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(contamLevel) }} />
+                Cross-Contamination
+              </div>
+              <div
+                className="font-[family-name:var(--font-display)] text-3xl mb-3"
+                style={{ color: signalColor(contamLevel), letterSpacing: "0.02em" }}
+              >
+                {contamText}
+              </div>
+              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                {contamLevel === "positive" ? "Low risk of cross-contamination reported." :
+                 contamLevel === "warning"  ? "Shared prep surfaces or fryer. Confirm practices on arrival." :
+                 contamLevel === "negative" ? "High cross-contamination risk in this kitchen." :
+                 "Contamination risk level not yet assessed."}
+              </p>
+            </div>
+
+            {/* Staff knowledge */}
+            <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(staffLevel) }} />
+                Staff Knowledge
+              </div>
+              <div
+                className="font-[family-name:var(--font-display)] text-3xl mb-3"
+                style={{ color: signalColor(staffLevel), letterSpacing: "0.02em" }}
+              >
+                {staffText}
+              </div>
+              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                {staffLevel === "positive" ? "Staff are knowledgeable and can guide GF diners confidently." :
+                 staffLevel === "neutral"  ? "Staff have some GF awareness but may need prompting." :
+                 staffLevel === "negative" ? "Limited staff knowledge reported — ask for a manager." :
+                 "Staff knowledge level not yet assessed."}
+              </p>
+            </div>
+
+            {/* Illness reports */}
+            <div className="p-7">
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: signalColor(sickCount > 0 ? "negative" : "positive") }}
+                />
+                Illness Reports
+              </div>
+              <div
+                className="font-[family-name:var(--font-display)] text-3xl mb-3"
+                style={{ color: signalColor(sickCount > 0 ? "negative" : "positive"), letterSpacing: "0.02em" }}
+              >
+                {sickCount > 0 ? `${sickCount} Reported` : "None"}
+              </div>
+              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                {sickCount > 0
+                  ? `${sickCount} gluten-related illness report${sickCount !== 1 ? "s" : ""} in the past 6 months.`
+                  : "No GF-related illness reports found in recent data."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Secondary strip — 3 supplementary signals ── */}
+        {d && (
+          <div
+            className="grid grid-cols-1 md:grid-cols-3 gap-px mb-16"
+            style={{ backgroundColor: "var(--border-subtle)" }}
+          >
+            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(labelingLevel) }} />
+                GF Labeling
+              </div>
+              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
+                {labelingText}
+              </div>
+            </div>
+
+            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(optionsLevel) }} />
+                GF Options
+              </div>
+              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
+                {gfItemCount > 0 ? `${gfItemCount} item${gfItemCount !== 1 ? "s" : ""} identified` : optionsText}
+              </div>
+            </div>
+
+            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(sentimentLevel) }} />
+                GF Sentiment
+              </div>
+              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
+                {sentimentText}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── About ── */}
+        {r.restaurant_description && (
+          <section
+            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            style={{ borderColor: "var(--border-default)" }}
+          >
+            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+              About
+            </div>
+            <CollapsibleText
+              text={r.restaurant_description.replace(/\[(high|medium|low)\]\s*$/i, "").trim()}
+              className="font-sans text-base leading-[1.6]"
+              style={{ color: "var(--text-secondary)" }}
+            />
+          </section>
+        )}
+
+        {/* ── GF Menu ── */}
+        {gfSections.length > 0 && (
+          <section
+            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            style={{ borderColor: "var(--border-default)" }}
+          >
+            <div>
+              <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+                GF Menu
+              </div>
+              <div className="font-mono text-ui-xs uppercase tracking-label mt-1" style={{ color: "var(--text-disabled)" }}>
+                Snapshot — verify on arrival
+              </div>
+            </div>
+
+            <div>
+              {/* Section header */}
+              <div className="flex justify-between items-center mb-6">
+                <div className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+                  {gfItemCount} item{gfItemCount !== 1 ? "s" : ""}
+                </div>
+                {menuData?.menu_source && (
+                  <a
+                    href={menuData.menu_source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
+                    style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
+                  >
+                    View Full Menu <span style={{ opacity: 0.7 }}>↗</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Menu groups */}
+              {gfSections.map((section, si) => (
+                <div key={si} className={si > 0 ? "mt-7" : ""}>
+                  {section.section && (
+                    <div
+                      className="flex items-center gap-3 font-mono text-ui-xs uppercase tracking-label mb-3"
+                      style={{ color: "var(--text-dim)" }}
+                    >
+                      {section.section}
+                      <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {section.items.map((item, i) => {
+                      const displayName = item.name === item.name.toUpperCase()
+                        ? item.name.charAt(0) + item.name.slice(1).toLowerCase()
+                        : item.name;
+                      return (
+                        <div
+                          key={i}
+                          className="border p-5 flex flex-col gap-1.5"
+                          style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
+                        >
+                          <div className="font-sans text-base leading-snug" style={{ color: "var(--text-primary)" }}>
+                            {displayName}
+                          </div>
+                          {item.description && (
+                            <div className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-dim)" }}>
+                              {item.description}
+                            </div>
+                          )}
+                          <div className="flex gap-1.5 mt-1">
+                            <span
+                              className="font-mono text-ui-xs uppercase tracking-label px-1.5 py-0.5 border"
+                              style={{
+                                color: SIGNAL_COLORS.positive,
+                                borderColor: SIGNAL_BORDER.positive,
+                                backgroundColor: SIGNAL_BG.positive,
+                              }}
+                            >
+                              GF
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Reviews ── */}
+        {(visit || r.google_place_id) && (
+          <section
+            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            style={{ borderColor: "var(--border-default)" }}
+          >
+            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+              Reviews
+            </div>
+
             <div className="space-y-5">
-              <div className="flex items-center gap-4">
-                <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-                  Reviews
-                </h2>
-                <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
-              </div>
-
               {visit ? (
                 <div
                   className="border p-6 space-y-5"
-                  style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
+                  style={{ borderColor: signalBorder("positive"), backgroundColor: signalBg("positive") }}
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-2.5">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--signal-positive)" }}>
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
-                      <span className="font-mono text-ui-sm uppercase tracking-editorial" style={{ color: "#4A7C59" }}>
+                      <span className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--signal-positive)" }}>
                         Verified Visit
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {visit.overall_sentiment && (
-                        <span
-                          className="font-mono text-ui-sm uppercase tracking-label px-2.5 py-1 border"
-                          style={{
-                            borderColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5940" : visit.overall_sentiment === "mixed" ? "#D4AE6240" : "var(--accent-tint-lg)",
-                            color: visit.overall_sentiment === "mostly_positive" ? "#4A7C59" : visit.overall_sentiment === "mixed" ? "#D4AE62" : "var(--accent)",
-                            backgroundColor: visit.overall_sentiment === "mostly_positive" ? "#4A7C5910" : visit.overall_sentiment === "mixed" ? "#D4AE6210" : "var(--accent-tint-xs)",
-                          }}
-                        >
-                          {visit.overall_sentiment === "mostly_positive" ? "Positive" : visit.overall_sentiment === "mixed" ? "Mixed" : "Negative"}
-                        </span>
-                      )}
+                      {visit.overall_sentiment && (() => {
+                        const sentLevel: SignalLevel =
+                          visit.overall_sentiment === "mostly_positive" ? "positive" :
+                          visit.overall_sentiment === "mixed"           ? "neutral"  : "negative";
+                        return (
+                          <span
+                            className="font-mono text-ui-sm uppercase tracking-label px-2.5 py-1 border"
+                            style={{
+                              borderColor: signalBorder(sentLevel),
+                              color: signalColor(sentLevel),
+                              backgroundColor: signalBg(sentLevel),
+                            }}
+                          >
+                            {visit.overall_sentiment === "mostly_positive" ? "Positive" :
+                             visit.overall_sentiment === "mixed" ? "Mixed" : "Negative"}
+                          </span>
+                        );
+                      })()}
                       {visit.visit_date && (
-                        <span className="font-mono text-ui-sm uppercase tracking-snug text-text-dim">
+                        <span className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
                           {new Date(visit.visit_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Notes */}
                   {visit.notes && (
-                    <p className="text-ui-2xl leading-[1.7] text-text-secondary">
+                    <p className="text-ui-2xl leading-[1.7]" style={{ color: "var(--text-secondary)" }}>
                       {visit.notes}
                     </p>
                   )}
 
-                  {/* Signal chips */}
                   {(() => {
                     const chipLevel = (field: string, value: string): SignalLevel => {
                       if (field === "GF Labeling") return value === "clear" ? "positive" : value === "partial" ? "warning" : value === "none" ? "negative" : "unknown";
@@ -846,9 +903,9 @@ export default async function RestaurantPage({
                           return (
                             <span
                               key={label}
-                              className="font-mono text-ui-md uppercase tracking-snug px-2.5 py-1 border"
+                              className="font-mono text-ui-md uppercase tracking-label px-2.5 py-1 border"
                               style={{
-                                borderColor: `${signalColor(level)}40`,
+                                borderColor: signalBorder(level),
                                 color: signalColor(level),
                                 backgroundColor: signalBg(level),
                               }}
@@ -862,221 +919,142 @@ export default async function RestaurantPage({
                   })()}
                 </div>
               ) : (
-                <p className="font-mono text-ui-md text-text-dim">
+                <p className="font-mono text-ui-md" style={{ color: "var(--text-dim)" }}>
                   No verified reviews yet.
                 </p>
               )}
 
-              {/* Write a review — verified reviewers only */}
               {r.google_place_id && (
-                <ReviewForm
-                  restaurantId={r.id}
-                  googlePlaceId={r.google_place_id}
-                />
+                <ReviewForm restaurantId={r.id} googlePlaceId={r.google_place_id} />
               )}
             </div>
+          </section>
+        )}
 
-            {/* Data confidence notice */}
-            {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
-              <p
-                className="font-mono text-ui-sm uppercase tracking-editorial border-l-2 pl-4 py-1"
-                style={{
-                  borderColor: "var(--text-disabled)",
-                  color: "var(--text-tertiary)",
-                }}
-              >
-                {d.data_quality.confidence === "low"
-                  ? "Limited data — scores are based on partial information and may not fully reflect this restaurant's practices."
-                  : "Moderate confidence — some signals are inferred. Confirm details directly with the restaurant."}
-              </p>
-            )}
-
-            {/* ── Exploration layer — GF menu items + About ── */}
-            {(gfSections.length > 0 || r.restaurant_description) && (
-              <div className="pt-6 mt-2 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-                <p className="font-mono text-ui-xs uppercase tracking-stamp mb-8" style={{ color: "oklch(0.35 0 0)" }}>
-                  More about this restaurant
-                </p>
-
-                <div className="space-y-10">
-                  {/* Verified GF menu items */}
-                  {gfSections.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-4 mb-1">
-                        <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-dim">
-                          Gluten-Free Items
-                        </h2>
-                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
-                        <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "#7ECF9A" }}>
-                          {gfItemCount} item{gfItemCount !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      {menuData?.menu_source && (
-                        <div className="flex items-center justify-between gap-4 mb-4 mt-2">
-                          <p className="font-mono text-ui-sm text-[oklch(0.42_0_0)] leading-relaxed">
-                            Menu snapshot — items and availability may have changed.
-                          </p>
-                          <a
-                            href={menuData.menu_source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors text-text-tertiary hover:text-text-primary"
-                            style={{ borderColor: "var(--border-emphasis)", backgroundColor: "var(--surface-elevated)" }}
-                          >
-                            View full menu →
-                          </a>
-                        </div>
-                      )}
-                      <div>
-                        {gfSections.map((section, si) => (
-                          <div key={si} className={si > 0 ? "mt-5" : ""}>
-                            {section.section && (
-                              <p
-                                className="font-mono text-ui-xs uppercase tracking-editorial mb-1 pb-2 border-b"
-                                style={{ color: "var(--text-dim)", borderColor: "var(--border-subtle)" }}
-                              >
-                                {section.section}
-                              </p>
-                            )}
-                            {section.items.map((item, i) => (
-                              <GfMenuItemRow key={i} item={item} />
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* About — collapsible */}
-                  {r.restaurant_description && (
-                    <div>
-                      <div className="flex items-center gap-4 mb-4">
-                        <p className="font-mono text-ui-sm uppercase tracking-label text-text-dim">
-                          About {r.name}
-                        </p>
-                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
-                      </div>
-                      <CollapsibleText
-                        text={r.restaurant_description.replace(/\[(high|medium|low)\]\s*$/i, "").trim()}
-                        className="text-ui-2xl leading-[1.75]"
-                        style={{ color: "var(--text-label)" }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+        {/* ── Data confidence notice ── */}
+        {d?.data_quality?.confidence && d.data_quality.confidence !== "high" && (
+          <div className="py-6 border-t" style={{ borderColor: "var(--border-default)" }}>
+            <p
+              className="font-mono text-ui-sm uppercase tracking-label border-l-2 pl-4 py-1"
+              style={{ borderColor: "var(--text-disabled)", color: "var(--text-tertiary)" }}
+            >
+              {d.data_quality.confidence === "low"
+                ? "Limited data — scores are based on partial information and may not fully reflect this restaurant's practices."
+                : "Moderate confidence — some signals are inferred. Confirm details directly with the restaurant."}
+            </p>
           </div>
+        )}
 
-          {/* ── Right sidebar ── */}
-          <div
-            className="border p-6 space-y-6 md:sticky md:top-24"
-            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
+        {/* ── Logistics ── */}
+        {(r.address || r.phone || r.website_url || r.google_maps_url || (hours && hours.length > 0)) && (
+          <section
+            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            style={{ borderColor: "var(--border-default)" }}
           >
-            <h2 className="font-mono text-ui-sm uppercase tracking-label text-text-tertiary">
-              Info
-            </h2>
+            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+              Logistics
+            </div>
 
-            {/* Address */}
-            {r.address && (
-              <div className="flex gap-3">
-                <span className="text-text-label mt-0.5 shrink-0"><IconPin /></span>
-                <div>
-                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Location</p>
-                  <p className="font-mono text-ui-lg text-text-secondary leading-relaxed">{r.address}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Phone */}
-            {r.phone && (
-              <div className="flex gap-3">
-                <span className="text-text-label mt-0.5 shrink-0"><IconPhone /></span>
-                <div>
-                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Phone</p>
-                  <a
-                    href={`tel:${r.phone}`}
-                    className="font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
-                  >
-                    {r.phone}
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* Links */}
-            {(r.website_url || r.google_maps_url) && (
-              <div className="flex gap-3">
-                <span className="text-text-label mt-0.5 shrink-0"><IconGlobe /></span>
-                <div className="space-y-1.5">
-                  <p className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-1">Links</p>
-                  {r.website_url && (
-                    <a
-                      href={r.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
-                    >
-                      Website ↗
-                    </a>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              {(r.address || r.phone) && (
+                <div className="flex flex-col gap-5">
+                  {r.address && (
+                    <div>
+                      <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
+                        Address
+                      </div>
+                      <div className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                        {r.address}
+                      </div>
+                    </div>
                   )}
-                  {r.google_maps_url && (
-                    <a
-                      href={r.google_maps_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block font-mono text-ui-lg text-text-secondary hover:text-accent transition-colors"
-                    >
-                      Google Maps ↗
-                    </a>
+                  {r.phone && (
+                    <div>
+                      <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
+                        Phone
+                      </div>
+                      <a
+                        href={`tel:${r.phone}`}
+                        className="font-mono text-ui-md border-b pb-0.5 transition-colors"
+                        style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
+                      >
+                        {r.phone}
+                      </a>
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Hours */}
-            {hours && hours.length > 0 && (
-              <div className="flex gap-3">
-                <span className="text-text-label mt-0.5 shrink-0"><IconClock /></span>
-                <div className="w-full">
-                  <h3 className="font-mono text-ui-md uppercase tracking-label text-text-tertiary mb-3">Hours</h3>
-                  <div className="space-y-2">
+              {hours && hours.length > 0 && (
+                <div>
+                  <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
+                    Hours
+                  </div>
+                  <div className="space-y-1.5">
                     {hours.map((line) => {
                       const [day, ...rest] = line.split(": ");
                       return (
                         <div key={line} className="flex justify-between gap-4">
-                          <span className="font-mono text-ui-md tracking-[0.02em] text-text-secondary">
-                            {day}
-                          </span>
-                          <span className="font-mono text-ui-md text-text-secondary text-right">
-                            {rest.join(": ")}
-                          </span>
+                          <span className="font-mono text-ui-md" style={{ color: "var(--text-secondary)" }}>{day}</span>
+                          <span className="font-mono text-ui-md text-right" style={{ color: "var(--text-secondary)" }}>{rest.join(": ")}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
 
-        </div>
-      </section>
+              {(r.website_url || r.google_maps_url) && (
+                <div>
+                  <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
+                    Links
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {r.website_url && (
+                      <a
+                        href={r.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-ui-md border-b pb-0.5 transition-colors self-start"
+                        style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
+                      >
+                        Website ↗
+                      </a>
+                    )}
+                    {r.google_maps_url && (
+                      <a
+                        href={r.google_maps_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-ui-md border-b pb-0.5 transition-colors self-start"
+                        style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
+                      >
+                        Get Directions ↗
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
-      {/* ── Neighborhood links (S6b) ── */}
+      </div>
+
+      {/* ── Neighborhood links ── */}
       {r.neighborhood && (
         <section className="px-6 py-8 border-t" style={{ borderColor: "var(--border-subtle)" }}>
           <div className="max-w-6xl mx-auto flex flex-wrap gap-3">
             <Link
               href={`/gluten-free/${r.city.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}/${r.neighborhood.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`}
-              className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
+              className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
               style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
             >
               More GF restaurants in {r.neighborhood} →
             </Link>
             <Link
               href={`/rankings?city=${encodeURIComponent(r.city)}`}
-              className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
+              className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-colors duration-150 hover:border-accent hover:text-accent"
               style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
             >
               All GF restaurants in {r.city} →
