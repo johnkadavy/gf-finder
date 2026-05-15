@@ -448,7 +448,7 @@ export default async function RestaurantPage({
                 href={r.google_maps_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
                 style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
               >
                 Directions <span style={{ opacity: 0.7 }}>↗</span>
@@ -459,7 +459,7 @@ export default async function RestaurantPage({
                 href={r.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
                 style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
               >
                 Website <span style={{ opacity: 0.7 }}>↗</span>
