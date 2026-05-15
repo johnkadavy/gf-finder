@@ -48,6 +48,7 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "cc_risk_json");
     url.searchParams.append("fields[]", "restaurant_description");
     url.searchParams.append("fields[]", "menu_items");
+    url.searchParams.append("fields[]", "reservation_link");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -176,6 +177,8 @@ async function sync() {
       }
     }
 
+    const reservationLink = parseAiText(record.fields["reservation_link"]);
+
     const { error } = await supabase
       .from("restaurants")
       .update({
@@ -186,6 +189,7 @@ async function sync() {
         ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
         ...(restaurantDescription ? { restaurant_description: restaurantDescription } : {}),
         ...(menuItems ? { menu_items: menuItems } : {}),
+        ...(reservationLink ? { reservation_link: reservationLink } : {}),
       })
       .eq("google_place_id", googlePlaceId);
 
