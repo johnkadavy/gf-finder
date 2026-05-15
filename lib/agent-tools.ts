@@ -13,6 +13,9 @@ export type SearchRestaurantsInput = {
   has_dedicated_fryer?: boolean;
   has_gf_labels?: boolean;
   limit?: number;
+  lat?: number;
+  lng?: number;
+  radius_miles?: number;
 };
 
 export type GetRestaurantDetailsInput = {
@@ -170,6 +173,17 @@ export async function searchRestaurants(
     q = q.eq("dossier->operations->dedicated_equipment->>fryer", "true");
   if (input.has_gf_labels)
     q = q.eq("dossier->menu->>gf_labeling", "clear");
+
+  if (input.lat !== undefined && input.lng !== undefined) {
+    const radius = input.radius_miles ?? 0.5;
+    const latDelta = radius / 69.0;
+    const lngDelta = radius / (69.0 * Math.cos(input.lat * (Math.PI / 180)));
+    q = q
+      .gte("lat", input.lat - latDelta)
+      .lte("lat", input.lat + latDelta)
+      .gte("lng", input.lng - lngDelta)
+      .lte("lng", input.lng + lngDelta);
+  }
 
   const { data, count } = await q;
   const rows = (data ?? []) as DbRow[];

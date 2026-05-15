@@ -42,7 +42,8 @@ RULES:
 8. Format restaurant recommendations clearly: name and score first, then the safety signals most relevant to the question.
 9. Always format restaurant names as markdown links using the url field from the tool result, e.g. [Soda Club](/restaurant/123). Every restaurant name must be a link.
 10. Never say "in our database", "in our system", or similar. Speak as if you simply know this — e.g. "one of the best spots I know" or "haven't seen great scores there."
-11. When a request is too vague to return useful results (only a location, no cuisine or meal type), use the clarify tool to ask ONE short question before searching. If the request already includes a cuisine, meal type, food type, or restaurant name, skip clarify and search immediately.`;
+11. When a request is too vague to return useful results (only a location, no cuisine or meal type), use the clarify tool to ask ONE short question before searching. If the request already includes a cuisine, meal type, food type, or restaurant name, skip clarify and search immediately.
+12. GEOGRAPHIC SEARCH: When a user describes a location by landmark, intersection, or geographic range (e.g. "near Penn Station", "around Times Square", "between 42nd and 50th street"), use lat/lng/radius_miles instead of neighborhood. Use your knowledge of NYC geography to convert the description to coordinates. For a range like "Penn Station to 50th street", pick the midpoint and set radius_miles to cover the full span. Typical radii: 0.25 mi = a few blocks, 0.5 mi = ~10 block radius, 1.0 mi = a wide swath. You can run multiple searches with different center points if the area is large or oddly shaped.`;
 
 // Cache the system prompt — same text every request, 5-min TTL saves input token processing
 const SYSTEM_CACHED = [
@@ -81,6 +82,9 @@ const TOOLS: Anthropic.Tool[] = [
           description: "Filter for restaurants with clear GF menu labeling",
         },
         limit: { type: "number", description: "Max results to return (default 5, max 10)" },
+        lat: { type: "number", description: "Latitude of the center point for geographic search" },
+        lng: { type: "number", description: "Longitude of the center point for geographic search" },
+        radius_miles: { type: "number", description: "Search radius in miles around lat/lng (default 0.5). Use 0.25–0.5 for a few blocks, 0.75–1.0 for a wider area." },
       },
     },
   },
