@@ -67,6 +67,7 @@ type Restaurant = {
   gf_food_categories: string[] | null;
   restaurant_description: string | null;
   menu_items: MenuData | null;
+  reservation_link: string | null;
 };
 
 type VerifiedVisit = {
@@ -212,7 +213,7 @@ async function resolveRestaurant(slugOrId: string) {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items")
+    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
     .eq("slug", slugOrId)
     .single();
 
@@ -461,6 +462,17 @@ export default async function RestaurantPage({
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
                 Website <span style={{ opacity: 0.7 }}>↗</span>
+              </a>
+            )}
+            {r.reservation_link && (
+              <a
+                href={r.reservation_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
+                style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
+              >
+                Reserve <span style={{ opacity: 0.7 }}>↗</span>
               </a>
             )}
           </div>
