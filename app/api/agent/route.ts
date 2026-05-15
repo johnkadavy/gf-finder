@@ -239,18 +239,42 @@ export async function POST(request: Request) {
     { role: "user", content: query },
   ];
 
-  const referencedRestaurants: Array<{ id: number; name: string }> = [];
+  type RestaurantRef = {
+    id: number;
+    name: string;
+    url: string;
+    score: number | null;
+    score_label: string;
+    cuisine: string | null;
+    neighborhood: string | null;
+    price_level: number | null;
+  };
+
+  const referencedRestaurants: RestaurantRef[] = [];
 
   function trackRestaurants(toolName: string, result: unknown) {
     if (toolName === "search_restaurants") {
-      const r = result as { results?: Array<{ id: number; name: string }> };
-      r.results?.forEach(({ id, name }) => {
-        if (!referencedRestaurants.find((x) => x.id === id)) referencedRestaurants.push({ id, name });
+      const r = result as { results?: RestaurantRef[] };
+      r.results?.forEach((item) => {
+        if (!referencedRestaurants.find((x) => x.id === item.id)) {
+          referencedRestaurants.push({
+            id: item.id, name: item.name, url: item.url,
+            score: item.score, score_label: item.score_label,
+            cuisine: item.cuisine, neighborhood: item.neighborhood,
+            price_level: item.price_level,
+          });
+        }
       });
     } else if (toolName === "get_restaurant_details") {
-      const r = result as { restaurant?: { id: number; name: string } | null };
+      const r = result as { restaurant?: RestaurantRef | null };
       if (r.restaurant && !referencedRestaurants.find((x) => x.id === r.restaurant!.id)) {
-        referencedRestaurants.push({ id: r.restaurant.id, name: r.restaurant.name });
+        const item = r.restaurant;
+        referencedRestaurants.push({
+          id: item.id, name: item.name, url: item.url,
+          score: item.score, score_label: item.score_label,
+          cuisine: item.cuisine, neighborhood: item.neighborhood,
+          price_level: item.price_level,
+        });
       }
     }
   }

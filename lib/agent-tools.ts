@@ -38,6 +38,7 @@ export type RestaurantSummary = {
   cuisine: string | null;
   score: number | null;
   score_label: string;
+  price_level: number | null;
   summary: string | null;
   place_type: string[] | null;
   gf_food_categories: string[] | null;
@@ -86,6 +87,7 @@ type DbRow = {
   cuisine: string | null;
   score: number | null;
   slug: string | null;
+  price_level: number | null;
   place_type: string[] | null;
   gf_food_categories: string[] | null;
   website_url: string | null;
@@ -108,7 +110,7 @@ type DbRow = {
 };
 
 const DB_SELECT =
-  "id, name, city, neighborhood, cuisine, score, slug, place_type, gf_food_categories, website_url, google_maps_url, dossier";
+  "id, name, city, neighborhood, cuisine, score, slug, price_level, place_type, gf_food_categories, website_url, google_maps_url, dossier";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -122,6 +124,7 @@ function toSummary(r: DbRow): RestaurantSummary {
     cuisine: r.cuisine,
     score: r.score,
     score_label: label,
+    price_level: r.price_level,
     summary: r.dossier?.summary?.short_summary ?? null,
     place_type: r.place_type,
     gf_food_categories: r.gf_food_categories,

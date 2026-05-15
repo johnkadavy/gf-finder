@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { marked, Renderer } from "marked";
+import { getGaugeColor } from "@/lib/score";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -13,7 +15,16 @@ const SUGGESTED_QUERIES = [
   "Quick GF lunch options in Midtown",
 ];
 
-type RestaurantRef = { id: number; name: string };
+type RestaurantRef = {
+  id: number;
+  name: string;
+  url: string;
+  score: number | null;
+  score_label: string;
+  cuisine: string | null;
+  neighborhood: string | null;
+  price_level: number | null;
+};
 
 type Message = {
   role: "user" | "assistant";
@@ -117,6 +128,60 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Restaurant cards ─────────────────────────────────────────────────────────
+
+const PRICE = ["Free", "$", "$$", "$$$", "$$$$"];
+
+function RestaurantCards({ restaurants }: { restaurants: RestaurantRef[] }) {
+  if (restaurants.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2 mt-3">
+      {restaurants.map((r) => {
+        const color = getGaugeColor(r.score);
+        const meta = [r.cuisine, r.neighborhood, r.price_level != null ? PRICE[r.price_level] : null]
+          .filter(Boolean)
+          .join(" · ");
+        return (
+          <Link
+            key={r.id}
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block border px-4 py-3 transition-colors duration-150"
+            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; e.currentTarget.style.backgroundColor = "var(--surface-elevated)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.backgroundColor = "var(--surface-raised)"; }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-ui-lg" style={{ color: "var(--text-primary)" }}>
+                {r.name}
+              </span>
+              {r.score !== null && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className="font-[family-name:var(--font-display)] text-2xl leading-none"
+                    style={{ color }}
+                  >
+                    {Math.round(r.score)}
+                  </span>
+                  <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color }}>
+                    {r.score_label}
+                  </span>
+                </div>
+              )}
+            </div>
+            {meta && (
+              <p className="font-mono text-ui-sm uppercase tracking-label mt-1" style={{ color: "var(--text-dim)" }}>
+                {meta}
+              </p>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -368,6 +433,9 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                     >
                       {renderContent(msg.content)}
                     </div>
+                    {msg.restaurants && msg.restaurants.length > 0 && (
+                      <RestaurantCards restaurants={msg.restaurants} />
+                    )}
                   </div>
                 </div>
               )
