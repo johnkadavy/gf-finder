@@ -441,6 +441,7 @@ export async function syncAirtableRecordToSupabase(
   }
 
   const reservationLink = getAIFieldValue(fields["reservation_link"]) || null;
+  const restaurantDescription = getAIFieldValue(fields["restaurant_description"]) || null;
 
   const { error: syncError } = await supabaseServer
     .from("restaurants")
@@ -452,6 +453,7 @@ export async function syncAirtableRecordToSupabase(
       ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
       ...(menuItems ? { menu_items: menuItems } : {}),
       ...(reservationLink ? { reservation_link: reservationLink } : {}),
+      ...(restaurantDescription ? { restaurant_description: restaurantDescription } : {}),
     })
     .eq("google_place_id", placeId);
 
