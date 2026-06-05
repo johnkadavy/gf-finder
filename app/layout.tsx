@@ -93,7 +93,7 @@ export default function RootLayout({
           </div>
         </header>
 
-        <div className="min-h-screen pb-16 md:pb-0">{children}</div>
+        <div className="min-h-dvh pb-16 md:pb-0">{children}</div>
         <Analytics />
         <SpeedInsights />
         <Script id="microsoft-clarity" strategy="afterInteractive">

@@ -93,7 +93,11 @@ export function Nav() {
       {/* Mobile bottom tab bar */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
-        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)" }}
+        style={{
+          backgroundColor: "var(--surface-base)",
+          borderColor: "var(--border-subtle)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
       >
         {TABS.map(({ href, label, Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
