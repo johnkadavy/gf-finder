@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
@@ -27,6 +27,13 @@ const bebasNeue = Bebas_Neue({
   variable: "--font-display",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
