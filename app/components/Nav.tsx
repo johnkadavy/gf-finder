@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 
 const linkClass =
@@ -54,8 +54,6 @@ const TABS = [
 export function Nav() {
   const pathname = usePathname();
   const [loggedIn, setLoggedIn] = useState(false);
-  const mobileNavRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => setLoggedIn(!!user));
@@ -63,26 +61,6 @@ export function Nav() {
       setLoggedIn(!!session?.user);
     });
     return () => subscription.unsubscribe();
-  }, []);
-
-  // iOS Safari: position: fixed elements don't track the visual viewport during
-  // browser chrome animations. Listen to visualViewport and update bottom manually.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      const nav = mobileNavRef.current;
-      if (!nav) return;
-      const offset = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-      nav.style.bottom = `${offset}px`;
-    };
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    update();
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
   }, []);
 
   return (
@@ -113,9 +91,12 @@ export function Nav() {
 
       {/* Mobile bottom tab bar */}
       <nav
-        ref={mobileNavRef}
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
-        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)" }}
+        style={{
+          backgroundColor: "var(--surface-base)",
+          borderColor: "var(--border-subtle)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
       >
         {TABS.map(({ href, label, Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
