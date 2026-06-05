@@ -187,7 +187,6 @@
     background-color: oklch(0.08 0 0);
     color: oklch(0.95 0 0);
     font-family: var(--font-sans), sans-serif;
-    overflow-x: hidden;
   }
   ::selection {
     background: var(--accent);
