@@ -90,20 +90,10 @@ export function Nav() {
         )}
       </nav>
 
-      {/* Fill safe area below nav with matching background */}
-      <div
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40"
-        style={{ height: "env(safe-area-inset-bottom)", backgroundColor: "var(--surface-base)" }}
-      />
-
-      {/* Mobile bottom tab bar — sits above safe area, not stretched by it */}
+      {/* Mobile bottom tab bar */}
       <nav
-        className="md:hidden fixed left-0 right-0 z-50 flex border-t"
-        style={{
-          bottom: "env(safe-area-inset-bottom)",
-          backgroundColor: "var(--surface-base)",
-          borderColor: "var(--border-subtle)",
-        }}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
+        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)" }}
       >
         {TABS.map(({ href, label, Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);

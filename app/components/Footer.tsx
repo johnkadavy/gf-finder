@@ -8,7 +8,7 @@ export function Footer() {
 
   return (
     <footer
-      className="border-t py-10 px-8"
+      className="border-t pt-10 pb-24 md:py-10 px-8"
       style={{ borderColor: "var(--border-default)" }}
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-screen-xl mx-auto gap-6">
