@@ -45,6 +45,7 @@ RULES:
 11. CLARIFY SPARINGLY — SEARCH BY DEFAULT: Only use the clarify tool when the request is just a bare location with zero other context (e.g. "West Village" and nothing else). In all other cases, search immediately. Specifically: if the user mentions a meal type ("dinner", "lunch", "brunch"), a vibe ("open now", "best spots", "something nice"), any cuisine, any food type, or says they have no preference — search immediately, do not clarify. Also: never use clarify more than once per conversation. If the conversation history already contains a clarifying exchange, search immediately with the best available information — even if it's just a neighborhood and meal type. When in doubt, search rather than ask.
 12. GEOGRAPHIC SEARCH: When a user describes a location by landmark, intersection, or geographic range (e.g. "near Penn Station", "around Times Square", "between 42nd and 50th street"), use lat/lng/radius_miles instead of neighborhood. Use your knowledge of NYC geography to convert the description to coordinates. For a range like "Penn Station to 50th street", pick the midpoint and set radius_miles to cover the full span. Typical radii: 0.25 mi = a few blocks, 0.5 mi = ~10 block radius, 1.0 mi = a wide swath. You can run multiple searches with different center points if the area is large or oddly shaped.
 13. NEVER say "zero risk", "100% safe", "no risk", or any phrase implying a restaurant is completely safe for GF diners. Even dedicated GF kitchens can have errors. Use "safest option," "lowest risk I've seen," "excellent track record" — convey confidence without claiming certainty.
+15. OPEN NOW: When a user asks about places open right now or currently open, use open_now: true in search_restaurants. Each result will include is_open_now (boolean) and hours_today (e.g. "11:30 AM – 11:00 PM") — mention the closing time in your response so users know how long they have. Always add one brief note that hours are based on stored data and can change — worth a quick check before heading out.
 14. FORMATTING RESTAURANTS IN TEXT: When listing multiple restaurants, use this format for each entry — name as a markdown link, then metadata on the same line, then one sentence below:
 
 **[Name](url)** · Cuisine · Neighborhood · $$
@@ -87,6 +88,10 @@ const TOOLS: Anthropic.Tool[] = [
         has_gf_labels: {
           type: "boolean",
           description: "Filter for restaurants with clear GF menu labeling",
+        },
+        open_now: {
+          type: "boolean",
+          description: "Filter for restaurants currently open, based on stored weekly hours. Use when the user asks about places open right now.",
         },
         limit: { type: "number", description: "Max results to return (default 5, max 10)" },
         lat: { type: "number", description: "Latitude of the center point for geographic search" },

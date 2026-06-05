@@ -12,6 +12,7 @@ export type SearchRestaurantsInput = {
   min_score?: number;
   has_dedicated_fryer?: boolean;
   has_gf_labels?: boolean;
+  open_now?: boolean;
   limit?: number;
   lat?: number;
   lng?: number;
@@ -47,6 +48,8 @@ export type RestaurantSummary = {
   has_gf_labels: boolean;
   cross_contamination_risk: string | null;
   sick_reports_recent: number;
+  is_open_now: boolean | null;
+  hours_today: string | null;
   url: string;
 };
 
@@ -79,6 +82,16 @@ export type NeighborhoodOverview = {
 
 // ─── Shared DB row type ──────────────────────────────────────────────────────
 
+type OpeningHoursPeriod = {
+  open: { day: number; hour: number; minute: number };
+  close: { day: number; hour: number; minute: number };
+};
+
+type OpeningHours = {
+  periods?: OpeningHoursPeriod[];
+  weekdayDescriptions?: string[];
+} | null;
+
 type DbRow = {
   id: number;
   name: string;
@@ -93,6 +106,7 @@ type DbRow = {
   gf_food_categories: string[] | null;
   website_url: string | null;
   google_maps_url: string | null;
+  opening_hours: OpeningHours;
   dossier: {
     summary?: { short_summary?: string };
     menu?: { gf_labeling?: string; gf_options_level?: string };
@@ -111,11 +125,44 @@ type DbRow = {
 };
 
 const DB_SELECT =
-  "id, name, city, neighborhood, cuisine, score, slug, price_level, place_type, gf_food_categories, website_url, google_maps_url, dossier";
+  "id, name, city, neighborhood, cuisine, score, slug, price_level, place_type, gf_food_categories, website_url, google_maps_url, opening_hours, dossier";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const PRICE_DISPLAY = ["Free", "$", "$$", "$$$", "$$$$"];
+
+// Returns current day (0=Sun) and minutes-since-midnight in NYC local time.
+function getNycNow(): { day: number; totalMinutes: number } {
+  const nyStr = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  const nyDate = new Date(nyStr);
+  return { day: nyDate.getDay(), totalMinutes: nyDate.getHours() * 60 + nyDate.getMinutes() };
+}
+
+function isOpenNow(hours: OpeningHours): boolean | null {
+  if (!hours?.periods?.length) return null;
+  const { day, totalMinutes } = getNycNow();
+  for (const p of hours.periods) {
+    const openMin = p.open.hour * 60 + p.open.minute;
+    const closeMin = p.close.hour * 60 + p.close.minute;
+    if (p.open.day === p.close.day) {
+      if (day === p.open.day && totalMinutes >= openMin && totalMinutes < closeMin) return true;
+    } else {
+      // Overnight period (e.g. open Fri 10pm, close Sat 2am)
+      if (day === p.open.day && totalMinutes >= openMin) return true;
+      if (day === p.close.day && totalMinutes < closeMin) return true;
+    }
+  }
+  return false;
+}
+
+function getTodayHours(hours: OpeningHours): string | null {
+  if (!hours?.weekdayDescriptions?.length) return null;
+  // weekdayDescriptions: index 0 = Monday … 6 = Sunday; JS getDay: 0 = Sunday
+  const idx = (getNycNow().day + 6) % 7;
+  const desc = hours.weekdayDescriptions[idx];
+  if (!desc) return null;
+  return desc.replace(/^[^:]+:\s*/, ""); // strip "Monday: " prefix
+}
 
 function toSummary(r: DbRow): RestaurantSummary {
   const { label } = getScoreLabel(r.score);
@@ -136,6 +183,8 @@ function toSummary(r: DbRow): RestaurantSummary {
     has_gf_labels: r.dossier?.menu?.gf_labeling === "clear",
     cross_contamination_risk: r.dossier?.operations?.cross_contamination_risk ?? null,
     sick_reports_recent: r.dossier?.reviews?.sick_reports_recent ?? 0,
+    is_open_now: isOpenNow(r.opening_hours),
+    hours_today: getTodayHours(r.opening_hours),
     url: r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`,
   };
 }
@@ -161,14 +210,16 @@ function toDetails(r: DbRow): RestaurantDetails {
 export async function searchRestaurants(
   input: SearchRestaurantsInput,
 ): Promise<{ results: RestaurantSummary[]; total_found: number }> {
-  const limit = Math.min(input.limit ?? 5, 10);
+  const requestedLimit = Math.min(input.limit ?? 5, 10);
+  // Fetch extra rows when filtering by open_now so we have enough after JS-side filtering
+  const fetchLimit = input.open_now ? requestedLimit * 4 : requestedLimit;
 
   let q = supabase
     .from("restaurants")
-    .select(DB_SELECT, { count: "exact" })
+    .select(DB_SELECT, input.open_now ? undefined : { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false })
-    .limit(limit);
+    .limit(fetchLimit);
 
   if (input.city)          q = q.ilike("city", input.city);
   if (input.neighborhood)  q = q.ilike("neighborhood", `%${input.neighborhood}%`);
@@ -193,11 +244,15 @@ export async function searchRestaurants(
   }
 
   const { data, count } = await q;
-  const rows = (data ?? []) as DbRow[];
+  let rows = (data ?? []) as DbRow[];
+
+  if (input.open_now) {
+    rows = rows.filter((r) => isOpenNow(r.opening_hours) === true).slice(0, requestedLimit);
+  }
 
   return {
     results: rows.map(toSummary),
-    total_found: count ?? 0,
+    total_found: input.open_now ? rows.length : (count ?? 0),
   };
 }
 
