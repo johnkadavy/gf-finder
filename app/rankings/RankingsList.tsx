@@ -113,7 +113,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
           <Link
             key={restaurant.id}
             href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
-            className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-3 md:gap-10 py-4 md:py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-surface-raised"
+            className="group grid grid-cols-[3rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-3 md:gap-10 py-4 md:py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-surface-raised"
             style={{
               borderColor: "var(--border-subtle)",
               borderLeft: `2px solid ${color}`,
@@ -134,16 +134,22 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
             {/* Name + location */}
             <div className="min-w-0">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span
-                  className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate"
-                  style={{
-                    fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
-                    letterSpacing: "0.02em",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {restaurant.name}
-                </span>
+                <div className="relative min-w-0">
+                  <span
+                    className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate"
+                    style={{
+                      fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
+                      letterSpacing: "0.02em",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {restaurant.name}
+                  </span>
+                  <span
+                    className="absolute bottom-0 left-0 h-px w-0 group-hover:w-full transition-all duration-300"
+                    style={{ backgroundColor: color }}
+                  />
+                </div>
                 {isNewRestaurant(restaurant.source, restaurant.ingested_at) && (
                   <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
                     New
