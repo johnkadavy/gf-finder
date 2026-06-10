@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
+import { getGaugeColor, type ScoringDossier } from "@/lib/score";
 import { isNewRestaurant, formatLocation } from "@/lib/utils";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { rankingsUrl, type Filters, EXPERIENCE_OPTIONS } from "./utils";
 import { ExpandableText } from "./ExpandableText";
+import { ScoreBadge } from "@/app/components/ScoreBadge";
 
 const DEFAULT_LIMIT = 25;
 
@@ -106,7 +107,6 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
 
       {restaurants.map((restaurant, index) => {
         const color = getGaugeColor(restaurant.score);
-        const { label } = getScoreLabel(restaurant.score);
         const rank = index + 1;
 
         return (
@@ -172,20 +172,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
             </div>
 
             {/* Score */}
-            <div className="flex flex-col items-end shrink-0 pt-0.5">
-              <span
-                className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.75rem)", color }}
-              >
-                {Math.round(restaurant.score)}
-              </span>
-              <span
-                className="hidden md:block font-mono text-ui-sm uppercase tracking-label mt-1 text-right"
-                style={{ color: `${color}cc` }}
-              >
-                {label}
-              </span>
-            </div>
+            <ScoreBadge score={restaurant.score} />
           </Link>
         );
       })}

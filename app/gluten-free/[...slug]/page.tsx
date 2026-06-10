@@ -2,10 +2,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
-import { getGaugeColor, getScoreLabel } from "@/lib/score";
+import { getGaugeColor } from "@/lib/score";
+import type { ScoringDossier } from "@/lib/score";
+import { ScoreBadge } from "@/app/components/ScoreBadge";
 import { isNewRestaurant } from "@/lib/utils";
+import { IndexTable } from "./IndexTable";
+import type { TableRestaurant } from "./IndexTable";
+import { StatStrip } from "./StatStrip";
 
 export const revalidate = 86400; // regenerate at most once per 24 hours
+
+const TABLE_LAYOUT_MIN_RESULTS = 8;
 
 // ── Slug helpers ─────────────────────────────────────────────────────────────
 
@@ -222,7 +229,9 @@ type RestaurantRow = {
   slug: string | null;
   neighborhood: string | null;
   cuisine: string | null;
-  dossier: { summary?: { short_summary?: string } } | null;
+  website_url: string | null;
+  google_maps_url: string | null;
+  dossier: (ScoringDossier & { summary?: { short_summary?: string } }) | null;
   source: string | null;
   ingested_at: string | null;
 };
@@ -294,7 +303,7 @@ export default async function LandingPage({ params }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query: any = supabase
       .from("restaurants")
-      .select("id, name, score, slug, neighborhood, cuisine, dossier, source, ingested_at")
+      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dossier, source, ingested_at")
       .not("score", "is", null)
       .eq("city", city)
       .gte("score", 75)
@@ -305,6 +314,8 @@ export default async function LandingPage({ params }: Props) {
     const { data } = await query;
     const restaurants = (data ?? []) as RestaurantRow[];
     if (restaurants.length < 5) notFound();
+
+    const isTableLayout = restaurants.length >= TABLE_LAYOUT_MIN_RESULTS;
 
     const h1 = `${catDef.cityLabelPlural} in ${city}`;
     const otherCategories = Object.entries(CATEGORIES).filter(([cs]) => cs !== catSlug);
@@ -327,14 +338,10 @@ export default async function LandingPage({ params }: Props) {
 
         {/* ── Hero ── */}
         <section
-          className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
+          className="border-b px-4 md:px-8 py-14 md:py-20"
           style={{ borderColor: "var(--border-default)" }}
         >
-          <div
-            className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-            style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
-          />
-          <div className="max-w-4xl mx-auto">
+          <div className={isTableLayout ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 flex-wrap mb-6">
               <Link
@@ -376,82 +383,77 @@ export default async function LandingPage({ params }: Props) {
 
         {/* ── Restaurant list ── */}
         <section className="px-4 md:px-8 py-10">
-          <div className="max-w-4xl mx-auto">
-            <div
-              className="flex items-center justify-between py-3 border-b mb-1"
-              style={{ borderColor: "var(--border-default)" }}
-            >
-              <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
-                {restaurants.length} Restaurant{restaurants.length !== 1 ? "s" : ""} — Ranked by GF Safety
-              </span>
-            </div>
+          <div className={isTableLayout ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
+            {isTableLayout ? (
+              <>
+                <StatStrip restaurants={restaurants as TableRestaurant[]} entityLabel={catDef.labelPlural} />
+                <IndexTable restaurants={restaurants as TableRestaurant[]} />
+              </>
+            ) : (
+              <>
+                <div
+                  className="flex items-center justify-between py-3 border-b mb-1"
+                  style={{ borderColor: "var(--border-default)" }}
+                >
+                  <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
+                    {restaurants.length} Restaurant{restaurants.length !== 1 ? "s" : ""} — Ranked by GF Safety
+                  </span>
+                </div>
 
-            <div className="space-y-0">
-              {restaurants.map((r, i) => {
-                const color = getGaugeColor(r.score);
-                const { label } = getScoreLabel(r.score);
-                const summary = r.dossier?.summary?.short_summary;
+                <div className="space-y-0">
+                  {restaurants.map((r, i) => {
+                    const color = getGaugeColor(r.score);
+                    const summary = r.dossier?.summary?.short_summary;
 
-                return (
-                  <Link
-                    key={r.id}
-                    href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
-                    className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-surface-raised"
-                    style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
-                  >
-                    {/* Rank */}
-                    <span
-                      className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
-                      style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "var(--text-disabled)" }}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-
-                    {/* Name + meta */}
-                    <div className="min-w-0">
-                      <div className="flex items-baseline gap-2 flex-wrap">
+                    return (
+                      <Link
+                        key={r.id}
+                        href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
+                        className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-surface-raised"
+                        style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
+                      >
+                        {/* Rank */}
                         <span
-                          className="font-[family-name:var(--font-display)] leading-tight"
-                          style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
+                          className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
+                          style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "var(--text-disabled)" }}
                         >
-                          {r.name}
+                          {String(i + 1).padStart(2, "0")}
                         </span>
-                        {isNewRestaurant(r.source, r.ingested_at) && (
-                          <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
-                            New
-                          </span>
-                        )}
-                      </div>
-                      {/* Show neighborhood + cuisine on city-level pages */}
-                      <p className="font-mono text-ui-sm uppercase tracking-broad text-text-dim mt-1">
-                        {[r.neighborhood, r.cuisine].filter(Boolean).join(" · ")}
-                      </p>
-                      {summary && (
-                        <p className="text-ui-lg leading-[1.6] text-text-tertiary mt-1.5 max-w-lg line-clamp-2">
-                          {summary}
-                        </p>
-                      )}
-                    </div>
 
-                    {/* Score */}
-                    <div className="flex flex-col items-end shrink-0 pt-0.5">
-                      <span
-                        className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                        style={{ fontSize: "clamp(1.25rem, 3vw, 2.25rem)", color }}
-                      >
-                        {Math.round(r.score)}
-                      </span>
-                      <span
-                        className="hidden md:block font-mono text-ui-xs uppercase tracking-label mt-1"
-                        style={{ color: `${color}cc` }}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                        {/* Name + meta */}
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span
+                              className="font-[family-name:var(--font-display)] leading-tight"
+                              style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
+                            >
+                              {r.name}
+                            </span>
+                            {isNewRestaurant(r.source, r.ingested_at) && (
+                              <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
+                                New
+                              </span>
+                            )}
+                          </div>
+                          {/* Show neighborhood + cuisine on city-level pages */}
+                          <p className="font-mono text-ui-sm uppercase tracking-broad text-text-dim mt-1">
+                            {[r.neighborhood, r.cuisine].filter(Boolean).join(" · ")}
+                          </p>
+                          {summary && (
+                            <p className="text-ui-lg leading-[1.6] text-text-tertiary mt-1.5 max-w-lg line-clamp-2">
+                              {summary}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Score */}
+                        <ScoreBadge score={r.score} size="sm" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* ── Internal links ── */}
             <div className="mt-14 pt-8 border-t space-y-8" style={{ borderColor: "var(--border-default)" }}>
@@ -619,7 +621,6 @@ export default async function LandingPage({ params }: Props) {
           <div className="space-y-0">
             {restaurants.map((r, i) => {
               const color = getGaugeColor(r.score);
-              const { label } = getScoreLabel(r.score);
               const summary = r.dossier?.summary?.short_summary;
 
               return (
@@ -665,20 +666,7 @@ export default async function LandingPage({ params }: Props) {
                   </div>
 
                   {/* Score */}
-                  <div className="flex flex-col items-end shrink-0 pt-0.5">
-                    <span
-                      className="font-[family-name:var(--font-display)] leading-none tabular-nums"
-                      style={{ fontSize: "clamp(1.25rem, 3vw, 2.25rem)", color }}
-                    >
-                      {Math.round(r.score)}
-                    </span>
-                    <span
-                      className="hidden md:block font-mono text-ui-xs uppercase tracking-label mt-1"
-                      style={{ color: `${color}cc` }}
-                    >
-                      {label}
-                    </span>
-                  </div>
+                  <ScoreBadge score={r.score} size="sm" />
                 </Link>
               );
             })}
