@@ -151,7 +151,7 @@ function buildPageJsonLd({
             "position": i + 1,
             "item": {
               "@type": "Restaurant",
-              "name": r.name,
+              "name": r.display_name ?? r.name,
               "url": `${BASE_URL}/restaurant/${r.slug ?? r.id}`,
               ...(r.neighborhood ? {
                 "address": {
@@ -232,6 +232,7 @@ type RestaurantRow = {
   website_url: string | null;
   google_maps_url: string | null;
   dedicated_gf_kitchen: string | null;
+  display_name: string | null;
   dossier: (ScoringDossier & { summary?: { short_summary?: string } }) | null;
   source: string | null;
   ingested_at: string | null;
@@ -304,7 +305,7 @@ export default async function LandingPage({ params }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query: any = supabase
       .from("restaurants")
-      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, dossier, source, ingested_at")
+      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier, source, ingested_at")
       .not("score", "is", null)
       .eq("city", city)
       .gte("score", 75)
@@ -428,7 +429,7 @@ export default async function LandingPage({ params }: Props) {
                               className="font-[family-name:var(--font-display)] leading-tight"
                               style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
                             >
-                              {r.name}
+                              {r.display_name ?? r.name}
                             </span>
                             {isNewRestaurant(r.source, r.ingested_at) && (
                               <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>

@@ -49,7 +49,7 @@ function RestaurantCard({ r }: { r: TopRestaurant }) {
           className="font-[family-name:var(--font-display)] leading-tight text-white group-hover:text-accent transition-colors"
           style={{ fontSize: "clamp(1.05rem, 3vw, 1.35rem)", letterSpacing: "0.02em" }}
         >
-          {r.name}
+          {r.display_name ?? r.name}
         </span>
         <div className="flex flex-col items-end shrink-0">
           <span

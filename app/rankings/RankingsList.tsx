@@ -16,6 +16,7 @@ type Dossier = ScoringDossier & {
 type Restaurant = {
   id: number;
   name: string;
+  display_name: string | null;
   city: string;
   neighborhood: string | null;
   region: string | null;
@@ -40,7 +41,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
 
   let query = supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, source, ingested_at", { count: "exact" })
+    .select("id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
@@ -143,7 +144,7 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
                       color: "var(--text-primary)",
                     }}
                   >
-                    {restaurant.name}
+                    {restaurant.display_name ?? restaurant.name}
                   </span>
                   <span
                     className="absolute bottom-0 left-0 h-px w-0 group-hover:w-full transition-all duration-300"

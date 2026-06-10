@@ -113,6 +113,7 @@ const getHomepageMeta = unstable_cache(
 export type TopRestaurant = {
   id: number;
   name: string;
+  display_name: string | null;
   neighborhood: string | null;
   cuisine: string | null;
   score: number | null;
@@ -128,13 +129,13 @@ const getTopRestaurants = unstable_cache(
   async (city: string) => {
     const { data } = await supabase
       .from("restaurants")
-      .select("id, name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
+      .select("id, name, display_name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
       .eq("city", city)
       .not("score", "is", null)
       .order("score", { ascending: false })
       .limit(50);
     return (data ?? []) as Array<{
-      id: number; name: string; neighborhood: string | null;
+      id: number; name: string; display_name: string | null; neighborhood: string | null;
       cuisine: string | null; score: number | null; slug: string | null;
       dossier: Dossier | null;
       gf_food_categories: string[] | null; place_type: string[] | null;
@@ -404,6 +405,7 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
   const topRated: TopRestaurant[] = topData.map((r) => ({
     id: r.id,
     name: r.name,
+    display_name: r.display_name ?? null,
     neighborhood: r.neighborhood,
     cuisine: r.cuisine,
     score: r.score,

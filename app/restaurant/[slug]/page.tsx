@@ -47,6 +47,7 @@ type MenuData = {
 type Restaurant = {
   id: number;
   name: string;
+  display_name: string | null;
   city: string;
   neighborhood: string | null;
   region: string | null;
@@ -213,7 +214,7 @@ async function resolveRestaurant(slugOrId: string) {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
+    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
     .eq("slug", slugOrId)
     .single();
 
@@ -225,8 +226,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const isNumericId = /^\d+$/.test(slug);
 
   const query = isNumericId
-    ? supabase.from("restaurants").select("name, city, neighborhood, region, dossier, verified_data, slug").eq("id", slug).single()
-    : supabase.from("restaurants").select("name, city, neighborhood, region, dossier, verified_data, slug").eq("slug", slug).single();
+    ? supabase.from("restaurants").select("name, display_name, city, neighborhood, region, dossier, verified_data, slug").eq("id", slug).single()
+    : supabase.from("restaurants").select("name, display_name, city, neighborhood, region, dossier, verified_data, slug").eq("slug", slug).single();
 
   const { data } = await query;
   if (!data) return {};
@@ -238,10 +239,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const location = formatLocation(data.neighborhood, data.city, data.region, ", ");
   const canonicalUrl = `/restaurant/${data.slug ?? slug}`;
 
-  const title = `${data.name} — Gluten-Free Safety Rating | CleanPlate`;
+  const displayName = data.display_name ?? data.name;
+  const title = `${displayName} — Gluten-Free Safety Rating | CleanPlate`;
   const description = score !== null
-    ? `${data.name}${location ? ` in ${location}` : ""} scores ${Math.round(score)}/100 for gluten-free safety.${buildSignalSummary(d)} See the full GF breakdown on CleanPlate.`
-    : `Find gluten-free details for ${data.name}${location ? ` in ${location}` : ""} — menu labeling, cross-contamination risk, and GF safety signals on CleanPlate.`;
+    ? `${displayName}${location ? ` in ${location}` : ""} scores ${Math.round(score)}/100 for gluten-free safety.${buildSignalSummary(d)} See the full GF breakdown on CleanPlate.`
+    : `Find gluten-free details for ${displayName}${location ? ` in ${location}` : ""} — menu labeling, cross-contamination risk, and GF safety signals on CleanPlate.`;
 
   return {
     title,
@@ -390,7 +392,7 @@ export default async function RestaurantPage({
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Restaurant",
-    "name": r.name,
+    "name": r.display_name ?? r.name,
     ...(summary ? { "description": summary } : {}),
     ...(r.address ? {
       "address": {
@@ -427,7 +429,7 @@ export default async function RestaurantPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <StickyInfoBar name={r.name} score={score} googleMapsUrl={r.google_maps_url} />
+      <StickyInfoBar name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
@@ -533,7 +535,7 @@ export default async function RestaurantPage({
                 className="font-[family-name:var(--font-display)] leading-none mb-7"
                 style={{ fontSize: "clamp(3rem, 7vw, 5.5rem)", letterSpacing: "0.01em", color: "var(--text-primary)" }}
               >
-                {r.name}
+                {r.display_name ?? r.name}
               </h1>
 
               {/* Illness warning */}

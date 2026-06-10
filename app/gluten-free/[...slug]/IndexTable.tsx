@@ -20,6 +20,7 @@ export type TableRestaurant = {
   website_url: string | null;
   google_maps_url: string | null;
   dedicated_gf_kitchen: string | null;
+  display_name: string | null;
   dossier: ScoringDossier | null;
 };
 
@@ -246,7 +247,7 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
                       className="font-[family-name:var(--font-display)] leading-tight transition-colors hover:text-white"
                       style={{ fontSize: "clamp(0.9rem, 1.3vw, 1.2rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
                     >
-                      {r.name}
+                      {r.display_name ?? r.name}
                     </Link>
                     {r.neighborhood && (() => {
                       const borough = lookupBorough(r.neighborhood);
@@ -320,7 +321,7 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
                   className="font-[family-name:var(--font-display)] leading-tight"
                   style={{ fontSize: "clamp(1rem, 4vw, 1.25rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
                 >
-                  {r.name}
+                  {r.display_name ?? r.name}
                 </span>
                 {r.neighborhood && (
                   <p className="font-mono text-ui-xs uppercase tracking-broad mt-0.5" style={{ color: "var(--text-dim)" }}>

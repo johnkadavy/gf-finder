@@ -50,6 +50,7 @@ async function fetchAirtableRecords(): Promise<AirtableRecord[]> {
     url.searchParams.append("fields[]", "menu_items");
     url.searchParams.append("fields[]", "reservation_link");
     url.searchParams.append("fields[]", "dedicated_gf_kitchen");
+    url.searchParams.append("fields[]", "display_name");
     url.searchParams.set("view", "viwTggcsKrf8UqgQb");
     if (offset) url.searchParams.set("offset", offset);
 
@@ -195,6 +196,7 @@ async function sync() {
         ...(menuItems ? { menu_items: menuItems } : {}),
         ...(reservationLink ? { reservation_link: reservationLink } : {}),
         ...(dedicatedGfKitchen ? { dedicated_gf_kitchen: dedicatedGfKitchen } : {}),
+        ...(parseAiText(record.fields["display_name"]) ? { display_name: parseAiText(record.fields["display_name"]) } : {}),
       })
       .eq("google_place_id", googlePlaceId);
 
