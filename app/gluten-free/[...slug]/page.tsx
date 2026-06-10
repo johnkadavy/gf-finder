@@ -51,7 +51,7 @@ const CATEGORIES: Record<string, CategoryDef> = {
     editorialIntro: "Gluten-free pasta is one of the trickier categories — shared boiling water, flour-dusted prep surfaces, and cross-contact from fresh pasta kitchens are all common hazards. CleanPlate looks at kitchen operations, staff awareness, and real diner illness reports to distinguish restaurants where GF pasta is genuinely safe from places where it's an afterthought. The spots below score in the top tier for GF safety.",
   },
   "bakery": {
-    type: "gf_food", value: "gf_baked_goods",
+    type: "place_type", value: "bakery",
     label: "GF Baked Goods",
     labelPlural: "GF Baked Goods Spots",
     cityLabelPlural: "Best Gluten-Free Bakeries",
@@ -308,7 +308,7 @@ export default async function LandingPage({ params }: Props) {
       .eq("city", city)
       .gte("score", 75)
       .order("score", { ascending: false })
-      .limit(25);
+      .limit(100);
     query = applyCategoryFilter(query, catDef);
 
     const { data } = await query;
