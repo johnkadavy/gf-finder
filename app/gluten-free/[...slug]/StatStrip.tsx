@@ -10,7 +10,7 @@ export function StatStrip({
 }) {
   const total = restaurants.length;
   const dedicated = restaurants.filter(
-    (r) => deriveKitchenStatus(r.dossier) === "dedicated"
+    (r) => deriveKitchenStatus(r.dedicated_gf_kitchen) === "dedicated"
   ).length;
   const excellent = restaurants.filter(
     (r) => r.score != null && r.score >= 85

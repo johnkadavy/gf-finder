@@ -19,6 +19,7 @@ export type TableRestaurant = {
   cuisine: string | null;
   website_url: string | null;
   google_maps_url: string | null;
+  dedicated_gf_kitchen: string | null;
   dossier: ScoringDossier | null;
 };
 
@@ -222,7 +223,7 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
           </thead>
           <tbody>
             {rows.map((r, i) => {
-              const kitchenStatus = deriveKitchenStatus(r.dossier);
+              const kitchenStatus = deriveKitchenStatus(r.dedicated_gf_kitchen);
               const confidence = r.dossier?.data_quality?.confidence ?? null;
               const href = r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`;
 

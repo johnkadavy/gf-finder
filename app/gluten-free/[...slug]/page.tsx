@@ -231,6 +231,7 @@ type RestaurantRow = {
   cuisine: string | null;
   website_url: string | null;
   google_maps_url: string | null;
+  dedicated_gf_kitchen: string | null;
   dossier: (ScoringDossier & { summary?: { short_summary?: string } }) | null;
   source: string | null;
   ingested_at: string | null;
@@ -303,7 +304,7 @@ export default async function LandingPage({ params }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query: any = supabase
       .from("restaurants")
-      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dossier, source, ingested_at")
+      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, dossier, source, ingested_at")
       .not("score", "is", null)
       .eq("city", city)
       .gte("score", 75)
