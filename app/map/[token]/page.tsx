@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
-import dynamic from "next/dynamic";
-const SharedMapView = dynamic(() => import("./SharedMapView").then((m) => ({ default: m.SharedMapView })), { ssr: false });
+import { SharedMapViewLoader as SharedMapView } from "./SharedMapViewLoader";
 import type { MapRestaurant } from "../types";
 
 export default async function SharedMapPage({
