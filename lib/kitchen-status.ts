@@ -1,10 +1,7 @@
-export type KitchenStatus = "dedicated" | "shared" | "unverified";
+export type KitchenStatus = "dedicated" | "shared";
 
 export function deriveKitchenStatus(
   dedicatedGfKitchen: string | null | undefined,
-): KitchenStatus | null {
-  if (dedicatedGfKitchen === "yes") return "dedicated";
-  if (dedicatedGfKitchen === "no") return "shared";
-  if (dedicatedGfKitchen === "unverified") return "unverified";
-  return null;
+): KitchenStatus {
+  return dedicatedGfKitchen === "yes" ? "dedicated" : "shared";
 }

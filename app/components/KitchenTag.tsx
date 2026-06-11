@@ -2,9 +2,8 @@ import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import type { KitchenStatus } from "@/lib/kitchen-status";
 
 const CONFIG: Record<KitchenStatus, { label: string; color: string; bg: string; border: string }> = {
-  dedicated:  { label: "Dedicated GF",  color: SIGNAL_COLORS.positive, bg: SIGNAL_BG.positive, border: SIGNAL_BORDER.positive },
-  shared:     { label: "Shared",        color: SIGNAL_COLORS.warning,  bg: SIGNAL_BG.warning,  border: SIGNAL_BORDER.warning  },
-  unverified: { label: "Unverified",    color: "var(--text-disabled)", bg: "transparent",       border: "var(--border-subtle)" },
+  dedicated: { label: "Dedicated GF", color: SIGNAL_COLORS.positive, bg: SIGNAL_BG.positive, border: SIGNAL_BORDER.positive },
+  shared:    { label: "Shared",       color: SIGNAL_COLORS.warning,  bg: SIGNAL_BG.warning,  border: SIGNAL_BORDER.warning  },
 };
 
 export function KitchenTag({ status }: { status: KitchenStatus | null }) {
