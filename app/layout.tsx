@@ -20,6 +20,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
+  preload: false,
 });
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -60,8 +61,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <link rel="preconnect" href="https://api.mapbox.com" />
-        <link rel="preconnect" href="https://events.mapbox.com" />
         {supabaseHostname && <link rel="preconnect" href={supabaseHostname} />}
       </head>
       <body
