@@ -524,7 +524,7 @@ export default async function LandingPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from("restaurants")
-    .select("id, name, score, slug, neighborhood, cuisine, dossier, source, ingested_at")
+    .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier")
     .not("score", "is", null)
     .eq("city", city)
     .eq("neighborhood", neighborhood)
@@ -568,14 +568,10 @@ export default async function LandingPage({ params }: Props) {
 
       {/* ── Hero ── */}
       <section
-        className="grid-bg border-b px-4 md:px-8 py-14 md:py-20 relative"
+        className="border-b px-4 md:px-8 py-14 md:py-20"
         style={{ borderColor: "var(--border-default)" }}
       >
-        <div
-          className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
-        />
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <Link
@@ -583,6 +579,13 @@ export default async function LandingPage({ params }: Props) {
               className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
             >
               Rankings
+            </Link>
+            <span className="text-[oklch(0.3_0_0)]">/</span>
+            <Link
+              href={`/rankings?city=${encodeURIComponent(city)}`}
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+            >
+              {city}
             </Link>
             <span className="text-[oklch(0.3_0_0)]">/</span>
             {categorySlug ? (
@@ -612,13 +615,13 @@ export default async function LandingPage({ params }: Props) {
           </p>
 
           <h1
-            className="font-[family-name:var(--font-display)] leading-tight mb-5"
+            className="font-[family-name:var(--font-display)] leading-tight mb-6"
             style={{ fontSize: "clamp(2rem, 6vw, 4rem)", letterSpacing: "0.02em" }}
           >
             {h1}
           </h1>
 
-          <p className="font-mono text-ui-lg leading-[1.7] text-text-tertiary max-w-2xl">
+          <p className="text-ui-2xl leading-[1.8] text-text-secondary max-w-2xl">
             {intro}
           </p>
         </div>
@@ -626,68 +629,27 @@ export default async function LandingPage({ params }: Props) {
 
       {/* ── Restaurant list ── */}
       <section className="px-4 md:px-8 py-10">
-        <div className="max-w-4xl mx-auto">
-          <div
-            className="flex items-center justify-between py-3 border-b mb-1"
-            style={{ borderColor: "var(--border-default)" }}
-          >
-            <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
-              {restaurants.length} Restaurant{restaurants.length !== 1 ? "s" : ""} — Ranked by GF Safety
-            </span>
-          </div>
-
-          <div className="space-y-0">
-            {restaurants.map((r, i) => {
-              const color = getGaugeColor(r.score);
-              const summary = r.dossier?.summary?.short_summary;
-
-              return (
-                <Link
-                  key={r.id}
-                  href={r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`}
-                  className="grid grid-cols-[3rem_1fr_auto] md:grid-cols-[4rem_1fr_auto] items-start border-b gap-3 md:gap-8 py-4 md:py-5 px-2 md:px-4 transition-colors duration-150 hover:bg-surface-raised"
-                  style={{ borderColor: "var(--border-subtle)", borderLeft: `2px solid ${color}` }}
-                >
-                  {/* Rank */}
-                  <span
-                    className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
-                    style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", color: i < 3 ? color : "var(--text-disabled)" }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-
-                  {/* Name + meta */}
-                  <div className="min-w-0">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span
-                        className="font-[family-name:var(--font-display)] leading-tight"
-                        style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)", color: "var(--text-primary)", letterSpacing: "0.02em" }}
-                      >
-                        {r.name}
-                      </span>
-                      {isNewRestaurant(r.source, r.ingested_at) && (
-                        <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
-                          New
-                        </span>
-                      )}
-                    </div>
-                    {r.cuisine && (
-                      <p className="font-mono text-ui-sm uppercase tracking-broad text-text-dim mt-1">
-                        {r.cuisine}
-                      </p>
-                    )}
-                    {summary && (
-                      <p className="text-ui-lg leading-[1.6] text-text-tertiary mt-1.5 max-w-lg line-clamp-2">
-                        {summary}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Score */}
-                  <ScoreBadge score={r.score} size="sm" />
-                </Link>
-              );
-            })}
+        <div className="max-w-6xl mx-auto">
+          <StatStrip
+            restaurants={restaurants as TableRestaurant[]}
+            entityLabel={catDef ? catDef.labelPlural : "Restaurants"}
+          />
+          <IndexTable
+            restaurants={restaurants as TableRestaurant[]}
+            city={city}
+            catLabel={catDef?.labelPlural}
+            catSlug={categorySlug ?? undefined}
+            neighborhoodOverride={neighborhood}
+            sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+          />
+          <div className="mt-8">
+            <FollowPrompt
+              variant="section"
+              followType="neighborhood"
+              followTarget={neighborhood}
+              contextLabel={neighborhood}
+              sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+            />
           </div>
 
           {/* ── Internal links ── */}

@@ -30,12 +30,14 @@ const BOROUGH_ORDER = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Islan
 type IndexTableProps = {
   restaurants: TableRestaurant[];
   city: string;
-  catSlug: string;
-  catLabel: string;
+  catSlug?: string;
+  catLabel?: string;
   sourcePage: string;
+  /** When set, the table is pinned to a single neighborhood: hides the filter and uses a neighborhood follow. */
+  neighborhoodOverride?: string;
 };
 
-export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }: IndexTableProps) {
+export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage, neighborhoodOverride }: IndexTableProps) {
   const [filterNeighborhood, setFilterNeighborhood] = useState<string>("all");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -104,10 +106,12 @@ export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }:
     );
   }, [restaurants, filterNeighborhood, sortDir]);
 
-  const followType = filterNeighborhood === "all" ? "category" : "neighborhood";
-  const followTarget = filterNeighborhood === "all" ? catSlug : filterNeighborhood;
+  const followType: "category" | "neighborhood" =
+    neighborhoodOverride || filterNeighborhood !== "all" ? "neighborhood" : "category";
+  const followTarget =
+    neighborhoodOverride ?? (filterNeighborhood === "all" ? (catSlug ?? "") : filterNeighborhood);
   const followContextLabel =
-    filterNeighborhood === "all" ? `${catLabel} in ${city}` : filterNeighborhood;
+    neighborhoodOverride ?? (filterNeighborhood === "all" ? `${catLabel ?? ""} in ${city}` : filterNeighborhood);
 
   const FOLLOW_PROMPT_AFTER_ROW = 8;
 
@@ -118,7 +122,7 @@ export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }:
         className="flex items-center py-3 border-b"
         style={{ borderColor: "var(--border-default)" }}
       >
-        {neighborhoodGroups.length > 1 && (
+        {neighborhoodGroups.length > 1 && !neighborhoodOverride && (
           <div className="flex items-center gap-3.5 pl-5">
             <span className="font-mono text-ui-xs uppercase tracking-stamp" style={{ color: "var(--text-disabled)" }}>
               Neighborhood
@@ -212,7 +216,7 @@ export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }:
                 className="font-mono text-ui-xs uppercase tracking-stamp text-left py-3 pr-6"
                 style={{ color: "var(--text-disabled)" }}
               >
-                Name / Neighborhood
+                {neighborhoodOverride ? "Name" : "Name / Neighborhood"}
               </th>
               <th
                 className="font-mono text-ui-xs uppercase tracking-stamp text-left py-3 pr-6 whitespace-nowrap"
@@ -276,7 +280,7 @@ export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }:
                     >
                       {r.display_name ?? r.name}
                     </Link>
-                    {r.neighborhood && (() => {
+                    {r.neighborhood && !neighborhoodOverride && (() => {
                       const borough = lookupBorough(r.neighborhood);
                       const suffix = borough && borough !== "Manhattan" ? `, ${borough}` : "";
                       return (
