@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, Fragment } from "react";
+import { FollowPrompt } from "./FollowPrompt";
 import Link from "next/link";
 import { deriveKitchenStatus } from "@/lib/kitchen-status";
 import { lookupBorough } from "@/lib/borough-lookup";
@@ -26,7 +27,15 @@ export type TableRestaurant = {
 
 const BOROUGH_ORDER = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
-export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) {
+type IndexTableProps = {
+  restaurants: TableRestaurant[];
+  city: string;
+  catSlug: string;
+  catLabel: string;
+  sourcePage: string;
+};
+
+export function IndexTable({ restaurants, city, catSlug, catLabel, sourcePage }: IndexTableProps) {
   const [filterNeighborhood, setFilterNeighborhood] = useState<string>("all");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -94,6 +103,13 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
       sortDir === "desc" ? b.score - a.score : a.score - b.score
     );
   }, [restaurants, filterNeighborhood, sortDir]);
+
+  const followType = filterNeighborhood === "all" ? "category" : "neighborhood";
+  const followTarget = filterNeighborhood === "all" ? catSlug : filterNeighborhood;
+  const followContextLabel =
+    filterNeighborhood === "all" ? `${catLabel} in ${city}` : filterNeighborhood;
+
+  const FOLLOW_PROMPT_AFTER_ROW = 8;
 
   return (
     <div>
@@ -229,8 +245,19 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
               const href = r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`;
 
               return (
+                <Fragment key={r.id}>
+                  {i === FOLLOW_PROMPT_AFTER_ROW && rows.length > FOLLOW_PROMPT_AFTER_ROW && (
+                    <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                      <FollowPrompt
+                        variant="table"
+                        followType={followType}
+                        followTarget={followTarget}
+                        contextLabel={followContextLabel}
+                        sourcePage={sourcePage}
+                      />
+                    </tr>
+                  )}
                 <tr
-                  key={r.id}
                   className="border-b hover:bg-surface-overlay"
                   style={{ borderColor: "var(--border-subtle)", transition: "background-color 120ms ease" }}
                 >
@@ -299,6 +326,7 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
                     </div>
                   </td>
                 </tr>
+                </Fragment>
               );
             })}
           </tbody>
@@ -307,11 +335,20 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
 
       {/* Mobile card fallback */}
       <div className="md:hidden space-y-0">
-        {rows.map((r) => {
+        {rows.map((r, i) => {
           const href = r.slug ? `/restaurant/${r.slug}` : `/restaurant/${r.id}`;
           return (
+            <Fragment key={r.id}>
+              {i === FOLLOW_PROMPT_AFTER_ROW && rows.length > FOLLOW_PROMPT_AFTER_ROW && (
+                <FollowPrompt
+                  variant="inline"
+                  followType={followType}
+                  followTarget={followTarget}
+                  contextLabel={followContextLabel}
+                  sourcePage={sourcePage}
+                />
+              )}
             <Link
-              key={r.id}
               href={href}
               className="flex items-start justify-between border-b gap-4 py-4 px-2 transition-colors hover:bg-surface-raised"
               style={{ borderColor: "var(--border-subtle)" }}
@@ -338,6 +375,7 @@ export function IndexTable({ restaurants }: { restaurants: TableRestaurant[] }) 
                 </span>
               </div>
             </Link>
+            </Fragment>
           );
         })}
       </div>

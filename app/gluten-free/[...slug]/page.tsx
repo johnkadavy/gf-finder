@@ -8,6 +8,7 @@ import { ScoreBadge } from "@/app/components/ScoreBadge";
 import { isNewRestaurant } from "@/lib/utils";
 import { IndexTable } from "./IndexTable";
 import type { TableRestaurant } from "./IndexTable";
+import { FollowPrompt } from "./FollowPrompt";
 import { StatStrip } from "./StatStrip";
 
 export const revalidate = 86400; // regenerate at most once per 24 hours
@@ -389,7 +390,22 @@ export default async function LandingPage({ params }: Props) {
             {isTableLayout ? (
               <>
                 <StatStrip restaurants={restaurants as TableRestaurant[]} entityLabel={catDef.labelPlural} />
-                <IndexTable restaurants={restaurants as TableRestaurant[]} />
+                <IndexTable
+                  restaurants={restaurants as TableRestaurant[]}
+                  city={city}
+                  catSlug={catSlug}
+                  catLabel={catDef.labelPlural}
+                  sourcePage={`/gluten-free/${s0}/${s1}`}
+                />
+                <div className="mt-8">
+                  <FollowPrompt
+                    variant="section"
+                    followType="category"
+                    followTarget={catSlug}
+                    contextLabel={`${catDef.labelPlural} in ${city}`}
+                    sourcePage={`/gluten-free/${s0}/${s1}`}
+                  />
+                </div>
               </>
             ) : (
               <>

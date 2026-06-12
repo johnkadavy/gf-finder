@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import { supabase as publicSupabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { AccountFilters } from "./AccountFilters";
 import { CopyButton } from "@/app/components/CopyButton";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { AddRestaurantForm } from "./AddRestaurantForm";
+import { TestDigestForm } from "./TestDigestForm";
 
 type SavedRestaurant = {
   id: number;
@@ -47,6 +49,25 @@ export default async function AccountPage({ searchParams }: PageProps) {
   const allowedCities: string[] = profile?.allowed_cities ?? ["New York"];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trycleanplate.com";
   const shareUrl = shareToken ? `${siteUrl}/map/${shareToken}` : null;
+
+  // Fetch follow segments for the digest preview tool (admin only)
+  let digestSegments: Array<{ follow_target: string; follow_type: string; count: number }> = [];
+  if (isAdmin) {
+    const { data: followRows } = await supabaseServer
+      .from("follows")
+      .select("follow_target, follow_type")
+      .not("confirmed_at", "is", null)
+      .is("unsubscribed_at", null);
+    const segmentMap = new Map<string, { follow_type: string; count: number }>();
+    for (const row of followRows ?? []) {
+      const existing = segmentMap.get(row.follow_target);
+      if (existing) { existing.count++; }
+      else { segmentMap.set(row.follow_target, { follow_type: row.follow_type, count: 1 }); }
+    }
+    digestSegments = Array.from(segmentMap.entries())
+      .map(([follow_target, { follow_type, count }]) => ({ follow_target, follow_type, count }))
+      .sort((a, b) => b.count - a.count);
+  }
 
   // Fetch saved IDs in save order
   const { data: saves } = await serverClient
@@ -130,6 +151,9 @@ export default async function AccountPage({ searchParams }: PageProps) {
 
       {/* Add Restaurant — admin only */}
       {isAdmin && <AddRestaurantForm />}
+
+      {/* Digest preview — admin only */}
+      {isAdmin && <TestDigestForm segments={digestSegments} />}
 
       {/* My Map */}
       {shareUrl && (
