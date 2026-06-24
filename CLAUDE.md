@@ -3,6 +3,9 @@
 ## What this is
 CleanPlate is a gluten-free restaurant discovery and safety-ranking app. Restaurants are scored 0–100 for GF safety based on reviews, menu labeling, and operational practices. The main surfaces are a ranked list page and an interactive map.
 
+## Current priorities
+See `PRIORITIES.md` for the current Now / Next / Later priorities and rationale. Check it at the start of a work session.
+
 ## Design system
 
 Before making any visual change — new component, layout tweak, color, spacing, anything — read `DESIGN_SYSTEM.md`.

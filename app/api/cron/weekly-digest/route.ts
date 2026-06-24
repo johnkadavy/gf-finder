@@ -27,6 +27,7 @@ type FollowRow = {
   follow_target: string;
   confirmation_token: string;
   min_score: number | null;
+  cadence: string | null;
 };
 
 export async function GET(req: Request) {
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
 
   const { data: follows, error: followsError } = await supabaseServer
     .from("follows")
-    .select("id, email, follow_type, follow_target, confirmation_token, min_score")
+    .select("id, email, follow_type, follow_target, confirmation_token, min_score, cadence")
     .not("confirmed_at", "is", null)
     .is("unsubscribed_at", null)
     .in("follow_type", ["neighborhood", "category"]);
@@ -62,6 +63,12 @@ export async function GET(req: Request) {
 }
 
 async function processFollow(follow: FollowRow, results: { sent: number; skipped: number; errors: number }) {
+  const isMonday = new Date().getDay() === 1;
+  if ((follow.cadence ?? 'weekly') === 'weekly' && !isMonday) {
+    results.skipped++;
+    return;
+  }
+
   const threshold = follow.min_score ?? DIGEST_MIN_SCORE;
 
   // Find already-notified place IDs for this follow (confirmed sends only)
