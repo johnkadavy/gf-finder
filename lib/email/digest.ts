@@ -1,7 +1,7 @@
 import { toSlug } from "@/lib/categories";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
-const DIGEST_INLINE_CAP = 8;
+const DIGEST_INLINE_CAP = 3;
 
 export type DigestRestaurant = {
   id: number;
@@ -25,33 +25,18 @@ export function scoreColor(score: number): string {
   return "#FF7444";
 }
 
-function overflowLinkUrl(followType: string, followTarget: string): string {
-  if (followType === "neighborhood") {
-    return `${SITE_URL}/gluten-free/new-york/${toSlug(followTarget)}`;
-  }
-  // category follow: followTarget is already the slug (e.g. "bakery")
-  return `${SITE_URL}/gluten-free/new-york/${followTarget}`;
-}
-
 export function buildDigestEmail({
-  follow_target,
-  follow_type,
+  label,
   restaurants,
   unsubscribeUrl,
 }: {
-  follow_target: string;
-  follow_type: string;
+  label: string;
   restaurants: DigestRestaurant[];
   unsubscribeUrl: string;
 }): string {
-  const subjectLabel =
-    follow_type === "neighborhood"
-      ? `GF spots in ${escapeHtml(follow_target)}`
-      : `GF ${escapeHtml(follow_target)} picks`;
+  const subjectLabel = escapeHtml(label);
 
   const inline = restaurants.slice(0, DIGEST_INLINE_CAP);
-  const overflowCount = restaurants.length - inline.length;
-
   const restaurantCards = inline
     .map((r) => {
       const score = Math.round(r.score);
@@ -97,18 +82,6 @@ export function buildDigestEmail({
     })
     .join("");
 
-  const overflowRow = overflowCount > 0
-    ? `
-        <tr>
-          <td style="padding:20px 36px 24px;border-bottom:1px solid #e8e8e8;">
-            <a href="${overflowLinkUrl(follow_type, follow_target)}"
-               style="font-size:13px;line-height:1.7;color:#FF7444;text-decoration:none;font-family:'Courier New',Courier,monospace;letter-spacing:0.08em;">
-              +${overflowCount} more new spot${overflowCount === 1 ? "" : "s"} this week &mdash; see them all &rarr;
-            </a>
-          </td>
-        </tr>`
-    : "";
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -127,13 +100,12 @@ export function buildDigestEmail({
 
         <!-- Restaurant cards -->
         ${restaurantCards}
-        ${overflowRow}
 
         <!-- Footer -->
         <tr>
           <td style="padding:20px 36px;border-top:1px solid #e8e8e8;">
             <p style="margin:0 0 6px;font-size:10px;line-height:1.6;color:#aaaaaa;letter-spacing:0.06em;text-transform:uppercase;">
-              You&rsquo;re following ${escapeHtml(follow_target)} on CleanPlate.
+              You&rsquo;re subscribed to the CleanPlate NYC digest.
             </p>
             <p style="margin:0;font-size:10px;color:#aaaaaa;letter-spacing:0.06em;text-transform:uppercase;">
               <a href="${unsubscribeUrl}" style="color:#aaaaaa;">Unsubscribe</a>

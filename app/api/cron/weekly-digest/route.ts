@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { CATEGORIES, applyCategoryFilter } from "@/lib/categories";
 import { buildDigestEmail } from "@/lib/email/digest";
 import type { DigestRestaurant } from "@/lib/email/digest";
 
@@ -18,7 +17,7 @@ import type { DigestRestaurant } from "@/lib/email/digest";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "CleanPlate <noreply@auth.trycleanplate.com>";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
-const DIGEST_MIN_SCORE = 85;
+const DIGEST_MIN_SCORE = 80;
 
 type FollowRow = {
   id: string;
@@ -39,8 +38,7 @@ export async function GET(req: Request) {
     .from("follows")
     .select("id, email, follow_type, follow_target, confirmation_token, min_score, cadence")
     .not("confirmed_at", "is", null)
-    .is("unsubscribed_at", null)
-    .in("follow_type", ["neighborhood", "category"]);
+    .is("unsubscribed_at", null);
 
   if (followsError) {
     console.error("[weekly-digest] failed to load follows:", followsError);
@@ -81,31 +79,41 @@ async function processFollow(follow: FollowRow, results: { sent: number; skipped
 
   const notifiedIds = new Set((notified ?? []).map((n: { place_id: number }) => n.place_id));
 
-  // Build restaurant query for this follow's target
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query: any = supabaseServer
+  const recentCutoff = new Date();
+  recentCutoff.setDate(recentCutoff.getDate() - 30);
+
+  // New spots: high-scoring restaurants added in the last 30 days, not yet notified
+  const { data: newCandidates } = await supabaseServer
     .from("restaurants")
     .select("id, name, slug, neighborhood, score, dossier")
+    .eq("city", "New York")
     .not("score", "is", null)
     .gte("score", threshold)
-    .eq("city", "New York") // all live follows are NYC; revisit when multi-city
+    .gte("created_at", recentCutoff.toISOString())
     .order("score", { ascending: false });
 
-  if (follow.follow_type === "neighborhood") {
-    query = query.eq("neighborhood", follow.follow_target);
-  } else {
-    // category follow: apply the same filter the ranking page uses
-    const catDef = CATEGORIES[follow.follow_target];
-    if (!catDef) {
-      console.warn("[weekly-digest] unknown category slug", follow.follow_target, "— skipping follow", follow.id);
-      results.skipped++;
-      return;
-    }
-    query = applyCategoryFilter(query, catDef);
-  }
+  const newSpots = ((newCandidates ?? []) as DigestRestaurant[])
+    .filter((r) => !notifiedIds.has(r.id));
 
-  const { data: candidates } = await query;
-  const qualifying = ((candidates ?? []) as DigestRestaurant[]).filter((r) => !notifiedIds.has(r.id));
+  // Evergreen: top-scoring spots not yet notified, excluding new spots
+  const newSpotIds = new Set(newSpots.map((r) => r.id));
+  const { data: evergreenCandidates } = await supabaseServer
+    .from("restaurants")
+    .select("id, name, slug, neighborhood, score, dossier")
+    .eq("city", "New York")
+    .not("score", "is", null)
+    .gte("score", threshold)
+    .order("score", { ascending: false })
+    .limit(50);
+
+  const evergreenSpots = ((evergreenCandidates ?? []) as DigestRestaurant[])
+    .filter((r) => !notifiedIds.has(r.id) && !newSpotIds.has(r.id));
+
+  // Lead with new spots, pad with evergreen to reach 3
+  const qualifying = [
+    ...newSpots.slice(0, 3),
+    ...evergreenSpots.slice(0, Math.max(0, 3 - newSpots.length)),
+  ];
 
   if (qualifying.length === 0) {
     results.skipped++;
@@ -138,10 +146,9 @@ async function processFollow(follow: FollowRow, results: { sent: number; skipped
   const { error: emailError } = await resend.emails.send({
     from: FROM_EMAIL,
     to: follow.email,
-    subject: `New GF spots in ${follow.follow_target} — CleanPlate`,
+    subject: `Top GF spots in NYC — CleanPlate`,
     html: buildDigestEmail({
-      follow_target: follow.follow_target,
-      follow_type: follow.follow_type,
+      label: "Top GF Spots in NYC",
       restaurants: qualifying,
       unsubscribeUrl,
     }),

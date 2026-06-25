@@ -20,46 +20,29 @@ export async function POST(req: Request) {
     .single();
   if (!profile?.is_admin) return new Response("Forbidden", { status: 403 });
 
-  const body = await req.json() as { follow_target?: string; follow_type?: string };
-  const { follow_target, follow_type } = body;
-
-  if (!follow_target?.trim() || !follow_type) {
-    return NextResponse.json({ error: "follow_target and follow_type are required." }, { status: 400 });
-  }
-
-  // Top restaurants for this follow target — sufficient for styling preview.
-  // The automated pipeline will supply a curated list of new/changed restaurants instead.
-  let query = supabaseServer
+  // Top 3 NYC restaurants — sufficient for styling preview
+  const { data: restaurants } = await supabaseServer
     .from("restaurants")
     .select("id, name, slug, neighborhood, score, dossier")
+    .eq("city", "New York")
     .not("score", "is", null)
-    .gte("score", 75)
+    .gte("score", 80)
     .order("score", { ascending: false })
-    .limit(5);
-
-  if (follow_type === "neighborhood") {
-    query = query.eq("neighborhood", follow_target);
-  } else {
-    query = query.eq("city", "New York");
-  }
-
-  const { data: restaurants } = await query;
+    .limit(3);
 
   if (!restaurants?.length) {
-    return NextResponse.json({ error: "No restaurants found for this target." }, { status: 404 });
+    return NextResponse.json({ error: "No restaurants found." }, { status: 404 });
   }
 
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
-  // Test unsubscribe URL — the handler gracefully no-ops on an unknown token
   const unsubscribeUrl = `${SITE_URL}/api/follows/unsubscribe?token=test-preview`;
 
   const { error: emailError } = await resend.emails.send({
     from: FROM_EMAIL,
     to: user.email!,
-    subject: `[TEST DIGEST] ${follow_target}`,
+    subject: `[TEST DIGEST] Top GF spots in NYC`,
     html: buildDigestEmail({
-      follow_target,
-      follow_type,
+      label: "Top GF Spots in NYC",
       restaurants: restaurants as DigestRestaurant[],
       unsubscribeUrl,
     }),
