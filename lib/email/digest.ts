@@ -1,7 +1,4 @@
-import { toSlug } from "@/lib/categories";
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
-const DIGEST_INLINE_CAP = 3;
 
 export type DigestRestaurant = {
   id: number;
@@ -29,15 +26,18 @@ export function buildDigestEmail({
   label,
   restaurants,
   unsubscribeUrl,
+  rankingsUrl,
+  totalCount,
 }: {
   label: string;
   restaurants: DigestRestaurant[];
   unsubscribeUrl: string;
+  rankingsUrl?: string;
+  totalCount?: number;
 }): string {
   const subjectLabel = escapeHtml(label);
 
-  const inline = restaurants.slice(0, DIGEST_INLINE_CAP);
-  const restaurantCards = inline
+  const restaurantCards = restaurants
     .map((r) => {
       const score = Math.round(r.score);
       const color = scoreColor(r.score);
@@ -100,6 +100,17 @@ export function buildDigestEmail({
 
         <!-- Restaurant cards -->
         ${restaurantCards}
+
+        <!-- CTA -->
+        ${rankingsUrl ? `
+        <tr>
+          <td style="padding:24px 36px;border-top:2px solid #111111;">
+            <a href="${SITE_URL}${escapeHtml(rankingsUrl)}"
+               style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#FF7444;text-decoration:none;font-family:'Courier New',Courier,monospace;">
+              See${totalCount ? ` all ${totalCount}` : " the full list of"} restaurants &rarr;
+            </a>
+          </td>
+        </tr>` : ""}
 
         <!-- Footer -->
         <tr>
