@@ -18,6 +18,7 @@ const FROM_EMAIL = "CleanPlate <noreply@auth.trycleanplate.com>";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME;
 const DIGEST_MIN_SCORE = 80;
 
 export async function GET(req: Request) {
@@ -36,8 +37,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No restaurants found for topic." }, { status: 500 });
   }
 
+  // 2b. Enrich with editorial notes + Airtable record IDs (one API call)
+  const airtableMap = await lookupAirtableRestaurants(restaurants.map((r) => r.name));
+  const enrichedRestaurants = restaurants.map((r) => ({
+    ...r,
+    editorial_note: airtableMap.get(r.name)?.editorialNote ?? null,
+  }));
+  const airtableRecordIds = restaurants
+    .map((r) => airtableMap.get(r.name)?.recordId)
+    .filter((id): id is string => Boolean(id));
+
   // 3. Generate subject line + intro copy via Claude Haiku
-  const { subject, intro } = await generateCopy(topic, restaurants);
+  const { subject, intro } = await generateCopy(topic, enrichedRestaurants);
 
   // 4. Get active subscribers, deduplicated by email
   const { data: allFollows, error: followsError } = await supabaseServer
@@ -73,7 +84,7 @@ export async function GET(req: Request) {
     const unsubscribeUrl = `${SITE_URL}/api/follows/unsubscribe?token=${confirmation_token}`;
     const html = buildDigestEmail({
       label: topic.label,
-      restaurants,
+      restaurants: enrichedRestaurants,
       unsubscribeUrl,
       rankingsUrl: topic.rankingsUrl,
       totalCount,
@@ -97,7 +108,7 @@ export async function GET(req: Request) {
 
   // 6. Log to Airtable as Sent (non-blocking — failure doesn't abort the run)
   if (results.sent > 0 || results.errors === 0) {
-    logToAirtable(topic, subject, intro, results.sent).catch((err) => {
+    logToAirtable(topic, subject, intro, results.sent, airtableRecordIds).catch((err) => {
       console.error("[weekly-digest] airtable log failed:", err);
     });
   }
@@ -221,11 +232,61 @@ INTRO: <intro copy>`,
   };
 }
 
+type AirtableRestaurantInfo = {
+  recordId: string;
+  editorialNote: string | null;
+};
+
+async function lookupAirtableRestaurants(names: string[]): Promise<Map<string, AirtableRestaurantInfo>> {
+  if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY || !AIRTABLE_TABLE_NAME || !names.length) {
+    return new Map();
+  }
+
+  const escaped = names.map((n) => n.replace(/'/g, "\\'"));
+  const formula = escaped.length === 1
+    ? `{name}='${escaped[0]}'`
+    : `OR(${escaped.map((n) => `{name}='${n}'`).join(",")})`;
+
+  const url = new URL(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`);
+  url.searchParams.set("filterByFormula", formula);
+  url.searchParams.append("fields[]", "name");
+  url.searchParams.append("fields[]", "editorial_note");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+    });
+    if (!res.ok) {
+      console.warn("[weekly-digest] Airtable restaurant lookup failed:", res.status);
+      return new Map();
+    }
+
+    const data = await res.json() as { records: { id: string; fields: Record<string, unknown> }[] };
+    const map = new Map<string, AirtableRestaurantInfo>();
+
+    for (const record of data.records ?? []) {
+      const name = record.fields["name"] as string | undefined;
+      if (!name) continue;
+      const noteField = record.fields["editorial_note"];
+      const editorialNote = typeof noteField === "string"
+        ? noteField.trim() || null
+        : (noteField as { state?: string; value?: string } | null)?.value?.trim() || null;
+      map.set(name, { recordId: record.id, editorialNote });
+    }
+
+    return map;
+  } catch (err) {
+    console.warn("[weekly-digest] Airtable restaurant lookup error:", err);
+    return new Map();
+  }
+}
+
 async function logToAirtable(
   topic: Topic,
   subject: string,
   intro: string,
-  sentCount: number
+  sentCount: number,
+  restaurantRecordIds: string[]
 ): Promise<void> {
   if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) return;
 
@@ -245,6 +306,7 @@ async function logToAirtable(
         "Intro Copy": intro,
         "Rankings URL": topic.rankingsUrl,
         "Name": `${new Date().toISOString().slice(0, 10)} — ${topic.label} (${sentCount} sent)`,
+        ...(restaurantRecordIds.length > 0 ? { "Restaurants": restaurantRecordIds } : {}),
       },
     }),
   });

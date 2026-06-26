@@ -7,6 +7,7 @@ export type DigestRestaurant = {
   neighborhood: string | null;
   score: number;
   dossier: { summary?: { short_summary?: string } } | null;
+  editorial_note?: string | null;
 };
 
 export function escapeHtml(s: string): string {
@@ -44,7 +45,7 @@ export function buildDigestEmail({
       const score = Math.round(r.score);
       const color = scoreColor(r.score);
       const href = `${SITE_URL}/restaurant/${r.slug ?? r.id}`;
-      const summary = r.dossier?.summary?.short_summary;
+      const summary = r.editorial_note || r.dossier?.summary?.short_summary;
 
       return `
         <tr>
