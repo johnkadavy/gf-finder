@@ -28,12 +28,14 @@ export function buildDigestEmail({
   unsubscribeUrl,
   rankingsUrl,
   totalCount,
+  introCopy,
 }: {
   label: string;
   restaurants: DigestRestaurant[];
   unsubscribeUrl: string;
   rankingsUrl?: string;
   totalCount?: number;
+  introCopy?: string;
 }): string {
   const subjectLabel = escapeHtml(label);
 
@@ -97,6 +99,14 @@ export function buildDigestEmail({
             <p style="margin:4px 0 0;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#888888;">${subjectLabel}</p>
           </td>
         </tr>
+
+        <!-- Intro copy -->
+        ${introCopy ? `
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <p style="margin:0;font-size:14px;line-height:1.75;color:#444444;font-family:Georgia,serif;">${escapeHtml(introCopy)}</p>
+          </td>
+        </tr>` : ""}
 
         <!-- Restaurant cards -->
         ${restaurantCards}
