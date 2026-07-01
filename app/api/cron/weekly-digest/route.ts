@@ -156,32 +156,45 @@ async function selectTopic(): Promise<Topic> {
 }
 
 async function fetchRestaurants(topic: Topic): Promise<{ restaurants: DigestRestaurant[]; totalCount: number }> {
-  let query = supabaseServer
+  // Count only — no data transferred
+  let countQuery = supabaseServer
+    .from("restaurants")
+    .select("*", { count: "exact", head: true })
+    .eq("city", "New York")
+    .not("score", "is", null)
+    .gte("score", DIGEST_MIN_SCORE);
+
+  // Fetch only what we might feature — hard limit so dossier JSONB isn't pulled for every row
+  let dataQuery = supabaseServer
     .from("restaurants")
     .select("id, name, slug, neighborhood, score, dossier")
     .eq("city", "New York")
     .not("score", "is", null)
     .gte("score", DIGEST_MIN_SCORE)
-    .order("score", { ascending: false });
+    .order("score", { ascending: false })
+    .limit(10);
 
   switch (topic.type) {
     case "neighborhood":
-      query = query.eq("neighborhood", topic.target);
+      countQuery = countQuery.eq("neighborhood", topic.target);
+      dataQuery  = dataQuery.eq("neighborhood", topic.target);
       break;
     case "cuisine":
-      query = query.ilike("cuisine", `%${topic.target}%`);
+      countQuery = countQuery.ilike("cuisine", `%${topic.target}%`);
+      dataQuery  = dataQuery.ilike("cuisine", `%${topic.target}%`);
       break;
     case "place_type":
-      query = query.contains("place_type", [topic.target]);
+      countQuery = countQuery.contains("place_type", [topic.target]);
+      dataQuery  = dataQuery.contains("place_type", [topic.target]);
       break;
   }
 
-  const { data } = await query;
+  const [{ count }, { data }] = await Promise.all([countQuery, dataQuery]);
+  const totalCount = count ?? 0;
   const all = (data ?? []) as DigestRestaurant[];
 
-  // Feature 3–5 based on pool depth; lead with strongest picks
-  const featureCount = all.length >= 8 ? 5 : all.length >= 5 ? 4 : Math.min(3, all.length);
-  return { restaurants: all.slice(0, featureCount), totalCount: all.length };
+  const featureCount = totalCount >= 8 ? 5 : totalCount >= 5 ? 4 : Math.min(3, all.length);
+  return { restaurants: all.slice(0, featureCount), totalCount };
 }
 
 async function generateCopy(
@@ -189,7 +202,10 @@ async function generateCopy(
   restaurants: DigestRestaurant[]
 ): Promise<{ subject: string; intro: string }> {
   const list = restaurants
-    .map((r) => `- ${r.name} (${r.neighborhood ?? "NYC"})`)
+    .map((r) => {
+      const detail = r.editorial_note || r.dossier?.summary?.short_summary;
+      return `- ${r.name} (${r.neighborhood ?? "NYC"})${detail ? `: ${detail}` : ""}`;
+    })
     .join("\n");
 
   const message = await anthropic.messages.create({
@@ -198,21 +214,24 @@ async function generateCopy(
     messages: [
       {
         role: "user",
-        content: `You are writing a short email digest for a gluten-free restaurant guide covering NYC.
+        content: `You write a short email for people in NYC who eat gluten-free, most of them celiac. Today's email covers: ${topic.label}.
 
-Topic: ${topic.label}
 Featured restaurants:
 ${list}
 
 Write:
-1. A subject line — punchy and specific, under 60 characters
-2. Intro copy — 2–3 sentences, warm and editorial, not a list
+1. A subject line — under 55 characters, specific, plain. Name the topic or a concrete detail from the list. No wordplay, no puns, no exclamation points.
+2. Intro copy — 1–2 sentences, then stop. Do not summarize the list; the restaurants appear right below.
 
-Voice rules:
-- Speak as someone who knows NYC's GF scene deeply. Never mention a guide, app, database, or rankings.
-- Acknowledge the real anxiety of eating out with celiac, casually not clinically.
-- Strong opinions. Short punchy sentences.
-- No filler phrases ("nestled in", "hidden gem", "a must-try", "look no further").
+Voice: understated insider. You know this scene well and don't need to sell it. Like a friend who's celiac texting you where to go. Confident, dry, specific.
+
+Rules:
+- Lead with something concrete pulled from the restaurant details (a dish, a practice like a dedicated fryer, a neighborhood fact). Never lead with enthusiasm.
+- No hype words: "amazing", "incredible", "gem", "must-try", "game-changer", "elevated", "curated", "foodie".
+- No filler openers: "nestled in", "look no further", "craving", "whether you're...".
+- No rhetorical questions. No exclamation points.
+- Don't oversell safety. "Takes cross-contamination seriously" is fine; "totally safe" is not.
+- Never mention a guide, app, database, or rankings.
 - Never use em dashes (—). Use a period or rewrite.
 
 Reply in exactly this format (no extra text):

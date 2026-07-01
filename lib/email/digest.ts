@@ -41,44 +41,34 @@ export function buildDigestEmail({
   const subjectLabel = escapeHtml(label);
 
   const restaurantCards = restaurants
-    .map((r) => {
+    .map((r, i) => {
       const score = Math.round(r.score);
       const color = scoreColor(r.score);
       const href = `${SITE_URL}/restaurant/${r.slug ?? r.id}`;
       const summary = r.editorial_note || r.dossier?.summary?.short_summary;
+      const isLast = i === restaurants.length - 1;
 
       return `
         <tr>
-          <td style="padding:20px 36px 24px;border-bottom:1px solid #e8e8e8;">
+          <td style="padding:24px 32px;${isLast ? "" : "border-bottom:1px solid #ececec;"}">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
               <tr>
-                <td style="padding-bottom:6px;">
-                  <span style="font-size:22px;font-weight:700;font-family:'Courier New',Courier,monospace;color:${color};">${score}</span>
-                  <span style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#aaaaaa;font-family:'Courier New',Courier,monospace;margin-left:8px;">GF Safety</span>
+                <td valign="top">
+                  <a href="${href}" style="font-size:18px;font-weight:700;color:#111111;text-decoration:none;font-family:Georgia,serif;line-height:1.3;">${escapeHtml(r.name)}</a>
+                  ${r.neighborhood ? `
+                  <p style="margin:5px 0 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#999999;font-family:'Courier New',Courier,monospace;">${escapeHtml(r.neighborhood)}</p>` : ""}
+                </td>
+                <td valign="top" align="right" width="64" style="padding-left:16px;">
+                  <span style="font-size:24px;font-weight:700;font-family:'Courier New',Courier,monospace;color:${color};line-height:1;">${score}</span>
+                  <p style="margin:3px 0 0;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#bbbbbb;font-family:'Courier New',Courier,monospace;">GF Safety</p>
                 </td>
               </tr>
-              <tr>
-                <td style="padding-bottom:4px;">
-                  <a href="${href}" style="font-size:17px;font-weight:700;color:#111111;text-decoration:none;letter-spacing:0.02em;font-family:Georgia,serif;">${escapeHtml(r.name)}</a>
-                </td>
-              </tr>
-              ${r.neighborhood ? `
-              <tr>
-                <td style="padding-bottom:8px;">
-                  <span style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#888888;font-family:'Courier New',Courier,monospace;">${escapeHtml(r.neighborhood)}</span>
-                </td>
-              </tr>` : ""}
               ${summary ? `
               <tr>
-                <td style="padding-bottom:12px;">
-                  <p style="margin:0;font-size:13px;line-height:1.7;color:#555555;font-family:Georgia,serif;">${escapeHtml(summary)}</p>
+                <td colspan="2" style="padding-top:10px;">
+                  <p style="margin:0;font-size:14px;line-height:1.65;color:#555555;font-family:Georgia,serif;">${escapeHtml(summary)}</p>
                 </td>
               </tr>` : ""}
-              <tr>
-                <td>
-                  <a href="${href}" style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#FF7444;text-decoration:none;font-family:'Courier New',Courier,monospace;">View on CleanPlate &rarr;</a>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>`;
@@ -88,24 +78,24 @@ export function buildDigestEmail({
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f0f0f0;font-family:'Courier New',Courier,monospace;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f0f0f0;padding:40px 20px;">
+<body style="margin:0;padding:0;background:#f4f3f1;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f3f1;padding:40px 16px;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border:1px solid #d8d8d8;max-width:560px;width:100%;">
+      <table width="560" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border:1px solid #e2e0dd;max-width:560px;width:100%;">
 
-        <!-- Header -->
+        <!-- Header: brand kicker small, topic as the headline -->
         <tr>
-          <td style="padding:28px 36px 24px;border-bottom:2px solid #111111;">
-            <p style="margin:0;font-size:16px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#111111;">CleanPlate</p>
-            <p style="margin:4px 0 0;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#888888;">${subjectLabel}</p>
+          <td style="padding:28px 32px 22px;border-bottom:2px solid #111111;">
+            <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#FF7444;font-family:'Courier New',Courier,monospace;">CleanPlate</p>
+            <p style="margin:0;font-size:24px;font-weight:700;color:#111111;font-family:Georgia,serif;line-height:1.25;">${subjectLabel}</p>
           </td>
         </tr>
 
         <!-- Intro copy -->
         ${introCopy ? `
         <tr>
-          <td style="padding:20px 36px 0;">
-            <p style="margin:0;font-size:14px;line-height:1.75;color:#444444;font-family:Georgia,serif;">${escapeHtml(introCopy)}</p>
+          <td style="padding:22px 32px 20px;border-bottom:1px solid #ececec;">
+            <p style="margin:0;font-size:15px;line-height:1.7;color:#444444;font-family:Georgia,serif;">${escapeHtml(introCopy)}</p>
           </td>
         </tr>` : ""}
 
@@ -115,9 +105,9 @@ export function buildDigestEmail({
         <!-- CTA -->
         ${rankingsUrl ? `
         <tr>
-          <td style="padding:24px 36px;border-top:2px solid #111111;">
+          <td style="padding:22px 32px;border-top:1px solid #ececec;background:#faf9f8;">
             <a href="${SITE_URL}${escapeHtml(rankingsUrl)}"
-               style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#FF7444;text-decoration:none;font-family:'Courier New',Courier,monospace;">
+               style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#FF7444;text-decoration:none;font-weight:700;font-family:'Courier New',Courier,monospace;">
               See${totalCount ? ` all ${totalCount}` : " the full list of"} restaurants &rarr;
             </a>
           </td>
@@ -125,14 +115,11 @@ export function buildDigestEmail({
 
         <!-- Footer -->
         <tr>
-          <td style="padding:20px 36px;border-top:1px solid #e8e8e8;">
-            <p style="margin:0 0 6px;font-size:10px;line-height:1.6;color:#aaaaaa;letter-spacing:0.06em;text-transform:uppercase;">
+          <td style="padding:18px 32px 22px;border-top:1px solid #ececec;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;font-family:Georgia,serif;">
               You&rsquo;re subscribed to the CleanPlate NYC digest.
-            </p>
-            <p style="margin:0;font-size:10px;color:#aaaaaa;letter-spacing:0.06em;text-transform:uppercase;">
-              <a href="${unsubscribeUrl}" style="color:#aaaaaa;">Unsubscribe</a>
-              &nbsp;&mdash;&nbsp;
-              <a href="${SITE_URL}" style="color:#aaaaaa;">trycleanplate.com</a>
+              <a href="${unsubscribeUrl}" style="color:#999999;">Unsubscribe</a> &middot;
+              <a href="${SITE_URL}" style="color:#999999;">trycleanplate.com</a>
             </p>
           </td>
         </tr>
