@@ -167,7 +167,7 @@ async function fetchRestaurants(topic: Topic): Promise<{ restaurants: DigestRest
   // Fetch only what we might feature — hard limit so dossier JSONB isn't pulled for every row
   let dataQuery = supabaseServer
     .from("restaurants")
-    .select("id, name, slug, neighborhood, score, dossier")
+    .select("id, name, slug, neighborhood, cuisine, score, dossier")
     .eq("city", "New York")
     .not("score", "is", null)
     .gte("score", DIGEST_MIN_SCORE)

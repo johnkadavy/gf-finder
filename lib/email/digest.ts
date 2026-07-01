@@ -1,3 +1,5 @@
+import { normalizeCuisine } from "@/lib/cuisine";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
 
 export type DigestRestaurant = {
@@ -5,6 +7,7 @@ export type DigestRestaurant = {
   name: string;
   slug: string | null;
   neighborhood: string | null;
+  cuisine: string | null;
   score: number;
   dossier: { summary?: { short_summary?: string } } | null;
   editorial_note?: string | null;
@@ -55,8 +58,13 @@ export function buildDigestEmail({
               <tr>
                 <td valign="top">
                   <a href="${href}" style="font-size:18px;font-weight:700;color:#111111;text-decoration:none;font-family:Georgia,serif;line-height:1.3;">${escapeHtml(r.name)}</a>
-                  ${r.neighborhood ? `
-                  <p style="margin:5px 0 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#999999;font-family:'Courier New',Courier,monospace;">${escapeHtml(r.neighborhood)}</p>` : ""}
+                  ${(() => {
+                    const parts = [
+                      r.cuisine ? escapeHtml(normalizeCuisine(r.cuisine)) : null,
+                      r.neighborhood ? escapeHtml(r.neighborhood) : null,
+                    ].filter(Boolean);
+                    return parts.length ? `<p style="margin:5px 0 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#999999;font-family:'Courier New',Courier,monospace;">${parts.join(" · ")}</p>` : "";
+                  })()}
                 </td>
                 <td valign="top" align="right" width="64" style="padding-left:16px;">
                   <span style="font-size:24px;font-weight:700;font-family:'Courier New',Courier,monospace;color:${color};line-height:1;">${score}</span>
