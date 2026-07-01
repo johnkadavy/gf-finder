@@ -1,6 +1,6 @@
 # CleanPlate — Priorities
 
-_Living doc. Update freely. Last updated: 2026-06-23._
+_Living doc. Update freely. Last updated: 2026-07-01._
 
 CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 safety scores + email digest). Two jobs at once: (1) a real product with early organic signups, (2) a portfolio piece proving applied-AI product chops for the job search.
 
@@ -14,17 +14,20 @@ CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 s
 
 | # | Item | Why now | Rough effort |
 |---|------|---------|------|
-| 1 | **Fix the email digest flow** | Only retention loop, and it's buggy — every bug leaks a hard-won signup. Stop the bleeding first. | S–M |
-| 2 | **Analytics on logged-in behavior** | Can't prioritize the rest blind. A few signups is exactly when instrumentation pays off. Unblocks everything below. | M |
-| 3 | **Schedule celiac/user interviews** | Cheap, high-signal, compounding. Keep a steady cadence rather than batching. | S (recurring) |
+| 1 | **Digest quality pass** — restaurant-selection logic + copy/voice | Mechanics (daily cron, topic generation) now work; quality is what's left. It fires daily to every follower, so tone/selection compounds with each send — at <10 followers, one unsubscribe from a stale pick is a real loss. | S–M |
+| 2 | **Schedule celiac/user interviews** | At <10 users, qualitative signal beats analytics. Directly informs digest voice and what the protocol DB should capture. Keep a steady cadence rather than batching. | S (recurring) |
+| 3 | **Analytics on logged-in behavior** | Demoted below interviews at current scale, but don't drop: it's cheap and needs lead time to accumulate data. Instrument now, read it later. | M |
+
+Explicitly deferred: digest reliability work (locks, idempotency, batching) — per the TODO in `app/api/cron/weekly-digest/route.ts`, revisit at a few hundred followers.
 
 ## Next (2–4 weeks)
 
 | # | Item | Why next | Rough effort |
 |---|------|----------|------|
-| 7 | **Computer-use flows to capture Instagram data** (GF options, signature dishes) | Feeds the differentiated DB AND is portfolio gold — agentic AI is exactly the target role. | M–L |
-| 4 | **Plan restaurant-protocol capture** (differentiated DB) | The actual moat. Start with schema + a small manual pilot before automating. | M (plan), L (build) |
-| 6 | **Automated DB refresh cycle** (close-out + score updates) | Data trust. Can stay semi-manual until traffic justifies full automation. | M |
+| 4 | **Agent eval infra** | Promoted from backlog: two AI surfaces now ship user-facing output (ask agent + Claude-generated digest copy) with zero regression safety. Cases already exist in `evals/agent-eval-cases.md`; needs a runner that scores pass/fail and logs results. Also protects the #1 digest-quality work. | S–M |
+| 5 | **Plan restaurant-protocol capture** (differentiated DB) | The actual moat. Start with schema + a small manual pilot before automating. | M (plan), L (build) |
+| 6 | **Computer-use flows to capture Instagram data** (GF options, signature dishes) | Feeds the differentiated DB. Judge on data value; portfolio value is a bonus, not the driver. | M–L |
+| 7 | **Automated DB refresh cycle** (close-out + score updates) | Data trust. Can stay semi-manual until traffic justifies full automation. | M |
 
 ## Later (after the loop holds)
 
@@ -36,7 +39,8 @@ CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 s
 
 ## Notes / backlog
 - **New restaurant detection pipeline** — automatically detect when new restaurants open in NYC and ingest them. Would power "newly opened" signal in the digest and keep the DB fresh without manual neighborhood runs.
-- **Agent eval infra** — eval cases already exist in `evals/agent-eval-cases.md`; need a script that runs them against the live agent, scores pass/fail, and logs results. Catches prompt regressions before they reach users.
+- **Agent V2: full chat** (from the retired GF_AGENT_SPEC) — multi-turn conversation with history, saved preferences ("celiac + dairy allergy"), GPS location-awareness, suggested follow-ups. Only after V1 single-shot validates.
+- **Agent pricing** (from the retired GF_AGENT_SPEC) — free tier of ~5 queries (limits already enforced in `/api/agent`), premium at ~$7/mo or $60/yr for unlimited queries + saved preferences, gated via Supabase Auth. Revisit once usage justifies it.
 - **Onboarding flow** — post-signup modal questionnaire: home city, risk profile (celiac vs. gluten-sensitive vs. preference), top interests (cuisine, neighborhood, place type). Use answers to personalize default filters and seed their first follows.
 - **Account page improvements**
 - **Logo alignment** — review and fix logo positioning/alignment across pages.
