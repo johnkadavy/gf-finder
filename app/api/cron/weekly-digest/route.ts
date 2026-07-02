@@ -89,6 +89,7 @@ export async function GET(req: Request) {
       rankingsUrl: topic.rankingsUrl,
       totalCount,
       introCopy: intro,
+      heroImageUrl: topic.heroImage,
     });
 
     const { error } = await resend.emails.send({

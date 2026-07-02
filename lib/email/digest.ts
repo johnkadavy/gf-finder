@@ -33,6 +33,7 @@ export function buildDigestEmail({
   rankingsUrl,
   totalCount,
   introCopy,
+  heroImageUrl,
 }: {
   label: string;
   restaurants: DigestRestaurant[];
@@ -40,6 +41,8 @@ export function buildDigestEmail({
   rankingsUrl?: string;
   totalCount?: number;
   introCopy?: string;
+  /** Path under public/, e.g. "/digest/williamsburg.png". Omit for no hero. */
+  heroImageUrl?: string;
 }): string {
   const subjectLabel = escapeHtml(label);
 
@@ -98,6 +101,15 @@ export function buildDigestEmail({
             <p style="margin:0;font-size:24px;font-weight:700;color:#111111;font-family:Georgia,serif;line-height:1.25;">${subjectLabel}</p>
           </td>
         </tr>
+
+        <!-- Hero illustration -->
+        ${heroImageUrl ? `
+        <tr>
+          <td style="padding:0;border-bottom:1px solid #ececec;">
+            <img src="${SITE_URL}${escapeHtml(heroImageUrl)}" width="560" alt="${subjectLabel}"
+                 style="display:block;width:100%;height:auto;"/>
+          </td>
+        </tr>` : ""}
 
         <!-- Intro copy -->
         ${introCopy ? `

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { buildDigestEmail } from "@/lib/email/digest";
 import type { DigestRestaurant } from "@/lib/email/digest";
+import { TOPIC_POOL } from "@/lib/digest-topics";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "CleanPlate <noreply@auth.trycleanplate.com>";
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
   // Top 3 NYC restaurants — sufficient for styling preview
   const { data: restaurants } = await supabaseServer
     .from("restaurants")
-    .select("id, name, slug, neighborhood, score, dossier")
+    .select("id, name, slug, neighborhood, cuisine, score, dossier")
     .eq("city", "New York")
     .not("score", "is", null)
     .gte("score", 80)
@@ -37,14 +38,19 @@ export async function POST(req: Request) {
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://trycleanplate.com";
   const unsubscribeUrl = `${SITE_URL}/api/follows/unsubscribe?token=test-preview`;
 
+  // Random topic so tests exercise the hero image + CTA layout
+  const topic = TOPIC_POOL[Math.floor(Math.random() * TOPIC_POOL.length)];
+
   const { error: emailError } = await resend.emails.send({
     from: FROM_EMAIL,
     to: user.email!,
-    subject: `[TEST DIGEST] Top GF spots in NYC`,
+    subject: `[TEST DIGEST] ${topic.label}`,
     html: buildDigestEmail({
-      label: "Top GF Spots in NYC",
+      label: topic.label,
       restaurants: restaurants as DigestRestaurant[],
       unsubscribeUrl,
+      rankingsUrl: topic.rankingsUrl,
+      heroImageUrl: topic.heroImage,
     }),
   });
 
