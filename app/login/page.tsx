@@ -67,6 +67,7 @@ function LoginForm() {
               </p>
               <p className="text-[13px] text-[oklch(0.55_0_0)] text-center leading-relaxed">
                 We&apos;ll email you a magic link — no password needed.
+                You&apos;ll also get our weekly GF digest; unsubscribe anytime.
               </p>
             </div>
 

@@ -195,7 +195,7 @@ async function main() {
 
     const results = await searchStreet(query);
     const operational = results.filter(
-      (p) => !p.businessStatus || p.businessStatus === "OPERATIONAL"
+      (p) => p.businessStatus === "OPERATIONAL"
     );
 
     let newCount = 0;

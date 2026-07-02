@@ -6,10 +6,10 @@ import { getGaugeColor } from "@/lib/score";
 import type { ScoringDossier } from "@/lib/score";
 import { ScoreBadge } from "@/app/components/ScoreBadge";
 import { isNewRestaurant } from "@/lib/utils";
-import { IndexTable } from "./IndexTable";
-import type { TableRestaurant } from "./IndexTable";
+import { RankedList, type RankedRestaurant } from "@/app/components/RankedList";
+import { lookupBorough } from "@/lib/borough-lookup";
 import { FollowPrompt } from "./FollowPrompt";
-import { StatStrip } from "./StatStrip";
+import { StatStrip, type TableRestaurant } from "./StatStrip";
 import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
 import type { CategoryDef } from "@/lib/categories";
 
@@ -240,9 +240,13 @@ export default async function LandingPage({ params }: Props) {
 
         {/* ── Hero ── */}
         <section
-          className="border-b px-4 md:px-8 py-14 md:py-20"
+          className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"
           style={{ borderColor: "var(--border-default)" }}
         >
+          <div
+            className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
+          />
           <div className={isTableLayout ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 flex-wrap mb-6">
@@ -265,15 +269,13 @@ export default async function LandingPage({ params }: Props) {
               </span>
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
-              CleanPlate · {city}
-            </p>
-
             <h1
-              className="font-[family-name:var(--font-display)] leading-tight mb-6"
-              style={{ fontSize: "clamp(2rem, 6vw, 4rem)", letterSpacing: "0.02em" }}
+              className="font-[family-name:var(--font-display)] leading-none mb-10"
+              style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
             >
-              {h1}
+              {catDef.cityLabelPlural}
+              <br />
+              <span style={{ color: "var(--accent)" }}>in {city}</span>
             </h1>
 
             {/* Editorial intro */}
@@ -289,12 +291,28 @@ export default async function LandingPage({ params }: Props) {
             {isTableLayout ? (
               <>
                 <StatStrip restaurants={restaurants as TableRestaurant[]} entityLabel={catDef.labelPlural} />
-                <IndexTable
-                  restaurants={restaurants as TableRestaurant[]}
-                  city={city}
-                  catSlug={catSlug}
-                  catLabel={catDef.labelPlural}
-                  sourcePage={`/gluten-free/${s0}/${s1}`}
+                <RankedList
+                  restaurants={restaurants as unknown as RankedRestaurant[]}
+                  countLabel={`${restaurants.length} ${catDef.labelPlural} — Ranked by GF Safety`}
+                  metaLine={(r) => {
+                    const borough = r.neighborhood ? lookupBorough(r.neighborhood) : null;
+                    const hood = r.neighborhood
+                      ? `${r.neighborhood}${borough && borough !== "Manhattan" ? `, ${borough}` : ""}`
+                      : null;
+                    return [hood, r.cuisine].filter(Boolean).join(" · ");
+                  }}
+                  inlineSlot={{
+                    afterRow: 8,
+                    node: (
+                      <FollowPrompt
+                        variant="inline"
+                        followType="category"
+                        followTarget={catSlug}
+                        contextLabel={`${catDef.labelPlural} in ${city}`}
+                        sourcePage={`/gluten-free/${s0}/${s1}`}
+                      />
+                    ),
+                  }}
                 />
                 <div className="mt-8">
                   <FollowPrompt
@@ -423,13 +441,13 @@ export default async function LandingPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from("restaurants")
-    .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier")
+    .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier, source, ingested_at")
     .not("score", "is", null)
     .eq("city", city)
     .eq("neighborhood", neighborhood)
     .gte("score", 75)
     .order("score", { ascending: false })
-    .limit(25);
+    .limit(100);
 
   if (catDef) query = applyCategoryFilter(query, catDef);
 
@@ -444,8 +462,8 @@ export default async function LandingPage({ params }: Props) {
     : `Best Gluten-Free Restaurants in ${neighborhood}, ${city}`;
 
   const intro = catDef
-    ? `Looking for gluten-free ${catDef.label.toLowerCase()} in ${neighborhood}? CleanPlate rates ${restaurants.length} spot${restaurants.length !== 1 ? "s" : ""} in ${neighborhood} based on GF safety signals including cross-contamination risk, dedicated fryers, menu labeling, and real diner experiences.`
-    : `Looking for gluten-free restaurants in ${neighborhood}? CleanPlate rates ${restaurants.length} restaurant${restaurants.length !== 1 ? "s" : ""} in ${neighborhood} based on GF safety signals including cross-contamination risk, dedicated fryers, menu labeling, and real diner experiences.`;
+    ? `Every ${catDef.label.toLowerCase()} spot in ${neighborhood} with a GF safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`
+    : `Every restaurant in ${neighborhood} with a GF safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`;
 
   const availableCategories = Object.entries(CATEGORIES).filter(([cs]) => cs !== categorySlug);
 
@@ -467,9 +485,13 @@ export default async function LandingPage({ params }: Props) {
 
       {/* ── Hero ── */}
       <section
-        className="border-b px-4 md:px-8 py-14 md:py-20"
+        className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"
         style={{ borderColor: "var(--border-default)" }}
       >
+        <div
+          className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
+        />
         <div className="max-w-6xl mx-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 flex-wrap mb-6">
@@ -509,15 +531,13 @@ export default async function LandingPage({ params }: Props) {
             )}
           </div>
 
-          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-4">
-            CleanPlate · {city}
-          </p>
-
           <h1
-            className="font-[family-name:var(--font-display)] leading-tight mb-6"
-            style={{ fontSize: "clamp(2rem, 6vw, 4rem)", letterSpacing: "0.02em" }}
+            className="font-[family-name:var(--font-display)] leading-none mb-10"
+            style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
           >
-            {h1}
+            {catDef ? `Best ${catDef.labelPlural}` : "Best Gluten-Free Restaurants"}
+            <br />
+            <span style={{ color: "var(--accent)" }}>in {neighborhood}</span>
           </h1>
 
           <p className="text-ui-2xl leading-[1.8] text-text-secondary max-w-2xl">
@@ -533,13 +553,22 @@ export default async function LandingPage({ params }: Props) {
             restaurants={restaurants as TableRestaurant[]}
             entityLabel={catDef ? catDef.labelPlural : "Restaurants"}
           />
-          <IndexTable
-            restaurants={restaurants as TableRestaurant[]}
-            city={city}
-            catLabel={catDef?.labelPlural}
-            catSlug={categorySlug ?? undefined}
-            neighborhoodOverride={neighborhood}
-            sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+          <RankedList
+            restaurants={restaurants as unknown as RankedRestaurant[]}
+            countLabel={`${restaurants.length} ${catDef ? catDef.labelPlural : `Restaurant${restaurants.length !== 1 ? "s" : ""}`} — Ranked by GF Safety`}
+            metaLine={(r) => r.cuisine ?? ""}
+            inlineSlot={{
+              afterRow: 8,
+              node: (
+                <FollowPrompt
+                  variant="inline"
+                  followType="neighborhood"
+                  followTarget={neighborhood}
+                  contextLabel={neighborhood}
+                  sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+                />
+              ),
+            }}
           />
           <div className="mt-8">
             <FollowPrompt

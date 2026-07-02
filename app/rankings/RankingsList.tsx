@@ -1,11 +1,8 @@
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getGaugeColor, type ScoringDossier } from "@/lib/score";
-import { isNewRestaurant, formatLocation } from "@/lib/utils";
+import type { ScoringDossier } from "@/lib/score";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { rankingsUrl, type Filters, EXPERIENCE_OPTIONS } from "./utils";
-import { ExpandableText } from "./ExpandableText";
-import { ScoreBadge } from "@/app/components/ScoreBadge";
+import { RankedList } from "@/app/components/RankedList";
 
 const DEFAULT_LIMIT = 25;
 
@@ -87,111 +84,21 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
     );
   }
 
+  const contextSuffix =
+    filters.neighborhood !== "all"
+      ? ` — ${filters.neighborhood}`
+      : filters.city !== "all"
+      ? ` — ${filters.city}`
+      : filters.region !== "all"
+      ? ` — ${filters.region}`
+      : "";
+
   return (
-    <div className="space-y-0">
-      {/* Count header */}
-      <div
-        className="flex items-center justify-between py-4 border-b"
-        style={{ borderColor: "var(--border-default)" }}
-      >
-        <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
-          Showing {restaurants.length} of {totalCount} Restaurant{totalCount !== 1 ? "s" : ""}
-          {filters.neighborhood !== "all"
-            ? ` — ${filters.neighborhood}`
-            : filters.city !== "all"
-            ? ` — ${filters.city}`
-            : filters.region !== "all"
-            ? ` — ${filters.region}`
-            : ""}
-        </span>
-      </div>
-
-      {restaurants.map((restaurant, index) => {
-        const color = getGaugeColor(restaurant.score);
-        const rank = index + 1;
-
-        return (
-          <Link
-            key={restaurant.id}
-            href={restaurant.slug ? `/restaurant/${restaurant.slug}` : `/restaurant/${restaurant.id}`}
-            className="group grid grid-cols-[3rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-3 md:gap-10 py-4 md:py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-surface-raised"
-            style={{
-              borderColor: "var(--border-subtle)",
-              borderLeft: `2px solid ${color}`,
-              animation: `fadeUp 0.4s ease-out ${Math.min(index, 20) * 0.03}s both`,
-            }}
-          >
-            {/* Rank */}
-            <span
-              className="font-[family-name:var(--font-display)] leading-none tabular-nums text-right pt-0.5"
-              style={{
-                fontSize: "clamp(1.1rem, 2vw, 1.75rem)",
-                color: rank <= 3 ? color : "var(--text-label)",
-              }}
-            >
-              {String(rank).padStart(2, "0")}
-            </span>
-
-            {/* Name + location */}
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <div className="relative min-w-0">
-                  <span
-                    className="font-[family-name:var(--font-display)] leading-tight line-clamp-2 md:line-clamp-1 md:truncate"
-                    style={{
-                      fontSize: "clamp(1.15rem, 2.5vw, 2.1rem)",
-                      letterSpacing: "0.02em",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {restaurant.display_name ?? restaurant.name}
-                  </span>
-                  <span
-                    className="absolute bottom-0 left-0 h-px w-0 group-hover:w-full transition-all duration-300"
-                    style={{ backgroundColor: color }}
-                  />
-                </div>
-                {isNewRestaurant(restaurant.source, restaurant.ingested_at) && (
-                  <span className="font-mono text-ui-xs uppercase tracking-editorial px-1.5 py-0.5 shrink-0" style={{ backgroundColor: "var(--accent-tint-md)", color: "var(--accent)", border: "1px solid var(--accent-tint-lg)" }}>
-                    New
-                  </span>
-                )}
-              </div>
-              <p className="font-mono text-ui-md uppercase tracking-editorial text-text-label mt-1 md:mt-2 truncate">
-                {formatLocation(restaurant.neighborhood, restaurant.city, restaurant.region)}
-              </p>
-              {restaurant.dossier?.summary?.short_summary && (
-                <>
-                  <p className="md:hidden text-ui-lg leading-[1.65] text-text-tertiary mt-1">
-                    <ExpandableText text={restaurant.dossier.summary.short_summary} />
-                  </p>
-                  <p className="hidden md:block text-ui-xl leading-[1.7] text-text-secondary mt-2 max-w-xl">
-                    {restaurant.dossier.summary.short_summary}
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Score */}
-            <ScoreBadge score={restaurant.score} />
-          </Link>
-        );
-      })}
-
-      {/* Load More */}
-      {hasMore && (
-        <div className="flex justify-center pt-10 pb-2">
-          <Link
-            href={rankingsUrl(filters, { limit: filters.limit + DEFAULT_LIMIT })}
-            scroll={false}
-            className="font-mono text-ui-md uppercase tracking-editorial px-8 py-3.5 border transition-colors duration-150 text-text-tertiary hover:text-white"
-            style={{ borderColor: "var(--border-emphasis)" }}
-          >
-            Load More
-          </Link>
-        </div>
-      )}
-    </div>
+    <RankedList
+      restaurants={restaurants}
+      countLabel={`Showing ${restaurants.length} of ${totalCount} Restaurant${totalCount !== 1 ? "s" : ""}${contextSuffix}`}
+      loadMoreHref={hasMore ? rankingsUrl(filters, { limit: filters.limit + DEFAULT_LIMIT }) : undefined}
+    />
   );
 }
 

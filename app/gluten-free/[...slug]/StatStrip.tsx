@@ -1,5 +1,19 @@
 import { deriveKitchenStatus } from "@/lib/kitchen-status";
-import type { TableRestaurant } from "./IndexTable";
+import type { ScoringDossier } from "@/lib/score";
+
+export type TableRestaurant = {
+  id: number;
+  name: string;
+  score: number;
+  slug: string | null;
+  neighborhood: string | null;
+  cuisine: string | null;
+  website_url: string | null;
+  google_maps_url: string | null;
+  dedicated_gf_kitchen: string | null;
+  display_name: string | null;
+  dossier: ScoringDossier | null;
+};
 
 export function StatStrip({
   restaurants,

@@ -8,6 +8,53 @@ import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFil
 import { RankingsList, RankingsListSkeleton } from "./RankingsList";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { getCityAccess, resolveCity } from "@/lib/cities";
+import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
+
+/**
+ * When the active filters map exactly to an existing /gluten-free SEO page,
+ * canonicalize this filtered view to that page (the indexed surface).
+ * Returns null when no matching page exists → caller falls back to "/rankings".
+ */
+const seoPageCanonical = unstable_cache(
+  async (city: string, neighborhood: string | null, catSlug: string | null): Promise<string | null> => {
+    if (neighborhood) {
+      const { count } = await supabase
+        .from("restaurants")
+        .select("*", { count: "exact", head: true })
+        .not("score", "is", null)
+        .eq("city", city)
+        .eq("neighborhood", neighborhood)
+        .gte("score", 75);
+      // Mirrors the neighborhood page's notFound threshold (<3)
+      return (count ?? 0) >= 3 ? `/gluten-free/${toSlug(city)}/${toSlug(neighborhood)}` : null;
+    }
+    if (catSlug && CATEGORIES[catSlug]) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query: any = supabase
+        .from("restaurants")
+        .select("*", { count: "exact", head: true })
+        .not("score", "is", null)
+        .eq("city", city)
+        .gte("score", 75);
+      query = applyCategoryFilter(query, CATEGORIES[catSlug]);
+      const { count } = await query;
+      // Mirrors the city-level category page's notFound threshold (<5)
+      return (count ?? 0) >= 5 ? `/gluten-free/${toSlug(city)}/${catSlug}` : null;
+    }
+    return null;
+  },
+  ["rankings-seo-canonical"],
+  { revalidate: 86400 }
+);
+
+/** Reverse-map rankings filter params to a /gluten-free category slug. */
+function categorySlugForFilters(gfCategory: string, placeType: string): string | null {
+  for (const [slug, def] of Object.entries(CATEGORIES)) {
+    if (def.type === "gf_food" && def.value === gfCategory) return slug;
+    if (def.type === "place_type" && def.value === placeType) return slug;
+  }
+  return null;
+}
 
 type SearchParams = {
   region?: string;
@@ -59,11 +106,23 @@ export async function generateMetadata({
     description = "Browse 3,500+ NYC restaurants ranked by gluten-free safety. Filter by dedicated GF kitchen, GF fryer, GF pizza, neighborhood, and more.";
   }
 
+  // Filtered views that match an existing /gluten-free page canonicalize there
+  let canonical = "/rankings";
+  if (city !== "all") {
+    const catSlug = categorySlugForFilters(gfCategory, placeType);
+    const seoPath = await seoPageCanonical(
+      city,
+      neighborhood !== "all" ? neighborhood : null,
+      neighborhood === "all" ? catSlug : null
+    );
+    if (seoPath) canonical = seoPath;
+  }
+
   return {
     title,
     description,
-    alternates: { canonical: "/rankings" },
-    openGraph: { title, description, type: "website", url: "/rankings" },
+    alternates: { canonical },
+    openGraph: { title, description, type: "website", url: canonical },
   };
 }
 
