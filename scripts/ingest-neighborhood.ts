@@ -222,20 +222,33 @@ async function main() {
   const top = sorted.slice(0, count);
   console.log(`Upserting ${top.length} restaurants...\n`);
 
-  // Load all existing slugs so new ones don't collide
-  const { data: existingSlugs } = await supabase
-    .from("restaurants")
-    .select("slug")
-    .not("slug", "is", null);
-  const takenSlugs = new Set((existingSlugs ?? []).map((r) => r.slug as string));
+  // Load all existing slugs so new ones don't collide (paginated — PostgREST caps at 1000/page)
+  const slugAccum: string[] = [];
+  const placeAccum: { google_place_id: string; slug: string | null }[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: slugPage } = await supabase
+      .from("restaurants")
+      .select("slug")
+      .not("slug", "is", null)
+      .range(from, from + PAGE - 1);
+    slugAccum.push(...(slugPage ?? []).map((r) => r.slug as string));
+    if (!slugPage || slugPage.length < PAGE) break;
+  }
+  const takenSlugs = new Set(slugAccum);
 
-  // Also load existing place_ids so we can reuse their existing slugs on re-ingest
-  const { data: existingPlaces } = await supabase
-    .from("restaurants")
-    .select("google_place_id, slug")
-    .not("google_place_id", "is", null);
+  // Also load existing place_ids so we can reuse their existing slugs on re-ingest (paginated)
+  for (let from = 0; ; from += PAGE) {
+    const { data: placePage } = await supabase
+      .from("restaurants")
+      .select("google_place_id, slug")
+      .not("google_place_id", "is", null)
+      .range(from, from + PAGE - 1);
+    placeAccum.push(...(placePage ?? []));
+    if (!placePage || placePage.length < PAGE) break;
+  }
   const existingSlugByPlaceId = new Map(
-    (existingPlaces ?? []).map((r) => [r.google_place_id, r.slug as string | null])
+    placeAccum.map((r) => [r.google_place_id, r.slug as string | null])
   );
 
   // Build rows
@@ -275,11 +288,9 @@ async function main() {
     .eq("neighborhood", neighborhood);
 
   const existingByPlaceId = new Set((existing ?? []).map((r) => r.google_place_id).filter(Boolean));
-  // All existing names — any new row whose name matches but has a different place_id would conflict
+  // All existing names — include rows with null place_id so they're caught by the name conflict check
   const existingNameToPlaceId = new Map(
-    (existing ?? [])
-      .filter((r) => r.google_place_id)
-      .map((r) => [r.name.toLowerCase(), r.google_place_id])
+    (existing ?? []).map((r) => [r.name.toLowerCase(), r.google_place_id ?? null])
   );
 
   // Also deduplicate new rows by name (keep first = highest review count)
@@ -287,8 +298,12 @@ async function main() {
   const safeRows = rows.filter((r) => {
     const nameLower = r.name.toLowerCase();
 
-    // Already in DB with same place_id → safe update
-    if (existingByPlaceId.has(r.google_place_id)) return true;
+    // Already in DB with same place_id → safe update, but still track name so a
+    // second row in this batch with the same name doesn't slip through
+    if (existingByPlaceId.has(r.google_place_id)) {
+      seenNames.add(nameLower);
+      return true;
+    }
 
     // Name exists in DB with a different place_id → skip to avoid constraint violation
     if (existingNameToPlaceId.has(nameLower) && existingNameToPlaceId.get(nameLower) !== r.google_place_id) {
@@ -305,16 +320,26 @@ async function main() {
     return true;
   });
 
-  const { error: upsertError } = await supabase
-    .from("restaurants")
-    .upsert(safeRows, { onConflict: "google_place_id" });
-
-  if (upsertError) {
-    console.error("Upsert failed:", upsertError.message);
-    process.exit(1);
+  let upserted = 0;
+  let upsertSkipped = 0;
+  for (const row of safeRows) {
+    const { error: upsertError } = await supabase
+      .from("restaurants")
+      .upsert(row, { onConflict: "google_place_id" });
+    if (upsertError) {
+      if (upsertError.code === "23505") {
+        console.log(`  Skipping "${row.name}" — constraint conflict`);
+        upsertSkipped++;
+      } else {
+        console.error("Upsert failed:", upsertError.message);
+        process.exit(1);
+      }
+    } else {
+      upserted++;
+    }
   }
 
-  console.log(`✓ Upserted ${safeRows.length} restaurants\n`);
+  console.log(`✓ Upserted ${upserted} restaurants${upsertSkipped ? ` (${upsertSkipped} skipped due to conflicts)` : ""}\n`);
 
   // Street yield summary
   console.log("Street yield summary:");
