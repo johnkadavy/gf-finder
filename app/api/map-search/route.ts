@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
@@ -20,9 +21,8 @@ type Row = {
   website_url: string | null;
   google_maps_url: string | null;
   score: number | null;
-  opening_hours: { periods?: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] } | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dossier: Record<string, any> | null;
+  periods: { open: { day: number; hour: number; minute: number }; close: { day: number; hour: number; minute: number } }[] | null;
+  short_summary: string | null;
   slug: string | null;
   source: string | null;
   ingested_at: string | null;
@@ -35,8 +35,8 @@ function toMapRestaurant(r: Row): MapRestaurant {
     price_level: r.price_level, address: r.address, website: r.website_url,
     google_maps_url: r.google_maps_url,
     score: r.score, color: getGaugeColor(r.score), scoreLabel: getScoreLabel(r.score).label,
-    periods: r.opening_hours?.periods ?? null,
-    short_summary: r.dossier?.summary?.short_summary ?? null,
+    periods: r.periods ?? null,
+    short_summary: r.short_summary ?? null,
     slug: r.slug,
     source: r.source, ingested_at: r.ingested_at,
   };
@@ -79,7 +79,9 @@ function scoreMatch(name: string, cuisine: string | null, query: string): number
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-const SELECT = "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, opening_hours, dossier, slug, source, ingested_at";
+// Egress control: never select whole JSONB columns here. The map needs only
+// opening periods and the one-line summary, so pull exactly those paths.
+const SELECT = "id, name, city, neighborhood, region, lat, lng, cuisine, google_rating, price_level, address, website_url, google_maps_url, score, periods:opening_hours->periods, short_summary:dossier->summary->>short_summary, slug, source, ingested_at";
 const MIN_SCORE = 0.25;
 
 export async function GET(request: Request) {
@@ -100,18 +102,26 @@ export async function GET(request: Request) {
   const { data: { user } } = await serverClient.auth.getUser();
   const cityAccess = await getCityAccess(user?.id, serverClient);
 
-  // Resolve raw cuisine values that map to the requested canonical category
-  let cuisineRawValues: string[] = [];
-  if (cuisine) {
-    let cq = supabase.from("restaurants").select("cuisine").not("cuisine", "is", null);
-    if (!cityAccess.isAdmin) cq = cq.in("city", cityAccess.allowedCities);
-    const { data: cData } = await cq;
-    cuisineRawValues = [...new Set(
-      (cData ?? [])
-        .map((r: { cuisine: string }) => r.cuisine)
-        .filter((c: string) => normalizeCuisine(c) === cuisine)
-    )];
-  }
+  // Resolve raw cuisine values that map to the requested canonical category.
+  // Cached: this was a full cuisine-column scan on every filtered request.
+  const resolveCuisineValues = unstable_cache(
+    async (canonical: string, isAdmin: boolean, allowedCities: string[]): Promise<string[]> => {
+      let cq = supabase.from("restaurants").select("cuisine").not("cuisine", "is", null);
+      if (!isAdmin) cq = cq.in("city", allowedCities);
+      const { data: cData } = await cq;
+      return [...new Set(
+        (cData ?? [])
+          .map((r: { cuisine: string }) => r.cuisine)
+          .filter((c: string) => normalizeCuisine(c) === canonical)
+      )];
+    },
+    ["map-cuisine-values"],
+    { revalidate: 3600 }
+  );
+
+  const cuisineRawValues: string[] = cuisine
+    ? await resolveCuisineValues(cuisine, cityAccess.isAdmin, [...cityAccess.allowedCities].sort())
+    : [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function applyMapFilters(query: any) {
@@ -157,8 +167,8 @@ export async function GET(request: Request) {
 
     const { data } = await query.limit(300);
 
-    const results = (data ?? [])
-      .map((r: Row) => ({ ...toMapRestaurant(r), _score: scoreMatch(r.name, r.cuisine, q) }))
+    const results = ((data ?? []) as unknown as Row[])
+      .map((r) => ({ ...toMapRestaurant(r), _score: scoreMatch(r.name, r.cuisine, q) }))
       .filter((r) => r._score >= MIN_SCORE)
       .sort((a, b) => b._score - a._score)
       .slice(0, 50)
@@ -183,7 +193,7 @@ export async function GET(request: Request) {
     query = applyMapFilters(query);
 
     const { data } = await query;
-    return Response.json((data ?? []).map(toMapRestaurant));
+    return Response.json(((data ?? []) as unknown as Row[]).map(toMapRestaurant));
   }
 
   return Response.json([]);

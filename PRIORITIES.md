@@ -15,7 +15,6 @@ CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 s
 | # | Item | Why now | Rough effort |
 |---|------|---------|------|
 | 1 | **Subscription placement review** — audit where follow/subscribe UI lives and optimize for conversion | Currently buried in `/gluten-free/[slug]` ranking pages; unclear if users are finding it. Wrong placement = silent churn before it starts. | S |
-| 2 | **Sitemap / page indexing check** — verify which pages are indexed, confirm sitemap is correct, check for crawl issues | Recent bot traffic spike raised questions about what's being crawled. Also an opportunity: restaurant and ranking pages are SEO-valuable and should be indexed. | S |
 | 3 | **Schedule celiac/user interviews** | At <10 users, qualitative signal beats analytics. Directly informs digest voice and what the protocol DB should capture. Keep a steady cadence rather than batching. | S (recurring) |
 | 4 | **Analytics on logged-in behavior** | Cheap and needs lead time to accumulate data. Instrument now, read it later. | M |
 
@@ -39,6 +38,8 @@ Digest is in good shape: daily cron, topic rotation, hero images, editorial note
 | 9 | **Posts in GF groups online** | Distribution is wasted before retention works; turn it on once the digest is solid. |
 
 ## Notes / backlog
+- **Create CleanPlate Substack** — distribution channel for the digest; cross-posts could drive backlinks and audience growth outside the current email list.
+- **SEO site structure** — low-impact at current scale; revisit when domain authority grows. Options: lower /gluten-free landing page threshold (75→60) to surface more restaurants; add borough-level aggregate pages for higher-intent keyword targets; noindex <50-score restaurant pages to improve crawl quality signal. Backlinks from GF blogs/publications will move the needle more than any of these.
 - **Vercel + Supabase usage audit** — review current consumption against plan limits; plan for upgrades or optimizations before hitting caps.
 - **New restaurant detection pipeline** — automatically detect when new restaurants open in NYC and ingest them. Would power "newly opened" signal in the digest and keep the DB fresh without manual neighborhood runs.
 - **Agent V2: full chat** (from the retired GF_AGENT_SPEC) — multi-turn conversation with history, saved preferences ("celiac + dairy allergy"), GPS location-awareness, suggested follow-ups. Only after V1 single-shot validates.

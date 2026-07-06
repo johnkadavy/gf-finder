@@ -106,16 +106,28 @@ export async function generateMetadata({
     description = "Browse 3,500+ NYC restaurants ranked by gluten-free safety. Filter by dedicated GF kitchen, GF fryer, GF pizza, neighborhood, and more.";
   }
 
-  // Filtered views that match an existing /gluten-free page canonicalize there
+  // Filtered views that match an existing /gluten-free page canonicalize there —
+  // but only on an EXACT slice match. Any extra narrowing filter means the
+  // content differs from the SEO page, so it must stay canonical to /rankings.
   let canonical = "/rankings";
-  if (city !== "all") {
-    const catSlug = categorySlugForFilters(gfCategory, placeType);
-    const seoPath = await seoPageCanonical(
-      city,
-      neighborhood !== "all" ? neighborhood : null,
-      neighborhood === "all" ? catSlug : null
-    );
-    if (seoPath) canonical = seoPath;
+  const noExtraFilters =
+    (params.cuisine ?? "all") === "all" &&
+    !params.priceLevel &&
+    params.fryer !== "1" &&
+    params.labeled !== "1" &&
+    (params.experience ?? "all") === "all";
+  if (city !== "all" && noExtraFilters) {
+    const bothCategoryParams = gfCategory !== "all" && placeType !== "all";
+    if (neighborhood !== "all" && gfCategory === "all" && placeType === "all") {
+      const seoPath = await seoPageCanonical(city, neighborhood, null);
+      if (seoPath) canonical = seoPath;
+    } else if (neighborhood === "all" && !bothCategoryParams) {
+      const catSlug = categorySlugForFilters(gfCategory, placeType);
+      if (catSlug) {
+        const seoPath = await seoPageCanonical(city, null, catSlug);
+        if (seoPath) canonical = seoPath;
+      }
+    }
   }
 
   return {

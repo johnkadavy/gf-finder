@@ -199,7 +199,9 @@ async function SaveState({
 
 // ── Slug resolution ────────────────────────────────────────────────────────
 
-async function resolveRestaurant(slugOrId: string) {
+// React cache() dedupes this across generateMetadata + the page render, so a
+// request hits the database once instead of twice (egress control).
+const resolveRestaurant = cache(async (slugOrId: string) => {
   const isNumericId = /^\d+$/.test(slugOrId);
 
   if (isNumericId) {
@@ -219,17 +221,12 @@ async function resolveRestaurant(slugOrId: string) {
     .single();
 
   return data ?? null;
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const isNumericId = /^\d+$/.test(slug);
 
-  const query = isNumericId
-    ? supabase.from("restaurants").select("name, display_name, city, neighborhood, region, dossier, verified_data, slug").eq("id", slug).single()
-    : supabase.from("restaurants").select("name, display_name, city, neighborhood, region, dossier, verified_data, slug").eq("slug", slug).single();
-
-  const { data } = await query;
+  const data = await resolveRestaurant(slug);
   if (!data) return {};
 
   const score = data.dossier

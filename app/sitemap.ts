@@ -22,7 +22,8 @@ const PLACE_TYPE_MAP: Record<string, string> = {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [restaurantsRes, landingRes] = await Promise.all([
     supabase.from("restaurants").select("id, slug, updated_at").not("score", "is", null).order("id", { ascending: true }),
-    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score, dossier").not("score", "is", null),
+    // Egress control: pull only the two dossier paths the counts need, not the whole JSONB
+    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk").not("score", "is", null),
   ]);
 
   // ── Restaurant detail pages ──
@@ -42,8 +43,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     gf_food_categories: string[] | null;
     place_type: string[] | null;
     score: number | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dossier: Record<string, any> | null;
+    fryer: string | null;
+    ccr: string | null;
   };
   const rows = (landingRes.data ?? []) as Row[];
 
@@ -71,11 +72,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         cityEntry.catCounts.set(k, (cityEntry.catCounts.get(k) ?? 0) + 1);
       }
       // fryer
-      if (r.dossier?.operations?.dedicated_equipment?.fryer === true) {
+      if (r.fryer === "true") {
         cityEntry.catCounts.set("fryer", (cityEntry.catCounts.get("fryer") ?? 0) + 1);
       }
       // dedicated
-      if (r.dossier?.operations?.cross_contamination_risk === "low") {
+      if (r.ccr === "low") {
         cityEntry.catCounts.set("dedicated", (cityEntry.catCounts.get("dedicated") ?? 0) + 1);
       }
     }
@@ -92,10 +93,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const k = `pt:${pt}`;
         nbhdEntry.catCounts.set(k, (nbhdEntry.catCounts.get(k) ?? 0) + 1);
       }
-      if (r.dossier?.operations?.dedicated_equipment?.fryer === true) {
+      if (r.fryer === "true") {
         nbhdEntry.catCounts.set("fryer", (nbhdEntry.catCounts.get("fryer") ?? 0) + 1);
       }
-      if (r.dossier?.operations?.cross_contamination_risk === "low") {
+      if (r.ccr === "low") {
         nbhdEntry.catCounts.set("dedicated", (nbhdEntry.catCounts.get("dedicated") ?? 0) + 1);
       }
     }
