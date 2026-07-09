@@ -12,7 +12,14 @@ export type AnalyticsEvent =
   | "save_requires_login"
   | "rankings_filter_applied"
   | "map_search"
-  | "agent_query";
+  | "agent_query"
+  | "restaurant_viewed"
+  | "home_ask_submitted"
+  | "signup_cta_clicked"
+  // Mirrored to PostHog so the email-capture funnel is visible alongside
+  // the logged-in events. These also fire to Vercel Analytics via track().
+  | "follow_prompt_impression"
+  | "follow_submitted";
 
 /**
  * Fire a client-side product-analytics event. No-ops when PostHog isn't

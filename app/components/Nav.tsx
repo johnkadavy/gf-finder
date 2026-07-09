@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { capture } from "@/lib/analytics";
 
 const linkClass =
   "font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-white transition-colors duration-200";
@@ -81,6 +82,7 @@ export function Nav() {
         ) : (
           <Link
             href="/login"
+            onClick={() => capture("signup_cta_clicked", { location: "nav_desktop" })}
             className="font-mono text-ui-md uppercase tracking-editorial px-4 py-2 transition-colors duration-200"
             style={{ backgroundColor: "var(--accent)", color: "var(--surface-base)" }}
           >
@@ -117,6 +119,7 @@ export function Nav() {
         {!loggedIn && (
           <Link
             href="/login"
+            onClick={() => capture("signup_cta_clicked", { location: "nav_mobile" })}
             className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors duration-150"
             style={{ color: "var(--accent)" }}
           >

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { track } from "@vercel/analytics/server";
+import { captureServer } from "@/lib/analytics-server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -24,6 +25,13 @@ export async function GET(req: Request) {
   }
 
   await track("follow_confirmed", {
+    follow_type: data.follow_type,
+    follow_target: data.follow_target,
+  });
+
+  // Email-link click — no browser session/identity to stitch to, so key on the
+  // follow id purely for confirmation volume in PostHog.
+  await captureServer(`follow:${data.id}`, "follow_confirmed", {
     follow_type: data.follow_type,
     follow_target: data.follow_target,
   });

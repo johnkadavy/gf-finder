@@ -4,7 +4,10 @@ import { PostHog } from "posthog-node";
  * Server-side analytics event names. Kept separate from the client list since
  * these fire from route handlers where we already know the authenticated user.
  */
-export type ServerAnalyticsEvent = "login_completed" | "review_submitted";
+export type ServerAnalyticsEvent =
+  | "login_completed"
+  | "review_submitted"
+  | "follow_confirmed";
 
 let client: PostHog | null = null;
 

@@ -38,6 +38,7 @@ Digest is in good shape: daily cron, topic rotation, hero images, editorial note
 | 9 | **Posts in GF groups online** | Distribution is wasted before retention works; turn it on once the digest is solid. |
 
 ## Notes / backlog
+- **Purpose-built operator agents** — a fleet of Claude agents to run CleanPlate operations: add a specific restaurant on demand, search for newly opened restaurants in a neighborhood, trigger enrichment/scoring for a single place, etc. Replaces ad-hoc script runs with a more conversational ops layer.
 - **Swipe UI for mobile** — Tinder-style card swipe to browse restaurants in a neighborhood. Makes mobile exploration more tactile; could replace or complement the ranked list on small screens.
 - **Create CleanPlate Substack** — distribution channel for the digest; cross-posts could drive backlinks and audience growth outside the current email list.
 - **SEO site structure** — low-impact at current scale; revisit when domain authority grows. Options: lower /gluten-free landing page threshold (75→60) to surface more restaurants; add borough-level aggregate pages for higher-intent keyword targets; noindex <50-score restaurant pages to improve crawl quality signal. Backlinks from GF blogs/publications will move the needle more than any of these.

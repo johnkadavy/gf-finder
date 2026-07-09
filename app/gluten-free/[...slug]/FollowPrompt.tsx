@@ -2,6 +2,7 @@
 
 import { useState, useId, useRef, useEffect } from "react";
 import { track } from "@vercel/analytics";
+import { capture } from "@/lib/analytics";
 
 type Props = {
   variant: "table" | "inline" | "section";
@@ -30,6 +31,7 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
         if (entry.isIntersecting && !impressionFired.current) {
           impressionFired.current = true;
           track("follow_prompt_impression", { follow_type: followType, follow_target: followTarget, variant });
+          capture("follow_prompt_impression", { follow_type: followType, follow_target: followTarget, variant });
           observer.disconnect();
         }
       },
@@ -65,6 +67,7 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
       }
       setSubmitState("success");
       track("follow_submitted", { follow_type: followType, follow_target: followTarget, source_page: sourcePage });
+      capture("follow_submitted", { follow_type: followType, follow_target: followTarget, source_page: sourcePage });
     } catch (err) {
       setSubmitState("error");
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");

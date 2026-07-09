@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { capture } from "@/lib/analytics";
 
 const EXAMPLE_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -18,10 +19,12 @@ export function HomeAskInput() {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
+    capture("home_ask_submitted", { source: "input", query_length: q.length });
     router.push(`/ask?q=${encodeURIComponent(q)}`);
   }
 
   function handleExample(q: string) {
+    capture("home_ask_submitted", { source: "example", query_length: q.length });
     router.push(`/ask?q=${encodeURIComponent(q)}`);
   }
 

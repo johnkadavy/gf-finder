@@ -17,6 +17,7 @@ import { StickyInfoBar } from "@/app/components/StickyInfoBar";
 import { isNewRestaurant, formatLocation } from "@/lib/utils";
 import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
+import { ViewTracker } from "./ViewTracker";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -425,6 +426,13 @@ export default async function RestaurantPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ViewTracker
+        restaurantId={r.id}
+        name={r.display_name ?? r.name}
+        score={score}
+        neighborhood={r.neighborhood}
+        city={r.city}
       />
       <StickyInfoBar name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
