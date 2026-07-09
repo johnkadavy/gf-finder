@@ -100,7 +100,10 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
       try {
         const cityParam = selectedCity !== "all" ? `&city=${encodeURIComponent(selectedCity)}` : "";
         const res = await fetch(`/api/suggestions?q=${encodeURIComponent(q)}${cityParam}`);
-        const data: Suggestion[] = await res.json();
+        const json = await res.json();
+        // /api/suggestions returns { restaurants, cuisines }. Guard against the
+        // older bare-array shape too, in case it ever changes back.
+        const data: Suggestion[] = Array.isArray(json) ? json : (json.restaurants ?? []);
         setSuggestions(data);
         setIsOpen(data.length > 0);
         setActiveIndex(-1);

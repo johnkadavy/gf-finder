@@ -6,12 +6,16 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
-import { HomeAskInput } from "./components/HomeAskInput";
-import { TopRatedSection } from "./components/TopRatedSection";
+import { SearchForm } from "./components/SearchForm";
+import { ExploreSection } from "./components/ExploreSection";
 import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
 import { SIGNAL_DOT } from "@/lib/tokens";
+import { CATEGORIES, toSlug, type CategoryDef } from "@/lib/categories";
+import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
+
+export type QuickLink = { label: string; href: string; count: number; emoji?: string };
 
 type Signal = {
   label: string;
@@ -42,15 +46,16 @@ type HomePageProps = {
 // ── Page metadata ────────────────────────────────────────────────────────────
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { totalCount } = await getHomepageMeta();
-  const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
+  const totalCount = await getNycRatedCount();
+  const roundedCount = Math.floor(totalCount / 100) * 100;
+  const countPrefix = roundedCount > 0 ? `${roundedCount.toLocaleString()}+ ` : "";
   return {
     title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
-    description: `${roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety. Find celiac-safe dining with dedicated fryers, clear menu labeling, and low cross-contamination risk.`,
+    description: `${countPrefix}NYC restaurants rated for gluten-free safety. Find celiac-safe dining with dedicated fryers, clear menu labeling, and low cross-contamination risk.`,
     alternates: { canonical: "/" },
     openGraph: {
       title: "CleanPlate — NYC's Gluten-Free Restaurant Guide",
-      description: `${roundedCount.toLocaleString()}+ NYC restaurants rated for GF safety. No guessing.`,
+      description: `${countPrefix}NYC restaurants rated for GF safety. No guessing.`,
       url: "/",
       images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "CleanPlate — NYC's Gluten-Free Restaurant Guide" }],
     },
@@ -100,49 +105,97 @@ const getRequestAuth = cache(async () => {
 // Cached homepage metadata (city list + NYC count) — revalidates every hour
 const getHomepageMeta = unstable_cache(
   async () => {
-    const [{ data: cityRows }, { count: totalCount }] = await Promise.all([
-      supabase.from("restaurants").select("city").not("score", "is", null),
-      supabase.from("restaurants").select("*", { count: "exact", head: true }).eq("city", "New York").not("score", "is", null),
-    ]);
-    return { cityRows: cityRows ?? [], totalCount: totalCount ?? 0 };
+    const { data: cityRows } = await supabase
+      .from("restaurants")
+      .select("city")
+      .not("score", "is", null);
+    return { cityRows: cityRows ?? [] };
   },
   ["homepage-meta"],
   { revalidate: 3600 },
 );
 
-export type TopRestaurant = {
-  id: number;
-  name: string;
-  display_name: string | null;
+// NYC rated-restaurant count for the hero + metadata.
+// Kept OUT of unstable_cache and computed per request (React cache dedupes
+// within a request) using an estimated, index-based count. The old version
+// cached an exact count for an hour, so a single transient 0/null response got
+// served as "0+ restaurants" until the cache expired. Estimated + no long-lived
+// cache avoids that poisoning; callers still guard against a 0 for display.
+const getNycRatedCount = cache(async (): Promise<number> => {
+  const { count } = await supabase
+    .from("restaurants")
+    .select("*", { count: "estimated", head: true })
+    .eq("city", "New York")
+    .not("score", "is", null);
+  return count ?? 0;
+});
+
+// Quick links to the /gluten-free SEO landing pages that actually exist.
+// Thresholds mirror the pages' own notFound logic (neighborhood ≥3, city
+// category ≥5 qualifying restaurants at score ≥75), so links never 404.
+const CATEGORY_LINK_ORDER: { slug: string; label: string; emoji: string }[] = [
+  { slug: "pizza",       label: "GF Pizza",     emoji: "🍕" },
+  { slug: "bakery",      label: "GF Bakeries",  emoji: "🥐" },
+  { slug: "pasta",       label: "GF Pasta",     emoji: "🍝" },
+  { slug: "breakfast",   label: "GF Breakfast", emoji: "🍳" },
+  { slug: "desserts",    label: "GF Desserts",  emoji: "🍰" },
+  { slug: "dedicated",   label: "Dedicated GF", emoji: "🛡️" },
+  { slug: "fryer",       label: "GF Fryer",     emoji: "🍟" },
+  { slug: "cafe",        label: "Cafés",        emoji: "☕" },
+  { slug: "bar",         label: "Bars",         emoji: "🍸" },
+  { slug: "fine-dining", label: "Fine Dining",  emoji: "🍽️" },
+];
+
+type QuickLinkRow = {
   neighborhood: string | null;
-  cuisine: string | null;
-  score: number | null;
-  slug: string | null;
-  hasGfFryer: boolean;
-  isDedicatedGf: boolean;
   gf_food_categories: string[] | null;
   place_type: string[] | null;
+  fryer: string | null;
+  ccr: string | null;
 };
 
-// Cached per-city top-50 — revalidates every 30 min
-const getTopRestaurants = unstable_cache(
-  async (city: string) => {
+function rowMatchesCategory(r: QuickLinkRow, def: CategoryDef): boolean {
+  if (def.type === "gf_food" && def.value)    return r.gf_food_categories?.includes(def.value) ?? false;
+  if (def.type === "place_type" && def.value) return r.place_type?.includes(def.value) ?? false;
+  if (def.type === "fryer")                   return r.fryer === "true";
+  if (def.type === "dedicated")               return r.ccr === "low";
+  return false;
+}
+
+const getNycQuickLinks = unstable_cache(
+  async (): Promise<{ neighborhoods: QuickLink[]; categories: QuickLink[] }> => {
     const { data } = await supabase
       .from("restaurants")
-      .select("id, name, display_name, neighborhood, cuisine, score, slug, dossier, gf_food_categories, place_type")
-      .eq("city", city)
+      .select("neighborhood, gf_food_categories, place_type, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
+      .eq("city", "New York")
       .not("score", "is", null)
-      .order("score", { ascending: false })
-      .limit(50);
-    return (data ?? []) as Array<{
-      id: number; name: string; display_name: string | null; neighborhood: string | null;
-      cuisine: string | null; score: number | null; slug: string | null;
-      dossier: Dossier | null;
-      gf_food_categories: string[] | null; place_type: string[] | null;
-    }>;
+      .gte("score", 75);
+    const rows = (data ?? []) as QuickLinkRow[];
+
+    const nbhdCounts = new Map<string, number>();
+    for (const r of rows) {
+      if (!r.neighborhood) continue;
+      nbhdCounts.set(r.neighborhood, (nbhdCounts.get(r.neighborhood) ?? 0) + 1);
+    }
+    const neighborhoods: QuickLink[] = [...nbhdCounts.entries()]
+      .filter(([, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, count]) => ({ label: name, href: `/gluten-free/new-york/${toSlug(name)}`, count }));
+
+    const categories: QuickLink[] = CATEGORY_LINK_ORDER
+      .map(({ slug, label, emoji }) => {
+        const def = CATEGORIES[slug];
+        const count = def ? rows.filter((r) => rowMatchesCategory(r, def)).length : 0;
+        return { label, href: `/gluten-free/new-york/${slug}`, count, emoji };
+      })
+      .filter((c) => c.count >= 5)
+      .slice(0, 8);
+
+    return { neighborhoods, categories };
   },
-  ["homepage-top-restaurants"],
-  { revalidate: 1800 },
+  ["homepage-quicklinks-nyc"],
+  { revalidate: 3600 },
 );
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -210,11 +263,13 @@ async function LocationBannerServer() {
 }
 
 async function HeroCount() {
-  const { totalCount } = await getHomepageMeta();
-  const roundedCount = Math.floor((totalCount ?? 0) / 100) * 100;
+  const totalCount = await getNycRatedCount();
+  const roundedCount = Math.floor(totalCount / 100) * 100;
   return (
-    <p className="font-mono text-ui-md uppercase tracking-broad text-text-dim mt-5">
-      {roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety
+    <p className="font-mono text-ui-md uppercase tracking-broad text-text-dim mt-3">
+      {roundedCount > 0
+        ? `${roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety`
+        : "NYC restaurants rated for gluten-free safety"}
     </p>
   );
 }
@@ -254,10 +309,26 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
     return (
       <section className="max-w-4xl mx-auto px-4 md:px-8 pb-24 md:pb-32 mt-6 md:mt-8">
         {restaurants.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center space-y-5">
             <p className="font-mono text-ui-md uppercase tracking-editorial text-text-label">
-              No results for &ldquo;{query}&rdquo;
+              No match for &ldquo;{query}&rdquo; yet
             </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href={`/ask?q=${encodeURIComponent(query)}`}
+                className="font-mono text-ui-sm uppercase tracking-label px-5 py-3 border transition-colors hover:border-accent hover:text-accent"
+                style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
+              >
+                Ask CleanPlate instead →
+              </Link>
+              <Link
+                href="/rankings"
+                className="font-mono text-ui-sm uppercase tracking-label px-5 py-3 border transition-colors hover:border-accent hover:text-accent"
+                style={{ borderColor: "var(--border-emphasis)", color: "var(--text-label)" }}
+              >
+                Browse top-rated →
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-0">
@@ -400,24 +471,16 @@ async function PageContent({ query, cityParam }: { query: string; cityParam?: st
     );
   }
 
-  // ── Top rated mode ─────────────────────────────────────────────────────────
-  const topData = await getTopRestaurants(topRatedCity);
-  const topRated: TopRestaurant[] = topData.map((r) => ({
-    id: r.id,
-    name: r.name,
-    display_name: r.display_name ?? null,
-    neighborhood: r.neighborhood,
-    cuisine: r.cuisine,
-    score: r.score,
-    slug: r.slug ?? null,
-    hasGfFryer: r.dossier?.operations?.dedicated_equipment?.fryer === true,
-    isDedicatedGf: r.dossier?.operations?.cross_contamination_risk === "low",
-    gf_food_categories: r.gf_food_categories ?? null,
-    place_type: r.place_type ?? null,
-  }));
-
-  if (topRated.length === 0) return null;
-  return <TopRatedSection restaurants={topRated} city={topRatedCity} />;
+  // ── Explore mode (no search yet) ─────────────────────────────────────────────
+  const quickLinks = topRatedCity === "New York"
+    ? await getNycQuickLinks()
+    : { neighborhoods: [], categories: [] };
+  return (
+    <ExploreSection
+      neighborhoods={quickLinks.neighborhoods}
+      categories={quickLinks.categories}
+    />
+  );
 }
 
 // ── Top rated skeleton (shown while PageContent resolves) ────────────────────
@@ -462,17 +525,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               className="font-[family-name:var(--font-display)] leading-none"
               style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", letterSpacing: "0.02em" }}
             >
-              Ask anything.
+              Know before
               <br />
-              <span style={{ color: "var(--accent)" }}>Eat gluten-free with confidence.</span>
+              <span style={{ color: "var(--accent)" }}>you go.</span>
             </h1>
+            <p className="font-mono text-ui-lg uppercase tracking-editorial text-text-secondary mt-5">
+              Gluten-free safety scores for any restaurant in NYC.
+            </p>
             {/* Count streams in — placeholder holds space */}
-            <Suspense fallback={<p className="mt-5 h-4 opacity-0">placeholder</p>}>
+            <Suspense fallback={<p className="mt-3 h-4 opacity-0">placeholder</p>}>
               <HeroCount />
             </Suspense>
           </div>
 
-          <HomeAskInput />
+          <div className="space-y-3">
+            <SearchForm initialQuery={query} cities={[]} selectedCity={params.city ?? "all"} />
+            <p className="font-mono text-ui-sm uppercase tracking-editorial text-text-dim">
+              Have a more specific question?{" "}
+              <Link href="/ask" className="text-accent hover:underline">Ask CleanPlate →</Link>
+            </p>
+          </div>
         </div>
       </section>
 
@@ -480,6 +552,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <Suspense fallback={!query ? <TopRatedSkeleton /> : null}>
         <PageContent query={query} cityParam={params.city} />
       </Suspense>
+
+      {/* Subscribe to the NYC digest — top-of-funnel capture */}
+      <section className="max-w-3xl mx-auto px-4 md:px-8 pb-24">
+        <FollowPrompt variant="section" source="homepage" />
+      </section>
     </main>
   );
 }
