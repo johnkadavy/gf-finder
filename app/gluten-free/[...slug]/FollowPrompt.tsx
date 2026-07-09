@@ -6,15 +6,23 @@ import { capture } from "@/lib/analytics";
 
 type Props = {
   variant: "table" | "inline" | "section";
-  followType: "neighborhood" | "category";
-  followTarget: string;
-  contextLabel: string;
-  sourcePage: string;
+  /** Where this prompt is rendered — analytics only, does not affect content. */
+  source: string;
 };
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
-export function FollowPrompt({ variant, followType, followTarget, contextLabel, sourcePage }: Props) {
+// Every subscribe prompt enrolls into the same city-level digest. The digest
+// send job selects all confirmed followers and picks an NYC-wide topic, so
+// neighborhood/category targeting adds no value — one region follow per email.
+const FOLLOW_TYPE = "region";
+const FOLLOW_TARGET = "New York City";
+
+const EYEBROW = "CleanPlate Weekly";
+const HEADLINE =
+  "The safest gluten-free spots in NYC — a few hand-picked places in your inbox each week.";
+
+export function FollowPrompt({ variant, source }: Props) {
   const [email, setEmail] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -30,8 +38,8 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
       ([entry]) => {
         if (entry.isIntersecting && !impressionFired.current) {
           impressionFired.current = true;
-          track("follow_prompt_impression", { follow_type: followType, follow_target: followTarget, variant });
-          capture("follow_prompt_impression", { follow_type: followType, follow_target: followTarget, variant });
+          track("follow_prompt_impression", { source, variant });
+          capture("follow_prompt_impression", { source, variant });
           observer.disconnect();
         }
       },
@@ -40,11 +48,6 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
     observer.observe(el);
     return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const copy =
-    followType === "neighborhood"
-      ? `Following ${contextLabel} — get notified when a top-rated GF spot opens here`
-      : `Get notified when a new top-rated GF spot is added to ${contextLabel}`;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,9 +59,9 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          follow_type: followType,
-          follow_target: followTarget,
-          source_page: sourcePage,
+          follow_type: FOLLOW_TYPE,
+          follow_target: FOLLOW_TARGET,
+          source_page: source,
         }),
       });
       if (!res.ok) {
@@ -66,8 +69,8 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
         throw new Error((data as { error?: string }).error ?? "Something went wrong.");
       }
       setSubmitState("success");
-      track("follow_submitted", { follow_type: followType, follow_target: followTarget, source_page: sourcePage });
-      capture("follow_submitted", { follow_type: followType, follow_target: followTarget, source_page: sourcePage });
+      track("follow_submitted", { source, variant });
+      capture("follow_submitted", { source, variant });
     } catch (err) {
       setSubmitState("error");
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
@@ -107,7 +110,7 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
         className="font-mono text-ui-sm uppercase tracking-label disabled:opacity-50 focus-visible:outline-none shrink-0"
         style={{ backgroundColor: "var(--accent)", color: "var(--accent-foreground)", padding: "0.5rem 1rem" }}
       >
-        {submitState === "loading" ? "…" : "Follow"}
+        {submitState === "loading" ? "…" : "Subscribe"}
       </button>
     </form>
   );
@@ -124,10 +127,10 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
           style={{ backgroundColor: "var(--accent-tint-sm)" }}
         >
           <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-1">
-            Stay Updated
+            {EYEBROW}
           </p>
           <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-            {copy}
+            {HEADLINE}
           </p>
         </td>
         <td
@@ -150,10 +153,10 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
       >
         <div>
           <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-1">
-            Stay Updated
+            {EYEBROW}
           </p>
           <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
-            {copy}
+            {HEADLINE}
           </p>
         </div>
         {formContent}
@@ -161,7 +164,7 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
     );
   }
 
-  // Section variant — below the full table
+  // Section variant — standalone box (below tables, restaurant detail, rankings)
   return (
     <div
       ref={containerRef as unknown as React.RefObject<HTMLDivElement>}
@@ -169,10 +172,10 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
       style={{ backgroundColor: "var(--accent-tint-xs)", borderColor: "var(--accent-tint-xl)" }}
     >
       <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-2">
-        Stay Updated
+        {EYEBROW}
       </p>
       <p className="font-mono text-ui-md uppercase tracking-label text-text-secondary mb-4">
-        {copy}
+        {HEADLINE}
       </p>
       {submitState === "success" ? (
         <p className="font-mono text-ui-md uppercase tracking-label text-signal-positive">
@@ -207,7 +210,7 @@ export function FollowPrompt({ variant, followType, followTarget, contextLabel, 
             className="font-mono text-ui-sm uppercase tracking-label disabled:opacity-50 focus-visible:outline-none shrink-0"
             style={{ backgroundColor: "var(--accent)", color: "var(--accent-foreground)", padding: "0.75rem 1.5rem" }}
           >
-            {submitState === "loading" ? "…" : "Follow"}
+            {submitState === "loading" ? "…" : "Subscribe"}
           </button>
         </form>
       )}

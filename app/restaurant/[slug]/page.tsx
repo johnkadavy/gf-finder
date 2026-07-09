@@ -18,6 +18,7 @@ import { isNewRestaurant, formatLocation } from "@/lib/utils";
 import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
+import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
   weekdayDescriptions?: string[];
@@ -731,6 +732,13 @@ export default async function RestaurantPage({
                 {sentimentText}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── Subscribe prompt (NYC digest) ── */}
+        {r.city === "New York" && (
+          <div className="mt-12">
+            <FollowPrompt variant="section" source="restaurant_detail" />
           </div>
         )}
 

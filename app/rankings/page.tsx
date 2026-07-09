@@ -7,6 +7,7 @@ import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, 
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { RankingsList, RankingsListSkeleton } from "./RankingsList";
 import { FilterAnalytics } from "./FilterAnalytics";
+import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { getCityAccess, resolveCity } from "@/lib/cities";
 import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
@@ -290,6 +291,12 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               rawCuisines={rawCuisines}
             />
           </Suspense>
+          {/* Subscribe prompt (NYC digest) — hidden when browsing non-NYC regions */}
+          {(filters.region === "New York City" || filters.region === "all") && (
+            <div className="mt-10">
+              <FollowPrompt variant="section" source="rankings" />
+            </div>
+          )}
         </div>
       </section>
     </main>

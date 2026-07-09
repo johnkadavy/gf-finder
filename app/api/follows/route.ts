@@ -80,8 +80,8 @@ export async function POST(req: Request) {
   const { error: emailError } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
-    subject: "Confirm your CleanPlate follow",
-    html: buildConfirmEmail({ follow_target: follow_target.trim(), follow_type: follow_type!, confirmUrl }),
+    subject: "Confirm your CleanPlate subscription",
+    html: buildConfirmEmail({ confirmUrl }),
   });
 
   if (emailError) {
@@ -92,20 +92,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ status: "pending_confirmation" });
 }
 
-function buildConfirmEmail({
-  follow_target,
-  follow_type,
-  confirmUrl,
-}: {
-  follow_target: string;
-  follow_type: string;
-  confirmUrl: string;
-}) {
-  const label =
-    follow_type === "neighborhood"
-      ? `the ${escapeHtml(follow_target)} neighborhood`
-      : escapeHtml(follow_target);
-
+function buildConfirmEmail({ confirmUrl }: { confirmUrl: string }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -125,13 +112,13 @@ function buildConfirmEmail({
         <!-- Body -->
         <tr>
           <td style="padding:32px 36px 28px;">
-            <p style="margin:0 0 8px;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#888888;">Confirm your follow</p>
+            <p style="margin:0 0 8px;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#888888;">Confirm your subscription</p>
             <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#222222;font-family:Georgia,serif;">
-              You asked to follow ${label}. Confirm below and we&rsquo;ll email you when a new high-scoring GF spot is added.
+              You&rsquo;re one click from CleanPlate Weekly &mdash; a short list of NYC&rsquo;s safest gluten-free spots, in your inbox each week. Confirm below to start.
             </p>
             <a href="${confirmUrl}"
                style="display:inline-block;padding:14px 28px;background:#FF7444;color:#ffffff;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;font-family:'Courier New',Courier,monospace;">
-              Confirm Follow &rarr;
+              Confirm Subscription &rarr;
             </a>
             <p style="margin:28px 0 0;font-size:11px;line-height:1.7;color:#999999;">
               If you didn&rsquo;t request this, ignore this email &mdash; nothing will happen.<br>

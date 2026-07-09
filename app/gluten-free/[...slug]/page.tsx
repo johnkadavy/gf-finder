@@ -306,10 +306,7 @@ export default async function LandingPage({ params }: Props) {
                     node: (
                       <FollowPrompt
                         variant="inline"
-                        followType="category"
-                        followTarget={catSlug}
-                        contextLabel={`${catDef.labelPlural} in ${city}`}
-                        sourcePage={`/gluten-free/${s0}/${s1}`}
+                        source={`/gluten-free/${s0}/${s1}`}
                       />
                     ),
                   }}
@@ -317,10 +314,7 @@ export default async function LandingPage({ params }: Props) {
                 <div className="mt-8">
                   <FollowPrompt
                     variant="section"
-                    followType="category"
-                    followTarget={catSlug}
-                    contextLabel={`${catDef.labelPlural} in ${city}`}
-                    sourcePage={`/gluten-free/${s0}/${s1}`}
+                    source={`/gluten-free/${s0}/${s1}`}
                   />
                 </div>
               </>
@@ -562,10 +556,7 @@ export default async function LandingPage({ params }: Props) {
               node: (
                 <FollowPrompt
                   variant="inline"
-                  followType="neighborhood"
-                  followTarget={neighborhood}
-                  contextLabel={neighborhood}
-                  sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+                  source={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
                 />
               ),
             }}
@@ -573,10 +564,7 @@ export default async function LandingPage({ params }: Props) {
           <div className="mt-8">
             <FollowPrompt
               variant="section"
-              followType="neighborhood"
-              followTarget={neighborhood}
-              contextLabel={neighborhood}
-              sourcePage={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
+              source={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
             />
           </div>
 
