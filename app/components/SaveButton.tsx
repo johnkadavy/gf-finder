@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { capture } from "@/lib/analytics";
 
 type Props = {
   restaurantId: number;
@@ -25,6 +26,7 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle,
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       const next = redirectPath ?? window.location.pathname;
+      capture("save_requires_login", { restaurant_id: restaurantId, source_path: next });
       router.push(`/login?next=${encodeURIComponent(next)}`);
       return;
     }
@@ -38,12 +40,14 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle,
         .eq("restaurant_id", restaurantId);
       setSaved(false);
       onToggle?.(false);
+      capture("restaurant_unsaved", { restaurant_id: restaurantId });
     } else {
       await supabase
         .from("saved_restaurants")
         .insert({ user_id: user.id, restaurant_id: restaurantId });
       setSaved(true);
       onToggle?.(true);
+      capture("restaurant_saved", { restaurant_id: restaurantId });
     }
     setLoading(false);
   }

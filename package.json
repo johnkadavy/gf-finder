@@ -22,6 +22,8 @@
     "mapbox-gl": "^3.20.0",
     "marked": "^18.0.0",
     "next": "16.1.6",
+    "posthog-js": "^1.398.7",
+    "posthog-node": "^5.40.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-map-gl": "^8.1.0",

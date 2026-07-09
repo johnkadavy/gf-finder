@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-server";
 import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { RankingsList, RankingsListSkeleton } from "./RankingsList";
+import { FilterAnalytics } from "./FilterAnalytics";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { getCityAccess, resolveCity } from "@/lib/cities";
 import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
@@ -234,6 +235,9 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
 
   return (
     <main className="pt-16">
+      <Suspense fallback={null}>
+        <FilterAnalytics />
+      </Suspense>
       {/* Hero */}
       <section
         className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"

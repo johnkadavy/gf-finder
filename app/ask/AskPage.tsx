@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { marked, Renderer } from "marked";
+import { capture } from "@/lib/analytics";
 
 const SUGGESTED_QUERIES = [
   "What's safe for celiac in the East Village?",
@@ -191,6 +192,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
 
       // Limit reached — not a stream, plain JSON error
       if (res.status === 402) {
+        capture("agent_query", { outcome: "limit_reached", query_length: trimmed.length, is_followup: history.length > 0 });
         setLimitReached(true);
         setMessages((prev) => [...prev, { role: "assistant", content: "__limit_reached__" }]);
         setLoading(false);
@@ -198,6 +200,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
       }
 
       if (!res.ok || !res.body) {
+        capture("agent_query", { outcome: "error", query_length: trimmed.length, is_followup: history.length > 0 });
         setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
         setLoading(false);
         return;
@@ -242,13 +245,21 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
             if (event.queries_remaining !== null && event.queries_remaining !== undefined) {
               setQueriesRemaining(event.queries_remaining);
             }
+            capture("agent_query", {
+              outcome: "ok",
+              query_length: trimmed.length,
+              is_followup: history.length > 0,
+              queries_remaining: event.queries_remaining ?? null,
+            });
           } else if (event.type === "error") {
+            capture("agent_query", { outcome: "error", query_length: trimmed.length, is_followup: history.length > 0 });
             setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
             setLoading(false);
           }
         }
       }
     } catch {
+      capture("agent_query", { outcome: "error", query_length: trimmed.length, is_followup: history.length > 0 });
       setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setLoading(false);

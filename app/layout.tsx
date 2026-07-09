@@ -4,6 +4,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { Nav } from "./components/Nav";
 import { Footer } from "./components/Footer";
+import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google";
@@ -99,7 +100,9 @@ export default function RootLayout({
           </div>
         </header>
 
-        <div className="min-h-dvh pb-16 md:pb-0">{children}</div>
+        <Providers>
+          <div className="min-h-dvh pb-16 md:pb-0">{children}</div>
+        </Providers>
         <Analytics />
         <SpeedInsights />
         <Script id="microsoft-clarity" strategy="afterInteractive">

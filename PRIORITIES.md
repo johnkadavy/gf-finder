@@ -38,9 +38,9 @@ Digest is in good shape: daily cron, topic rotation, hero images, editorial note
 | 9 | **Posts in GF groups online** | Distribution is wasted before retention works; turn it on once the digest is solid. |
 
 ## Notes / backlog
+- **Swipe UI for mobile** — Tinder-style card swipe to browse restaurants in a neighborhood. Makes mobile exploration more tactile; could replace or complement the ranked list on small screens.
 - **Create CleanPlate Substack** — distribution channel for the digest; cross-posts could drive backlinks and audience growth outside the current email list.
 - **SEO site structure** — low-impact at current scale; revisit when domain authority grows. Options: lower /gluten-free landing page threshold (75→60) to surface more restaurants; add borough-level aggregate pages for higher-intent keyword targets; noindex <50-score restaurant pages to improve crawl quality signal. Backlinks from GF blogs/publications will move the needle more than any of these.
-- **Vercel + Supabase usage audit** — review current consumption against plan limits; plan for upgrades or optimizations before hitting caps.
 - **New restaurant detection pipeline** — automatically detect when new restaurants open in NYC and ingest them. Would power "newly opened" signal in the digest and keep the DB fresh without manual neighborhood runs.
 - **Agent V2: full chat** (from the retired GF_AGENT_SPEC) — multi-turn conversation with history, saved preferences ("celiac + dairy allergy"), GPS location-awareness, suggested follow-ups. Only after V1 single-shot validates.
 - **Agent pricing** (from the retired GF_AGENT_SPEC) — free tier of ~5 queries (limits already enforced in `/api/agent`), premium at ~$7/mo or $60/yr for unlimited queries + saved preferences, gated via Supabase Auth. Revisit once usage justifies it.

@@ -10,6 +10,7 @@ import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { SaveButton } from "@/app/components/SaveButton";
 import { GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS } from "@/app/rankings/utils";
 import { isNewRestaurant } from "@/lib/utils";
+import { capture } from "@/lib/analytics";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -430,6 +431,12 @@ const [mapReady, setMapReady] = useState(false);
       ]);
 
       const restaurants: MapRestaurant[] = await searchRes.json();
+
+      capture("map_search", {
+        query_length: q.length,
+        result_count: restaurants.length,
+        has_results: restaurants.length > 0,
+      });
 
       if (restaurants.length > 0) {
         setRestaurants(restaurants);

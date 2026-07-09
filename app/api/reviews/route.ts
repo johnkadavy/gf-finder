@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { calculateScore } from "@/lib/score";
+import { captureServer } from "@/lib/analytics-server";
 
 const supabaseAdmin = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,6 +66,12 @@ export async function POST(req: NextRequest) {
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  await captureServer(user.id, "review_submitted", {
+    restaurant_id,
+    google_place_id,
+    overall_sentiment: overall_sentiment ?? null,
+  });
 
   // Recalculate score
   const { data: restaurant } = await supabaseAdmin
