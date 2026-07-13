@@ -12,12 +12,15 @@ CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 s
 
 ## Now (this week)
 
-| # | Item | Why now | Rough effort |
-|---|------|---------|------|
-| 1 | **Subscription placement review** — audit where follow/subscribe UI lives and optimize for conversion | Currently buried in `/gluten-free/[slug]` ranking pages; unclear if users are finding it. Wrong placement = silent churn before it starts. | S |
-| 3 | **Schedule celiac/user interviews** | At <10 users, qualitative signal beats analytics. Directly informs digest voice and what the protocol DB should capture. Keep a steady cadence rather than batching. | S (recurring) |
+_Cleared — this week's scoped items shipped (subscription placement + follow cleanup, analytics instrumentation). Pick up from **Next** below._
+
+## Ongoing (always on)
+
+- **User interviews via the signup funnel.** No fixed cadence and no reminder — periodically check for new organic signups and reach out with a warm founder note (async questions or the 20-min cal link, https://cal.com/johnkadavy/20min). Outreach template + interview guide established 2026-07-09; first outreach sent to a friend referral and the first confirmed NYC organic signup. Qualitative signal beats analytics at this stage — feeds digest voice and the eventual protocol-DB schema. When notes accumulate, synthesize patterns rather than letting them evaporate.
 
 Digest is in good shape: daily cron, topic rotation, hero images, editorial notes, Claude-drafted copy. Deferred: digest reliability work (locks, idempotency, batching) — revisit at a few hundred followers.
+
+**Subscription placement + follow cleanup — shipped (2026-07-09).** Subscribe prompt now lives on restaurant detail pages (below the safety signals, NYC-gated) and rankings (below the list, hidden for non-NYC regions) in addition to the `/gluten-free` pages. Unified the follow model: every prompt enrolls one region-level `New York City` follow (the digest was already city-level, so neighborhood/category targeting did nothing), with honest copy ("CleanPlate Weekly" / NYC's safest GF spots / Subscribe) and a rewritten confirmation email. Follow events now carry `{ source, variant }` so conversion is sliceable by placement. **Follow-up: iterate the copy directly** — watch aggregate `follow_prompt_impression → follow_submitted` by `source` and revise on judgment. **A/B copy test is NOT worth running at current volume** (needs ~hundreds of conversions/arm to be meaningful); gate any formal experiment on real traffic (rough trigger: a few hundred subscribe impressions/week). Until then, improve copy directly + let user interviews drive messaging hypotheses.
 
 **Analytics — shipped & tabled (2026-07-09).** PostHog instrumented for both logged-in and anonymous behavior (identity stitching via `identify(user.id)`; Microsoft Clarity + Vercel Analytics still running). Events live: `restaurant_viewed`, `restaurant_saved/unsaved`, `save_requires_login`, `agent_query`, `rankings_filter_applied`, `map_search`, `home_ask_submitted`, `signup_cta_clicked`, `login_completed`, `review_submitted`, and the follow funnel (`follow_prompt_impression/submitted/confirmed`, mirrored from Vercel). Event helpers in `lib/analytics.ts` (client) and `lib/analytics-server.ts` (server). Autocapture is on, so clicks/pageviews are also funnel-able without new code. **Now collecting data — revisit once traffic accumulates** (rough trigger: a few dozen signups or ~a month of traffic). Follow-ups when we return: read the acquisition→signup funnel + `login_completed`→`restaurant_saved` retention, decide whether to consolidate on PostHog-only vs. keeping Vercel follow events, and consider a PostHog dashboard for the core loop.
 

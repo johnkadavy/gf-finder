@@ -151,7 +151,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!city) return {};
     const catDef = CATEGORIES[s1];
     const title = `${catDef.cityLabelPlural} in ${city} | CleanPlate`;
-    const description = `${catDef.cityLabelPlural} in ${city} ranked by GF safety score. CleanPlate evaluates cross-contamination risk, dedicated fryers, menu labeling, and real diner experiences.`;
+    const description = `${catDef.cityLabelPlural} in ${city} ranked by gluten-free safety score. CleanPlate evaluates cross-contamination risk, dedicated fryers, menu labeling, and real diner experiences.`;
     const canonicalPath = `/gluten-free/${s0}/${s1}`;
     return {
       title,
@@ -167,12 +167,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city, neighborhood } = resolved;
   const catDef = s2 ? CATEGORIES[s2] : null;
 
+  // Spell out "Gluten-Free" for search-query match; strip the "GF" abbreviation
+  // out of the category noun so descriptions don't read "gluten-free gf breakfast".
+  const catNoun = catDef ? catDef.labelPlural.replace(/\bGF\b/gi, "").replace(/\s+/g, " ").trim().toLowerCase() : "";
   const title = catDef
-    ? `Best ${catDef.labelPlural} in ${neighborhood}, ${city} | CleanPlate`
+    ? `${catDef.cityLabelPlural} in ${neighborhood}, ${city} | CleanPlate`
     : `Best Gluten-Free Restaurants in ${neighborhood}, ${city} | CleanPlate`;
   const description = catDef
-    ? `Top gluten-free ${catDef.label.toLowerCase()} spots in ${neighborhood}, ${city} ranked by GF safety score. Find places with dedicated fryers, clear labeling, and low cross-contamination risk.`
-    : `The best gluten-free restaurants in ${neighborhood}, ${city} ranked by GF safety score. Find places with dedicated fryers, clear labeling, and low cross-contamination risk.`;
+    ? `The safest gluten-free ${catNoun} in ${neighborhood}, ${city}, ranked by gluten-free safety score — dedicated fryers, clear labeling, and low cross-contamination risk.`
+    : `The best gluten-free restaurants in ${neighborhood}, ${city}, ranked by gluten-free safety score — dedicated fryers, clear labeling, and low cross-contamination risk.`;
   const canonicalPath = `/gluten-free/${s0}/${s1}${s2 ? `/${s2}` : ""}`;
 
   return {
@@ -227,9 +230,9 @@ export default async function LandingPage({ params }: Props) {
       name: h1,
       description: catDef.editorialIntro,
       breadcrumbs: [
-        { name: "Rankings", item: `${BASE_URL}/rankings` },
+        { name: "Gluten-Free", item: `${BASE_URL}/rankings` },
         { name: city, item: `${BASE_URL}/rankings?city=${encodeURIComponent(city)}` },
-        { name: catDef.label },
+        { name: catDef.label.replace(/\bGF\b/g, "").replace(/\s+/g, " ").trim() },
       ],
       restaurants,
     });
@@ -455,9 +458,10 @@ export default async function LandingPage({ params }: Props) {
     ? `Best ${catDef.labelPlural} in ${neighborhood}, ${city}`
     : `Best Gluten-Free Restaurants in ${neighborhood}, ${city}`;
 
+  const introNoun = catDef ? catDef.label.replace(/\bGF\b/gi, "").replace(/\s+/g, " ").trim().toLowerCase() : "";
   const intro = catDef
-    ? `Every ${catDef.label.toLowerCase()} spot in ${neighborhood} with a GF safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`
-    : `Every restaurant in ${neighborhood} with a GF safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`;
+    ? `Every gluten-free ${introNoun} spot in ${neighborhood} with a gluten-free safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`
+    : `Every restaurant in ${neighborhood} with a gluten-free safety score of 75 or higher. Scores weigh cross-contamination risk, dedicated fryers, menu labeling, and recent diner reports.`;
 
   const availableCategories = Object.entries(CATEGORIES).filter(([cs]) => cs !== categorySlug);
 
@@ -466,9 +470,10 @@ export default async function LandingPage({ params }: Props) {
     name: h1,
     description: intro,
     breadcrumbs: [
-      { name: "Rankings", item: `${BASE_URL}/rankings` },
+      { name: "Gluten-Free", item: `${BASE_URL}/rankings` },
+      { name: city, item: `${BASE_URL}/rankings?city=${encodeURIComponent(city)}` },
       { name: neighborhood, item: `${BASE_URL}/gluten-free/${citySlug}/${neighborhoodSlug}` },
-      ...(catDef ? [{ name: catDef.label }] : []),
+      ...(catDef ? [{ name: catDef.label.replace(/\bGF\b/g, "").replace(/\s+/g, " ").trim() }] : []),
     ],
     restaurants,
   });
