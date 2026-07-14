@@ -53,7 +53,7 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="flex items-center gap-2 mb-6">
             <Link
               href="/blog"
-              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
             >
               Blog
             </Link>
@@ -94,7 +94,7 @@ export default async function BlogPostPage({ params }: Props) {
       >
         <Link
           href="/blog"
-          className="font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-white transition-colors"
+          className="font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-text-primary transition-colors"
         >
           ← All Posts
         </Link>

@@ -20,7 +20,7 @@ export default function HomePage() {
           />
           <button
             type="submit"
-            className="rounded-md bg-black px-5 py-3 text-white"
+            className="rounded-md bg-black px-5 py-3 text-text-primary"
           >
             Search
           </button>

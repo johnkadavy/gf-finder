@@ -16,8 +16,9 @@ function Preloader() {
       {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <span
           key={i}
-          className="block w-px h-3 bg-[oklch(0.35_0_0)]"
+          className="block w-px h-3"
           style={{
+            backgroundColor: "var(--text-disabled)",
             animation: `scanBar 1s ease-in-out ${i * 0.08}s infinite alternate`,
           }}
         />
@@ -172,7 +173,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
           <form onSubmit={handleSubmit}>
             <div
               className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-accent"
-              style={{ backgroundColor: "oklch(0.12 0 0)", borderColor: isOpen ? "oklch(0.35 0 0)" : "oklch(0.28 0 0)" }}
+              style={{ backgroundColor: "var(--surface-raised)", borderColor: isOpen ? "var(--border-emphasis)" : "var(--border-default)" }}
             >
               <input
                 type="text"
@@ -182,12 +183,15 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                 onFocus={() => suggestions.length > 0 && setIsOpen(true)}
                 placeholder="Search restaurants or neighborhoods…"
                 autoComplete="off"
-                className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-[oklch(0.52_0_0)] text-white"
+                className="bg-transparent border-none outline-none focus:ring-0 w-full font-mono text-sm placeholder:text-text-dim text-text-primary"
               />
               <button
                 type="submit"
                 disabled={isPending}
-                className={`font-mono text-ui-md uppercase tracking-editorial px-6 py-2.5 border border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
+                className={`font-mono text-ui-md uppercase tracking-editorial px-6 py-2.5 border transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
+                style={{ borderColor: "var(--accent)", color: "var(--accent)", backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
               >
                 Search
               </button>
@@ -215,7 +219,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                   backgroundColor: i === activeIndex ? "var(--surface-overlay)" : "transparent",
                 }}
               >
-                <span className="font-mono text-sm text-white truncate">
+                <span className="font-mono text-sm text-text-primary truncate">
                   {/* Highlight matching portion */}
                   {highlightMatch(s.name, value)}
                 </span>
@@ -269,7 +273,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
                         value={citySearch}
                         onChange={(e) => setCitySearch(e.target.value)}
                         className="w-full bg-transparent font-mono text-ui-md px-4 py-2 outline-none placeholder:opacity-40"
-                        style={{ color: "oklch(0.85 0 0)" }}
+                        style={{ color: "var(--text-secondary)" }}
                       />
                     </div>
                   )}

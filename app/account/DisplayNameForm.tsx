@@ -24,13 +24,13 @@ export function DisplayNameForm({ current }: { current: string | null }) {
   if (!editing) {
     return (
       <div className="flex items-center gap-3">
-        <p className="font-mono text-ui-lg" style={{ color: value ? "var(--text-secondary)" : "oklch(0.38 0 0)" }}>
+        <p className="font-mono text-ui-lg" style={{ color: value ? "var(--text-secondary)" : "var(--text-disabled)" }}>
           {value || "Not set"}
         </p>
         <button
           onClick={() => { setDraft(value); setEditing(true); setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 0); }}
           className="font-mono text-ui-sm uppercase tracking-editorial transition-colors hover:text-accent"
-          style={{ color: "oklch(0.42 0 0)" }}
+          style={{ color: "var(--text-disabled)" }}
         >
           {value ? "Edit" : "Set"}
         </button>
@@ -49,9 +49,9 @@ export function DisplayNameForm({ current }: { current: string | null }) {
           placeholder="e.g. John"
           className="font-mono text-ui-lg outline-none px-3 py-2 border w-48"
           style={{
-            backgroundColor: "oklch(0.09 0 0)",
+            backgroundColor: "var(--surface-base)",
             borderColor: "var(--border-emphasis)",
-            color: "oklch(0.88 0 0)",
+            color: "var(--text-secondary)",
           }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
           onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-emphasis)")}
@@ -69,17 +69,17 @@ export function DisplayNameForm({ current }: { current: string | null }) {
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="font-mono text-ui-sm uppercase tracking-editorial transition-colors hover:text-white"
-          style={{ color: "oklch(0.4 0 0)" }}
+          className="font-mono text-ui-sm uppercase tracking-editorial transition-colors hover:text-text-primary"
+          style={{ color: "var(--text-disabled)" }}
         >
           Cancel
         </button>
       </div>
 
       {/* Live preview */}
-      <p className="font-mono text-ui-md" style={{ color: "oklch(0.38 0 0)" }}>
+      <p className="font-mono text-ui-md" style={{ color: "var(--text-disabled)" }}>
         Preview:{" "}
-        <span style={{ color: draft.trim() ? "var(--text-dim)" : "oklch(0.32 0 0)" }}>
+        <span style={{ color: draft.trim() ? "var(--text-dim)" : "var(--border-emphasis)" }}>
           {draft.trim() ? `${draft.trim()}'s Gluten-Free Spots` : "Your Gluten-Free Spots"}
         </span>
       </p>

@@ -16,6 +16,13 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+// Map base style follows the app theme (DOM markers persist across setStyle).
+const MAP_STYLE_DARK = "mapbox://styles/mapbox/dark-v11";
+const MAP_STYLE_LIGHT = "mapbox://styles/mapbox/light-v11";
+function isLightTheme() {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("light");
+}
+
 type ScoreFilter = "excellent" | "great" | "all";
 
 const SCORE_FILTERS: { value: ScoreFilter; label: string; min: number }[] = [
@@ -273,11 +280,23 @@ const [mapReady, setMapReady] = useState(false);
     })();
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: isLightTheme() ? MAP_STYLE_LIGHT : MAP_STYLE_DARK,
       center: saved ? [saved.lng, saved.lat] : [-73.985, 40.758],
       zoom: saved?.zoom ?? 12,
     });
     map.current.on("load", () => setMapReady(true));
+
+    // Swap the base map style live when the app theme toggles.
+    const htmlEl = document.documentElement;
+    let lastLight = isLightTheme();
+    const themeObserver = new MutationObserver(() => {
+      const nowLight = htmlEl.classList.contains("light");
+      if (nowLight !== lastLight) {
+        lastLight = nowLight;
+        map.current?.setStyle(nowLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK);
+      }
+    });
+    themeObserver.observe(htmlEl, { attributes: true, attributeFilter: ["class"] });
 
     map.current.on("movestart", () => {
       if (searchAreaTimer.current) { clearTimeout(searchAreaTimer.current); searchAreaTimer.current = null; }
@@ -296,6 +315,7 @@ const [mapReady, setMapReady] = useState(false);
     });
 
     return () => {
+      themeObserver.disconnect();
       map.current?.remove();
       map.current = null;
       markers.current.clear();
@@ -620,14 +640,14 @@ const [mapReady, setMapReady] = useState(false);
         onTouchMove={onHandleTouchMove}
         onTouchEnd={onHandleTouchEnd}
       >
-        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "oklch(0.35 0 0)" }} />
+        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "var(--border-emphasis)" }} />
       </div>
 
       {/* Close bar — desktop only */}
       <button
         onClick={() => setSelected(null)}
-        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-ui-sm uppercase tracking-label transition-colors hover:text-white"
-        style={{ borderColor: "var(--border-subtle)", color: "var(--text-label)", backgroundColor: "oklch(0.07 0 0)" }}
+        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-ui-sm uppercase tracking-label transition-colors hover:text-text-primary"
+        style={{ borderColor: "var(--border-subtle)", color: "var(--text-label)", backgroundColor: "var(--surface-base)" }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -638,7 +658,7 @@ const [mapReady, setMapReady] = useState(false);
       {/* Header */}
       <div
         className="px-5 pt-4 pb-3 border-b shrink-0"
-        style={{ borderColor: "var(--surface-overlay)", borderLeft: `3px solid ${selected.color}` }}
+        style={{ borderColor: "var(--surface-overlay)" }}
       >
         {/* Name row */}
         <div className="flex items-start justify-between gap-3 mb-1">
@@ -689,8 +709,8 @@ const [mapReady, setMapReady] = useState(false);
           </div>
           {openStatus !== null && (
             <span className="ml-auto font-mono text-ui-xs uppercase tracking-label flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openStatus ? "#4ADE80" : "oklch(0.4 0 0)" }} />
-              <span style={{ color: openStatus ? "#4ADE80" : "oklch(0.5 0 0)" }}>
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openStatus ? "var(--signal-positive)" : "var(--text-disabled)" }} />
+              <span style={{ color: openStatus ? "var(--signal-positive)" : "var(--text-dim)" }}>
                 {openStatus ? "Open now" : "Closed"}
               </span>
             </span>
@@ -795,7 +815,8 @@ const [mapReady, setMapReady] = useState(false);
           <Link
             href="/login?next=/map"
             onClick={(e) => e.stopPropagation()}
-            className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+            className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 transition-opacity hover:opacity-80"
+            style={{ backgroundColor: "var(--text-primary)", color: "var(--surface-base)" }}
           >
             Sign up to save →
           </Link>
@@ -826,6 +847,7 @@ const [mapReady, setMapReady] = useState(false);
         style={{
           backgroundColor: "var(--surface-base)",
           borderColor: "var(--border-subtle)",
+          borderLeft: selected ? `4px solid ${selected.color}` : undefined,
           transform: selected ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.25s ease",
           pointerEvents: selected ? "auto" : "none",
@@ -848,6 +870,7 @@ const [mapReady, setMapReady] = useState(false);
         style={{
           backgroundColor: "var(--surface-base)",
           height: "55vh",
+          borderLeft: selected ? `4px solid ${selected.color}` : undefined,
           transform: selected ? `translateY(${sheetDrag}px)` : "translateY(100%)",
           transition: sheetDrag > 0 ? "none" : "transform 0.3s ease",
           pointerEvents: selected ? "auto" : "none",
@@ -889,11 +912,11 @@ const [mapReady, setMapReady] = useState(false);
           >
             <div className="flex items-center gap-2 px-3 py-3 flex-1 min-w-0">
               {isSearching ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 animate-spin">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 animate-spin">
                   <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                 </svg>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.5 0 0)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
               )}
@@ -926,13 +949,13 @@ const [mapReady, setMapReady] = useState(false);
                 }}
                 onFocus={() => (suggestions.length > 0 || cuisineSuggestions.length > 0) && setShowSuggestions(true)}
                 placeholder={mapCuisine ? `Filtering: ${mapCuisine}` : "Search restaurants…"}
-                className="bg-transparent outline-none w-full font-mono text-[16px] md:text-ui-lg placeholder:text-[oklch(0.52_0_0)] min-w-0"
-                style={{ color: "oklch(0.88 0 0)" }}
+                className="bg-transparent outline-none w-full font-mono text-[16px] md:text-ui-lg placeholder:text-text-dim min-w-0"
+                style={{ color: "var(--text-primary)" }}
               />
               {(search || committedSearch || mapCuisine) && (
                 <button
                   onClick={() => { setSearch(""); setSuggestions([]); setCuisineSuggestions([]); setShowSuggestions(false); setMapCuisine(""); mapCuisineRef.current = ""; commitSearch(""); }}
-                  className="text-text-label hover:text-white transition-colors text-ui-md shrink-0"
+                  className="text-text-label hover:text-text-primary transition-colors text-ui-md shrink-0"
                 >✕</button>
               )}
             </div>
@@ -963,8 +986,8 @@ const [mapReady, setMapReady] = useState(false);
                     backgroundColor: i === activeIndex ? "var(--surface-overlay)" : "transparent",
                   }}
                 >
-                  <span className="font-mono text-ui-xs uppercase tracking-label shrink-0" style={{ color: "oklch(0.5 0 0)" }}>Cuisine</span>
-                  <span className="font-mono text-[12px] text-white truncate">
+                  <span className="font-mono text-ui-xs uppercase tracking-label shrink-0" style={{ color: "var(--text-dim)" }}>Cuisine</span>
+                  <span className="font-mono text-[12px] text-text-primary truncate">
                     {highlightMatch(c, search)}
                   </span>
                 </button>
@@ -981,7 +1004,7 @@ const [mapReady, setMapReady] = useState(false);
                     backgroundColor: cuisineSuggestions.length + i === activeIndex ? "var(--surface-overlay)" : "transparent",
                   }}
                 >
-                  <span className="font-mono text-[12px] text-white truncate">
+                  <span className="font-mono text-[12px] text-text-primary truncate">
                     {highlightMatch(s.name, search)}
                   </span>
                 </button>
@@ -1031,7 +1054,7 @@ const [mapReady, setMapReady] = useState(false);
                 borderColor: "var(--border-emphasis)",
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openNow ? "#4ADE80" : "oklch(0.4 0 0)" }} />
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: openNow ? "var(--signal-positive)" : "var(--text-disabled)" }} />
               Open
             </button>
             {/* Saved */}
@@ -1098,7 +1121,7 @@ const [mapReady, setMapReady] = useState(false);
                     onClick={() => setScoreFilter((prev) => prev === f.value ? "all" : f.value as ScoreFilter)}
                     className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: scoreFilter === f.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      borderColor: scoreFilter === f.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
                       backgroundColor: scoreFilter === f.value ? "var(--accent-tint-md)" : "transparent",
                       color: scoreFilter === f.value ? "var(--accent)" : "var(--text-label)",
                     }}
@@ -1119,7 +1142,7 @@ const [mapReady, setMapReady] = useState(false);
                     onClick={() => setMapGfCategory(opt.value)}
                     className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapGfCategory === opt.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      borderColor: mapGfCategory === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
                       backgroundColor: mapGfCategory === opt.value ? "var(--accent-tint-md)" : "transparent",
                       color: mapGfCategory === opt.value ? "var(--accent)" : "var(--text-label)",
                     }}
@@ -1140,7 +1163,7 @@ const [mapReady, setMapReady] = useState(false);
                     onClick={() => setMapPlaceType(opt.value)}
                     className="shrink-0 font-mono text-ui-xs uppercase tracking-snug px-2 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapPlaceType === opt.value ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      borderColor: mapPlaceType === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
                       backgroundColor: mapPlaceType === opt.value ? "var(--accent-tint-md)" : "transparent",
                       color: mapPlaceType === opt.value ? "var(--accent)" : "var(--text-label)",
                     }}
@@ -1157,7 +1180,7 @@ const [mapReady, setMapReady] = useState(false);
                     onClick={() => setMapFryer((v) => !v)}
                     className="font-mono text-ui-xs uppercase tracking-snug px-2.5 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapFryer ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      borderColor: mapFryer ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
                       backgroundColor: mapFryer ? "var(--accent-tint-md)" : "transparent",
                       color: mapFryer ? "var(--accent)" : "var(--text-label)",
                     }}
@@ -1168,7 +1191,7 @@ const [mapReady, setMapReady] = useState(false);
                     onClick={() => setMapLabeled((v) => !v)}
                     className="font-mono text-ui-xs uppercase tracking-snug px-2.5 py-1 border transition-colors duration-150"
                     style={{
-                      borderColor: mapLabeled ? "var(--accent-tint-xl)" : "oklch(0.3 0 0)",
+                      borderColor: mapLabeled ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
                       backgroundColor: mapLabeled ? "var(--accent-tint-md)" : "transparent",
                       color: mapLabeled ? "var(--accent)" : "var(--text-label)",
                     }}
@@ -1195,7 +1218,7 @@ const [mapReady, setMapReady] = useState(false);
             <Link
               href="/login?next=/map"
               className="font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors duration-150 hover:border-accent hover:text-accent shadow-lg flex items-center gap-1.5"
-              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+              style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)", color: "var(--text-secondary)" }}
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -1214,7 +1237,7 @@ const [mapReady, setMapReady] = useState(false);
                 if (q) fetchSearch(q); else fetchViewport();
               }}
               className="font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors duration-150 hover:border-accent hover:text-accent shadow-lg"
-              style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.85 0 0)" }}
+              style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)", color: "var(--text-secondary)" }}
             >
               Search this area
               {isPreview && (
@@ -1231,7 +1254,7 @@ const [mapReady, setMapReady] = useState(false);
           {/* Gradient fade */}
           <div
             className="h-24"
-            style={{ background: "linear-gradient(to bottom, transparent, rgba(8,8,8,0.92))" }}
+            style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
           />
           {/* Banner */}
           <div
@@ -1239,7 +1262,7 @@ const [mapReady, setMapReady] = useState(false);
             style={{ backgroundColor: "var(--surface-base)", borderTop: "1px solid var(--border-subtle)" }}
           >
             <div>
-              <p className="font-mono text-ui-md uppercase tracking-editorial text-white text-center md:text-left">
+              <p className="font-mono text-ui-md uppercase tracking-editorial text-text-primary text-center md:text-left">
                 Showing {PREVIEW_LIMIT} of 500+ restaurants
               </p>
               <p className="font-mono text-ui-sm text-text-label mt-0.5 text-center md:text-left">
@@ -1248,7 +1271,8 @@ const [mapReady, setMapReady] = useState(false);
             </div>
             <Link
               href="/login?next=/map"
-              className="shrink-0 px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+              className="shrink-0 px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] transition-opacity hover:opacity-80"
+              style={{ backgroundColor: "var(--text-primary)", color: "var(--surface-base)" }}
             >
               Create free account →
             </Link>
@@ -1261,7 +1285,7 @@ const [mapReady, setMapReady] = useState(false);
         onClick={locateUser}
         aria-label="Near me"
         className="absolute bottom-20 md:bottom-8 right-4 z-10 w-11 h-11 flex items-center justify-center border transition-colors duration-150 hover:border-accent hover:text-accent rounded-full"
-        style={{ backgroundColor: "oklch(0.1 0 0)", borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
+        style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)", boxShadow: "0 2px 12px rgba(0,0,0,0.25)" }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="3 11 22 2 13 21 11 13 3 11"/>
@@ -1281,7 +1305,7 @@ const [mapReady, setMapReady] = useState(false);
             borderLeft: `3px solid ${hovered.r.color}`,
           }}
         >
-          <p className="font-[family-name:var(--font-display)] text-base text-white leading-tight mb-1.5">
+          <p className="font-[family-name:var(--font-display)] text-base text-text-primary leading-tight mb-1.5">
             {hovered.r.name}
           </p>
           {(hovered.r.google_rating || hovered.r.cuisine) && (

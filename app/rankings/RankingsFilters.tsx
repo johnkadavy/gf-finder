@@ -35,7 +35,7 @@ function LocationDropdown({
   return (
     <div className="relative">
       {label && (
-        <p className="font-mono text-ui-xs uppercase tracking-editorial mb-1" style={{ color: "oklch(0.5 0 0)" }}>
+        <p className="font-mono text-ui-xs uppercase tracking-editorial mb-1" style={{ color: "var(--text-disabled)" }}>
           {label}
         </p>
       )}
@@ -515,7 +515,7 @@ export function RankingsSecondaryFilters({
           <Link
             href={clearAll}
             scroll={false}
-            className="font-mono text-ui-sm uppercase tracking-editorial transition-colors duration-150 hover:text-white ml-1"
+            className="font-mono text-ui-sm uppercase tracking-editorial transition-colors duration-150 hover:text-text-primary ml-1"
             style={{ color: "var(--text-dim)" }}
           >
             Clear all

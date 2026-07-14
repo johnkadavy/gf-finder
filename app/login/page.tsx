@@ -44,28 +44,28 @@ function LoginForm() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 justify-center">
           <Image src="/guanaco_logo.svg" alt="Guanaco logo" width={28} height={28} />
-          <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">
+          <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-text-primary">
             CleanPlate
           </span>
         </Link>
 
         {submitted ? (
           <div className="space-y-4 text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
               Check your email
             </p>
-            <p className="text-[14px] text-[oklch(0.65_0_0)] leading-relaxed">
-              We sent a login link to <span className="text-white">{email}</span>.
+            <p className="text-[14px] text-[var(--text-label)] leading-relaxed">
+              We sent a login link to <span className="text-text-primary">{email}</span>.
               Click it to continue.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[oklch(0.78_0_0)] text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] text-center">
                 Sign in to save restaurants
               </p>
-              <p className="text-[13px] text-[oklch(0.55_0_0)] text-center leading-relaxed">
+              <p className="text-[13px] text-[var(--text-dim)] text-center leading-relaxed">
                 We&apos;ll email you a magic link — no password needed.
                 You&apos;ll also get our weekly GF digest; unsubscribe anytime.
               </p>
@@ -84,13 +84,13 @@ function LoginForm() {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-transparent border px-4 py-3 font-mono text-[13px] text-white placeholder:text-[oklch(0.35_0_0)] outline-none focus:border-[oklch(0.45_0_0)] transition-colors"
-                style={{ borderColor: "oklch(0.22 0 0)" }}
+                className="w-full bg-transparent border px-4 py-3 font-mono text-[13px] text-text-primary placeholder:text-[var(--border-emphasis)] outline-none focus:border-[var(--text-disabled)] transition-colors"
+                style={{ borderColor: "var(--border-default)" }}
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-black bg-white hover:bg-[oklch(0.85_0_0)] disabled:opacity-50 transition-colors"
+                className="w-full px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] bg-text-primary text-surface-base hover:opacity-80 disabled:opacity-50 transition-opacity"
               >
                 {loading ? "Sending…" : "Send magic link"}
               </button>

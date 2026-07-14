@@ -17,7 +17,7 @@ export function CopyButton({ text }: { text: string }) {
       className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2 border transition-colors shrink-0"
       style={
         copied
-          ? { borderColor: "#4A7C59", color: "#4A7C59" }
+          ? { borderColor: "var(--score-excellent)", color: "var(--score-excellent)" }
           : { borderColor: "var(--border-emphasis)", color: "var(--text-dim)" }
       }
     >

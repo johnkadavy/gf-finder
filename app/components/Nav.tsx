@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { capture } from "@/lib/analytics";
 
 const linkClass =
-  "font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-white transition-colors duration-200";
+  "font-mono text-ui-md uppercase tracking-editorial text-text-label hover:text-text-primary transition-colors duration-200";
 
 function SearchIcon() {
   return (

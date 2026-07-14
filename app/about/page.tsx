@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function AboutPage() {
   return (
     <main className="pt-16">
@@ -52,7 +53,7 @@ export default function AboutPage() {
           <p className="pt-6">
             Eat well,
             <br />
-            <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">CleanPlate</span>
+            <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-text-primary">CleanPlate</span>
           </p>
         </div>
 
@@ -67,14 +68,14 @@ export default function AboutPage() {
           <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-label mb-6">
             Ready to explore?
           </p>
-          <a
+          <Link
             href="/"
-            className="group inline-flex items-center gap-4 border px-8 py-4 font-mono text-ui-md uppercase tracking-editorial text-white hover:border-accent hover:text-accent transition-all duration-200"
+            className="group inline-flex items-center gap-4 border px-8 py-4 font-mono text-ui-md uppercase tracking-editorial text-text-primary hover:border-accent hover:text-accent transition-all duration-200"
             style={{ borderColor: "var(--border-emphasis)" }}
           >
             Start your search
             <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-          </a>
+          </Link>
         </div>
       </article>
     </main>

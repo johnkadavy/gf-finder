@@ -4,6 +4,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { Nav } from "./components/Nav";
 import { Footer } from "./components/Footer";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -60,8 +61,15 @@ export default function RootLayout({
     : null;
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* No-flash theme: set the theme class before first paint from stored
+            preference, falling back to the OS setting, then dark. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`,
+          }}
+        />
         {supabaseHostname && <link rel="preconnect" href={supabaseHostname} />}
       </head>
       <body
@@ -92,11 +100,14 @@ export default function RootLayout({
                   </span>
                 </div>
               </div>
-              <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-white">
+              <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider" style={{ color: "var(--text-primary)" }}>
                 CleanPlate
               </span>
             </Link>
-            <Nav />
+            <div className="flex items-center gap-4 md:gap-6">
+              <ThemeToggle />
+              <Nav />
+            </div>
           </div>
         </header>
 

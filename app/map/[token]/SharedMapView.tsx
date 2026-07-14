@@ -8,6 +8,13 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+// Map base style follows the app theme (DOM markers persist across setStyle).
+const MAP_STYLE_DARK = "mapbox://styles/mapbox/dark-v11";
+const MAP_STYLE_LIGHT = "mapbox://styles/mapbox/light-v11";
+function isLightTheme() {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("light");
+}
+
 function priceStr(level: number | null) {
   return level ? "$".repeat(level) : null;
 }
@@ -47,7 +54,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
     if (map.current || !mapContainer.current) return;
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: isLightTheme() ? MAP_STYLE_LIGHT : MAP_STYLE_DARK,
       center: [-73.985, 40.758],
       zoom: 12,
     });
@@ -55,6 +62,17 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     }
     map.current.on("load", () => setMapReady(true));
+
+    const htmlEl = document.documentElement;
+    let lastLight = isLightTheme();
+    const themeObserver = new MutationObserver(() => {
+      const nowLight = htmlEl.classList.contains("light");
+      if (nowLight !== lastLight) {
+        lastLight = nowLight;
+        map.current?.setStyle(nowLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK);
+      }
+    });
+    themeObserver.observe(htmlEl, { attributes: true, attributeFilter: ["class"] });
     map.current.on("move", () => {
       // Keep hover tooltip position in sync while panning
       setHovered((prev) => {
@@ -63,7 +81,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
         return { ...prev, x: pos.x, y: pos.y };
       });
     });
-    return () => { map.current?.remove(); map.current = null; };
+    return () => { themeObserver.disconnect(); map.current?.remove(); map.current = null; };
   }, []);
 
   useEffect(() => {
@@ -156,14 +174,14 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
     <>
       {/* Drag handle — mobile only */}
       <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "oklch(0.3 0 0)" }} />
+        <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "var(--border-emphasis)" }} />
       </div>
 
       {/* Close bar — desktop only */}
       <button
         onClick={() => setSelected(null)}
-        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-white"
-        style={{ borderColor: "oklch(0.18 0 0)", color: "oklch(0.48 0 0)", backgroundColor: "oklch(0.07 0 0)" }}
+        className="hidden md:flex items-center gap-2 w-full px-5 py-3 border-b shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors hover:text-text-primary"
+        style={{ borderColor: "var(--border-subtle)", color: "var(--text-label)", backgroundColor: "var(--surface-base)" }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -173,17 +191,17 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
 
       <div
         className="p-5 md:p-6 border-b shrink-0"
-        style={{ borderColor: "oklch(0.16 0 0)", borderLeft: `3px solid ${selected.color}` }}
+        style={{ borderColor: "var(--surface-overlay)" }}
       >
         <div className="flex items-start justify-between gap-3 md:block">
           <div className="min-w-0">
             <p
               className="font-[family-name:var(--font-display)] leading-tight mb-1"
-              style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "oklch(0.95 0 0)" }}
+              style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", color: "var(--text-primary)" }}
             >
               {selected.name}
             </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[oklch(0.48_0_0)] mb-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-label mb-4">
               {[selected.neighborhood, selected.city].filter(Boolean).join(" · ")}
             </p>
           </div>
@@ -191,7 +209,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
           <button
             onClick={() => setSelected(null)}
             className="md:hidden shrink-0 mt-1 p-1"
-            style={{ color: "oklch(0.48 0 0)" }}
+            style={{ color: "var(--text-label)" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -207,7 +225,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
             {selected.score ?? "—"}
           </span>
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[oklch(0.45_0_0)]">GF Score</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-disabled">GF Score</p>
             <p className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: selected.color }}>
               {selected.scoreLabel}
             </p>
@@ -218,7 +236,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4">
         {selected.website && (
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">Website</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-text-disabled mb-0.5">Website</p>
             <a
               href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`}
               target="_blank"
@@ -238,25 +256,28 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
           const { label, value } = row as { label: string; value: string };
           return (
             <div key={label}>
-              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[oklch(0.45_0_0)] mb-0.5">{label}</p>
-              <p className="font-mono text-[12px] text-[oklch(0.82_0_0)] leading-snug">{value}</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-text-disabled mb-0.5">{label}</p>
+              <p className="font-mono text-[12px] text-text-secondary leading-snug">{value}</p>
             </div>
           );
         })}
       </div>
 
-      <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "oklch(0.16 0 0)" }}>
+      <div className="p-5 shrink-0 border-t space-y-3" style={{ borderColor: "var(--surface-overlay)" }}>
         <Link
           href={`/restaurant/${selected.slug ?? selected.id}`}
-          className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 border transition-colors hover:bg-accent hover:text-accent-foreground hover:border-accent"
-          style={{ borderColor: "oklch(0.3 0 0)", color: "oklch(0.75 0 0)" }}
+          className="block w-full text-center font-mono text-ui-md uppercase tracking-label py-3 border transition-colors"
+          style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)" }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; e.currentTarget.style.borderColor = "var(--accent)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.borderColor = "var(--border-emphasis)"; }}
         >
           View Full Details →
         </Link>
         {!isLoggedIn && (
           <Link
             href="/login"
-            className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 bg-white text-black hover:bg-[oklch(0.85_0_0)] transition-colors"
+            className="block w-full text-center font-mono text-[11px] uppercase tracking-[0.15em] py-3 transition-opacity hover:opacity-80"
+            style={{ backgroundColor: "var(--text-primary)", color: "var(--surface-base)" }}
           >
             Sign up to save →
           </Link>
@@ -277,11 +298,11 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       {/* Top bar — spot count + create CTA */}
       <div
         className="shrink-0 flex items-center justify-between px-4 md:px-6 py-2.5 border-b"
-        style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)", zIndex: 10 }}
+        style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)", zIndex: 10 }}
       >
         <span
           className="font-mono text-[10px] uppercase tracking-[0.2em]"
-          style={{ color: "oklch(0.55 0 0)" }}
+          style={{ color: "var(--text-dim)" }}
         >
           {ownerName
             ? `${ownerName}'s Gluten-Free Spots`
@@ -305,7 +326,7 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
         {/* Empty state */}
         {count === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "oklch(0.4 0 0)" }}>
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "var(--text-disabled)" }}>
               No saved spots to show
             </p>
           </div>
@@ -315,8 +336,9 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
         <div
           className="hidden md:flex absolute top-0 left-0 bottom-0 z-20 w-80 flex-col border-r overflow-hidden"
           style={{
-            backgroundColor: "oklch(0.08 0 0)",
-            borderColor: "oklch(0.18 0 0)",
+            backgroundColor: "var(--surface-base)",
+            borderColor: "var(--border-subtle)",
+            borderLeft: selected ? `4px solid ${selected.color}` : undefined,
             transform: selected ? "translateX(0)" : "translateX(-100%)",
             transition: "transform 0.25s ease",
             pointerEvents: selected ? "auto" : "none",
@@ -333,16 +355,16 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
               left: hovered.x,
               top: hovered.y,
               transform: "translate(-50%, calc(-100% - 18px))",
-              backgroundColor: "oklch(0.1 0 0)",
-              borderColor: "oklch(0.25 0 0)",
+              backgroundColor: "var(--surface-raised)",
+              borderColor: "var(--border-default)",
               borderLeft: `3px solid ${hovered.r.color}`,
             }}
           >
-            <p className="font-[family-name:var(--font-display)] text-base text-white leading-tight mb-1.5">
+            <p className="font-[family-name:var(--font-display)] text-base text-text-primary leading-tight mb-1.5">
               {hovered.r.name}
             </p>
             {(hovered.r.google_rating || hovered.r.cuisine) && (
-              <p className="font-mono text-[11px] tracking-[0.08em] text-[oklch(0.72_0_0)] mb-2">
+              <p className="font-mono text-[11px] tracking-[0.08em] text-text-tertiary mb-2">
                 {[
                   hovered.r.google_rating ? `★ ${hovered.r.google_rating}` : null,
                   hovered.r.cuisine,
@@ -370,8 +392,9 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       <div
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col overflow-hidden rounded-t-2xl"
         style={{
-          backgroundColor: "oklch(0.08 0 0)",
+          backgroundColor: "var(--surface-base)",
           height: "55vh",
+          borderLeft: selected ? `4px solid ${selected.color}` : undefined,
           transform: selected ? "translateY(0)" : "translateY(100%)",
           transition: "transform 0.3s ease",
           pointerEvents: selected ? "auto" : "none",
@@ -385,11 +408,11 @@ export function SharedMapView({ restaurants, isLoggedIn, ownerName = "" }: { res
       {!isLoggedIn && (
         <div
           className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t"
-          style={{ backgroundColor: "oklch(0.08 0 0)", borderColor: "oklch(0.18 0 0)", zIndex: 10 }}
+          style={{ backgroundColor: "var(--surface-base)", borderColor: "var(--border-subtle)", zIndex: 10 }}
         >
           <p
             className="font-mono text-[10px] uppercase tracking-[0.2em] text-center sm:text-left"
-            style={{ color: "oklch(0.45 0 0)" }}
+            style={{ color: "var(--text-disabled)" }}
           >
             Save your favorite gluten-free spots and share your own map.
           </p>

@@ -37,7 +37,7 @@ export function HomeAskInput() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask about GF dining in NYC…"
           autoComplete="off"
-          className="flex-1 border px-4 py-3 font-mono text-ui-lg placeholder:text-[oklch(0.38_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150"
+          className="flex-1 border px-4 py-3 font-mono text-ui-lg placeholder:text-text-disabled text-text-secondary focus:outline-none transition-colors duration-150"
           style={{ backgroundColor: "var(--surface-elevated)", borderColor: "var(--border-emphasis)" }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "var(--text-disabled)")}
           onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-emphasis)")}

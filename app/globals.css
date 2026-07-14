@@ -27,6 +27,7 @@
   --border-subtle:   oklch(0.18 0 0);  /* grid lines, secondary dividers */
   --border-default:  oklch(0.22 0 0);  /* primary border (= --border) */
   --border-emphasis: oklch(0.28 0 0);  /* medium-emphasis separators */
+  --grid-line:       oklch(0.18 0 0);  /* .grid-bg texture — tuned per theme */
 
   /* Text scale */
   --text-primary:   oklch(0.95 0 0);  /* primary reading text */
@@ -85,6 +86,52 @@
   --letter-spacing-widest: 0.25em;  /* strongest emphasis */
 }
 
+/* Light theme — warm cream palette derived from the digest email.
+   Activated by the `light` class on <html> (set by the no-flash script + toggle).
+   Only surfaces, text, borders, and the neutral signal tokens flip; the coral
+   accent and the chromatic score/signal colors carry across both themes. */
+html.light {
+  color-scheme: light;
+
+  --background: #f4f3f1;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --muted: #e2e0dd;
+  --muted-foreground: #6b6b6b;
+  --border: #e2e0dd;
+
+  --surface-base:     #f4f3f1;
+  --surface-raised:   #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-overlay:  #ffffff;
+
+  --border-subtle:   #ececec;
+  --border-default:  #e2e0dd;
+  --border-emphasis: #d5d2ce;
+  /* Warm + faint so the grid texture whispers on cream instead of shouting */
+  --grid-line:       #ece9e4;
+
+  --text-primary:   #111111;
+  --text-secondary: #333333;
+  --text-tertiary:  #555555;
+  --text-label:     #6b6b6b;
+  --text-dim:       #8a8a8a;
+  --text-disabled:  #b0b0b0;
+
+  /* Signal text colors darkened for contrast on light surfaces */
+  --signal-positive: #3E7A54;
+  --signal-warning:  #A9791F;
+  --signal-negative: #C8442A;
+  --signal-neutral:  #555555;
+  --signal-bg-neutral:     #f0efed;
+  --signal-border-neutral: #e2e0dd;
+
+  scrollbar-color: #c9c6c2 #f4f3f1;
+}
+
+html.dark { color-scheme: dark; }
+
 @theme inline {
   --font-sans: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -98,6 +145,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
   --radius-sm: 0rem;
   --radius-md: 0rem;
@@ -184,8 +232,8 @@
     scrollbar-color: oklch(0.25 0 0) oklch(0.08 0 0);
   }
   html, body {
-    background-color: oklch(0.08 0 0);
-    color: oklch(0.95 0 0);
+    background-color: var(--surface-base);
+    color: var(--text-primary);
     font-family: var(--font-sans), sans-serif;
   }
   ::selection {
@@ -197,8 +245,8 @@
 /* Grid background pattern */
 .grid-bg {
   background-image:
-    linear-gradient(to right, oklch(0.18 0 0) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.18 0 0) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 

@@ -127,9 +127,9 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
     return (
       <div
         className="border p-5 text-center"
-        style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
+        style={{ borderColor: "var(--signal-border-positive)", backgroundColor: "var(--signal-bg-positive)" }}
       >
-        <p className="font-mono text-ui-md uppercase tracking-editorial" style={{ color: "#4A7C59" }}>
+        <p className="font-mono text-ui-md uppercase tracking-editorial" style={{ color: "var(--score-excellent)" }}>
           Review submitted ✓
         </p>
       </div>
@@ -141,7 +141,7 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="w-full border py-3.5 font-mono text-ui-md uppercase tracking-editorial transition-colors hover:text-white"
+          className="w-full border py-3.5 font-mono text-ui-md uppercase tracking-editorial transition-colors hover:text-text-primary"
           style={{ borderColor: "var(--border-default)", color: "var(--text-dim)" }}
         >
           + Add Verified Review
@@ -229,7 +229,7 @@ export function ReviewForm({ restaurantId, googlePlaceId }: Props) {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 py-3 font-mono text-ui-md uppercase tracking-editorial bg-white text-black hover:bg-[oklch(0.85_0_0)] disabled:opacity-40 transition-colors"
+              className="flex-1 py-3 font-mono text-ui-md uppercase tracking-editorial bg-text-primary text-surface-base hover:opacity-80 disabled:opacity-40 transition-opacity"
             >
               {submitting ? "Submitting…" : "Submit"}
             </button>

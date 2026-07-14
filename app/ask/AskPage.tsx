@@ -108,7 +108,7 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
             onClick={() => onSelect(s)}
             className="font-mono text-ui-sm tracking-snug px-3 py-2 border transition-colors duration-150 text-left"
             style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--surface-raised)", color: "var(--text-dim)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "oklch(0.35 0 0)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-dim)"; }}
           >
             {s}
@@ -308,7 +308,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
                     style={{
                       backgroundColor: "var(--accent-tint-xs)",
                       border: "1px solid var(--accent-tint-md)",
-                      color: "oklch(0.88 0 0)",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     {msg.content}
@@ -371,14 +371,14 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
               placeholder={limitReached ? "Upgrade to ask more questions" : "Ask about GF dining in NYC…"}
               rows={1}
               disabled={loading || limitReached}
-              className="flex-1 resize-none border px-3 py-2.5 font-mono text-ui-lg leading-relaxed placeholder:text-[oklch(0.35_0_0)] text-[oklch(0.88_0_0)] focus:outline-none transition-colors duration-150 disabled:opacity-40"
+              className="flex-1 resize-none border px-3 py-2.5 font-mono text-ui-lg leading-relaxed placeholder:text-[var(--border-emphasis)] text-[var(--text-secondary)] focus:outline-none transition-colors duration-150 disabled:opacity-40"
               style={{
                 backgroundColor: "var(--surface-elevated)",
                 borderColor: "var(--border-default)",
                 maxHeight: "120px",
                 overflowY: "auto",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "oklch(0.38 0 0)")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--text-disabled)")}
               onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-default)")}
               onInput={(e) => {
                 // Auto-grow textarea
@@ -400,7 +400,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
           </div>
 
           {/* Usage counter */}
-          <p className="font-mono text-ui-xs uppercase tracking-broad text-[oklch(0.36_0_0)] mt-2">
+          <p className="font-mono text-ui-xs uppercase tracking-broad text-[var(--border-emphasis)] mt-2">
             {limitReached
               ? "Query limit reached"
               : queriesRemaining !== null

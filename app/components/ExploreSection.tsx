@@ -9,7 +9,7 @@ function ExploreTile({ link }: { link: QuickLink }) {
       style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--surface-raised)" }}
     >
       <span
-        className="font-[family-name:var(--font-display)] leading-tight text-white group-hover:text-accent transition-colors"
+        className="font-[family-name:var(--font-display)] leading-tight text-text-primary group-hover:text-accent transition-colors"
         style={{ fontSize: "clamp(1.15rem, 3.2vw, 1.5rem)", letterSpacing: "0.02em" }}
       >
         {link.emoji && <span className="mr-2" aria-hidden="true">{link.emoji}</span>}

@@ -71,7 +71,7 @@ export function LocationBanner({ cities }: { cities: string[] }) {
       </button>
       <button
         onClick={dismiss}
-        className="shrink-0 font-mono text-ui-sm text-[oklch(0.4_0_0)] hover:text-text-label transition-colors"
+        className="shrink-0 font-mono text-ui-sm text-text-disabled hover:text-text-label transition-colors"
       >
         ✕
       </button>

@@ -133,7 +133,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
             Account
           </p>
           <p className="font-mono text-ui-lg text-text-tertiary">{user.email}</p>
-          <p className="font-mono text-ui-sm text-[oklch(0.4_0_0)] mt-1">
+          <p className="font-mono text-ui-sm text-[var(--text-disabled)] mt-1">
             {isAdmin
               ? "Access: All cities"
               : `Access: ${allowedCities.join(" · ")}`}
@@ -142,7 +142,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
         <form action="/auth/signout" method="post">
           <button
             formAction="/auth/signout"
-            className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2 border border-[oklch(0.22_0_0)] text-[oklch(0.5_0_0)] transition-colors hover:text-white hover:border-[oklch(0.45_0_0)]"
+            className="font-mono text-ui-sm uppercase tracking-editorial px-4 py-2 border border-[var(--border-default)] text-[var(--text-disabled)] transition-colors hover:text-text-primary hover:border-[var(--text-disabled)]"
           >
             Sign out
           </button>
@@ -176,16 +176,16 @@ export default async function AccountPage({ searchParams }: PageProps) {
 
           {/* Display name */}
           <div className="mb-5">
-            <p className="font-mono text-ui-sm uppercase tracking-editorial text-[oklch(0.4_0_0)] mb-2">
+            <p className="font-mono text-ui-sm uppercase tracking-editorial text-[var(--text-disabled)] mb-2">
               Display Name
             </p>
             <DisplayNameForm current={displayName} />
           </div>
           <div
             className="flex items-center gap-3 border px-4 py-3"
-            style={{ borderColor: "var(--border-default)", backgroundColor: "oklch(0.09 0 0)" }}
+            style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-base)" }}
           >
-            <span className="font-mono text-ui-md text-[oklch(0.5_0_0)] truncate flex-1 min-w-0">
+            <span className="font-mono text-ui-md text-[var(--text-disabled)] truncate flex-1 min-w-0">
               {shareUrl}
             </span>
             <CopyButton text={shareUrl} />
@@ -205,7 +205,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
             <p className="font-mono text-ui-md uppercase tracking-stamp text-text-dim">
               Saved Restaurants
             </p>
-            <span className="font-mono text-ui-sm text-[oklch(0.38_0_0)]">
+            <span className="font-mono text-ui-sm text-[var(--text-disabled)]">
               {restaurants.length}{cityFilter !== "all" || cuisineFilter !== "all" ? ` of ${allRestaurants.length}` : ""}
             </span>
           </div>
@@ -224,16 +224,16 @@ export default async function AccountPage({ searchParams }: PageProps) {
             className="border border-dashed px-6 py-16 text-center mt-6"
             style={{ borderColor: "var(--border-default)" }}
           >
-            <p className="font-mono text-ui-md uppercase tracking-editorial text-[oklch(0.4_0_0)]">
+            <p className="font-mono text-ui-md uppercase tracking-editorial text-[var(--text-disabled)]">
               No saved restaurants yet
             </p>
-            <p className="font-mono text-ui-md text-[oklch(0.35_0_0)] mt-2">
+            <p className="font-mono text-ui-md text-[var(--border-emphasis)] mt-2">
               Use the bookmark icon on any restaurant to save it here.
             </p>
           </div>
         ) : restaurants.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="font-mono text-ui-md uppercase tracking-editorial text-[oklch(0.4_0_0)]">
+            <p className="font-mono text-ui-md uppercase tracking-editorial text-[var(--text-disabled)]">
               No saved restaurants match these filters
             </p>
           </div>
@@ -249,7 +249,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
               return (
                 <div
                   key={restaurant.id}
-                  className="grid grid-cols-[1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[oklch(0.11_0_0)]"
+                  className="grid grid-cols-[1fr_auto] items-center border-b gap-4 md:gap-10 py-6 px-4 md:px-6 transition-colors duration-150 hover:bg-[var(--surface-raised)]"
                   style={{
                     borderColor: "var(--border-subtle)",
                     borderLeft: `2px solid ${color}`,
@@ -332,7 +332,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
               <p className="font-mono text-ui-md uppercase tracking-stamp text-text-dim">
                 My Reviews
               </p>
-              <span className="font-mono text-ui-sm text-[oklch(0.38_0_0)]">
+              <span className="font-mono text-ui-sm text-[var(--text-disabled)]">
                 {reviewVisits.length}
               </span>
             </div>
@@ -342,9 +342,9 @@ export default async function AccountPage({ searchParams }: PageProps) {
             {reviewVisits.map((visit) => {
               const restaurant = placeIdToRestaurant.get(visit.google_place_id);
               const sentimentColor =
-                visit.overall_sentiment === "mostly_positive" ? "#7ECF9A" :
-                visit.overall_sentiment === "mixed" ? "#D4AE62" :
-                visit.overall_sentiment === "mostly_negative" ? "#FF8060" : null;
+                visit.overall_sentiment === "mostly_positive" ? "var(--signal-positive)" :
+                visit.overall_sentiment === "mixed" ? "var(--signal-warning)" :
+                visit.overall_sentiment === "mostly_negative" ? "var(--signal-negative)" : null;
               const sentimentLabel =
                 visit.overall_sentiment === "mostly_positive" ? "Positive" :
                 visit.overall_sentiment === "mixed" ? "Mixed" :
@@ -366,15 +366,15 @@ export default async function AccountPage({ searchParams }: PageProps) {
                   {/* Review card — mirrors restaurant page style */}
                   <div
                     className="border p-6 space-y-4"
-                    style={{ borderColor: "#4A7C5930", backgroundColor: "#4A7C5908" }}
+                    style={{ borderColor: "var(--signal-border-positive)", backgroundColor: "var(--signal-bg-positive)" }}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="flex items-center gap-2.5">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--score-excellent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
-                        <span className="font-mono text-ui-sm uppercase tracking-editorial text-[#4A7C59]">
+                        <span className="font-mono text-ui-sm uppercase tracking-editorial text-[var(--score-excellent)]">
                           Verified Visit
                         </span>
                       </div>
@@ -429,19 +429,19 @@ type SignalLevel = "positive" | "neutral" | "warning" | "negative" | "unknown";
 
 function signalColor(level: SignalLevel): string {
   switch (level) {
-    case "positive": return "#7ECF9A";
-    case "neutral":  return "oklch(0.72 0 0)";
-    case "warning":  return "#D4AE62";
-    case "negative": return "#FF8060";
-    default:         return "oklch(0.42 0 0)";
+    case "positive": return "var(--signal-positive)";
+    case "neutral":  return "var(--text-tertiary)";
+    case "warning":  return "var(--signal-warning)";
+    case "negative": return "var(--signal-negative)";
+    default:         return "var(--text-disabled)";
   }
 }
 
 function signalBg(level: SignalLevel): string {
   switch (level) {
-    case "positive": return "#4A7C590D";
+    case "positive": return "var(--signal-bg-positive)";
     case "negative": return "var(--signal-bg-negative)";
-    case "warning":  return "#C5A04A0D";
+    case "warning":  return "var(--signal-bg-warning)";
     default:         return "var(--surface-raised)";
   }
 }

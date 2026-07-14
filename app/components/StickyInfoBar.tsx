@@ -35,7 +35,7 @@ export function StickyInfoBar({
       <div className="flex items-center justify-between gap-3 px-4 h-12">
         {/* Name */}
         <span
-          className="font-[family-name:var(--font-display)] text-white leading-none truncate flex-1 min-w-0"
+          className="font-[family-name:var(--font-display)] text-text-primary leading-none truncate flex-1 min-w-0"
           style={{ fontSize: "1.2rem", letterSpacing: "0.02em" }}
         >
           {name}
@@ -58,7 +58,10 @@ export function StickyInfoBar({
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
+            style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
           >
             Directions
           </a>

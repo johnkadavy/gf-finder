@@ -250,7 +250,7 @@ export function AddRestaurantForm() {
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* URL input */}
         <div>
-          <label className="font-mono text-ui-sm uppercase tracking-editorial text-[oklch(0.4_0_0)] block mb-1.5">
+          <label className="font-mono text-ui-sm uppercase tracking-editorial text-[var(--text-disabled)] block mb-1.5">
             Google Maps URL
           </label>
           <input
@@ -268,7 +268,7 @@ export function AddRestaurantForm() {
         {/* City + Neighborhood */}
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="font-mono text-ui-sm uppercase tracking-editorial text-[oklch(0.4_0_0)] block mb-1.5">
+            <label className="font-mono text-ui-sm uppercase tracking-editorial text-[var(--text-disabled)] block mb-1.5">
               City
             </label>
             <input
@@ -282,7 +282,7 @@ export function AddRestaurantForm() {
             />
           </div>
           <div className="flex-1">
-            <label className="font-mono text-ui-sm uppercase tracking-editorial text-[oklch(0.4_0_0)] block mb-1.5">
+            <label className="font-mono text-ui-sm uppercase tracking-editorial text-[var(--text-disabled)] block mb-1.5">
               Neighborhood
             </label>
             <input
@@ -303,7 +303,7 @@ export function AddRestaurantForm() {
             type="submit"
             disabled={running || !url.trim()}
             className="font-mono text-ui-md uppercase tracking-editorial px-4 py-2 border transition-colors duration-150 disabled:opacity-40"
-            style={{ borderColor: "oklch(0.45 0 0)", color: "var(--text-secondary)", backgroundColor: "oklch(0.13 0 0)" }}
+            style={{ borderColor: "var(--text-disabled)", color: "var(--text-secondary)", backgroundColor: "var(--surface-elevated)" }}
           >
             {running ? "Running…" : "Add Restaurant"}
           </button>
@@ -312,7 +312,7 @@ export function AddRestaurantForm() {
               type="button"
               onClick={handleCancel}
               className="font-mono text-ui-md uppercase tracking-editorial px-4 py-2 border transition-colors duration-150"
-              style={{ borderColor: "var(--border-emphasis)", color: "oklch(0.5 0 0)" }}
+              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-disabled)" }}
             >
               Cancel
             </button>
@@ -340,7 +340,7 @@ export function AddRestaurantForm() {
 
           {/* Duplicate notice */}
           {steps.find((s) => s.key === "check_db" && s.status === "duplicate") && (
-            <p className="font-mono text-ui-md text-[oklch(0.55_0_0)] pt-1">
+            <p className="font-mono text-ui-md text-[var(--text-dim)] pt-1">
               This restaurant is already in the database.
             </p>
           )}
@@ -348,7 +348,7 @@ export function AddRestaurantForm() {
           {/* Timeout — auto-polls in background, manual retry also available */}
           {steps.find((s) => s.key === "enrichment" && s.status === "timeout") && (
             <div className="pt-2 space-y-2">
-              <p className="font-mono text-ui-md text-[oklch(0.5_0_0)]">
+              <p className="font-mono text-ui-md text-[var(--text-disabled)]">
                 {autoPollAttempt > 0
                   ? `Enrichment in progress — auto-check ${autoPollAttempt}/20…`
                   : "Enrichment in progress — checking automatically every 30s."}
@@ -359,12 +359,12 @@ export function AddRestaurantForm() {
                   onClick={handleRetrySync}
                   disabled={retrying}
                   className="font-mono text-ui-md uppercase tracking-label px-3 py-1.5 border transition-colors disabled:opacity-40"
-                  style={{ borderColor: "oklch(0.35 0 0)", color: "var(--text-tertiary)" }}
+                  style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)" }}
                 >
                   {retrying ? "Checking…" : "Check Now"}
                 </button>
                 {retryResult && (
-                  <span className="font-mono text-ui-md" style={{ color: retryResult.startsWith("Synced") ? "#7ECF9A" : "var(--text-dim)" }}>
+                  <span className="font-mono text-ui-md" style={{ color: retryResult.startsWith("Synced") ? "var(--signal-positive)" : "var(--text-dim)" }}>
                     {retryResult}
                   </span>
                 )}
@@ -374,7 +374,7 @@ export function AddRestaurantForm() {
 
           {/* Fatal error */}
           {fatalError && (
-            <p className="font-mono text-ui-md pt-1" style={{ color: "#FF8060" }}>
+            <p className="font-mono text-ui-md pt-1" style={{ color: "var(--signal-negative)" }}>
               Error: {fatalError}
             </p>
           )}
@@ -382,7 +382,7 @@ export function AddRestaurantForm() {
           {/* Success */}
           {result && (
             <div className="pt-2 flex items-center gap-3">
-              <span className="font-mono text-ui-md" style={{ color: "#7ECF9A" }}>
+              <span className="font-mono text-ui-md" style={{ color: "var(--signal-positive)" }}>
                 ✓ {result.name} added
                 {result.score != null && ` — Score: ${Math.round(result.score)}`}
               </span>
@@ -409,16 +409,16 @@ function StepIcon({ status }: { status: StepStatus }) {
     );
   }
   if (status === "done") {
-    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "#7ECF9A" }}>✓</span>;
+    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "var(--signal-positive)" }}>✓</span>;
   }
   if (status === "duplicate") {
-    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "#D4AE62" }}>~</span>;
+    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "var(--signal-warning)" }}>~</span>;
   }
   if (status === "timeout") {
-    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "#D4AE62" }}>!</span>;
+    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "var(--signal-warning)" }}>!</span>;
   }
   if (status === "error") {
-    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "#FF8060" }}>✗</span>;
+    return <span className="font-mono text-ui-md mt-px w-4 shrink-0" style={{ color: "var(--signal-negative)" }}>✗</span>;
   }
   return null;
 }

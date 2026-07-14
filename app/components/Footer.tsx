@@ -14,7 +14,7 @@ export function Footer() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-screen-xl mx-auto gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-6">
-            <span className="font-[family-name:var(--font-display)] text-xl tracking-wider text-white">
+            <span className="font-[family-name:var(--font-display)] text-xl tracking-wider text-text-primary">
               CleanPlate
             </span>
             <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim">
@@ -26,9 +26,9 @@ export function Footer() {
           </p>
         </div>
         <div className="flex gap-8 font-mono text-ui-sm uppercase tracking-editorial">
-          <a href="#" className="text-text-label hover:text-white transition-colors duration-200">Privacy</a>
-          <a href="#" className="text-text-label hover:text-white transition-colors duration-200">Terms</a>
-          <a href="#" className="text-text-label hover:text-white transition-colors duration-200">Contact</a>
+          <a href="#" className="text-text-label hover:text-text-primary transition-colors duration-200">Privacy</a>
+          <a href="#" className="text-text-label hover:text-text-primary transition-colors duration-200">Terms</a>
+          <a href="#" className="text-text-label hover:text-text-primary transition-colors duration-200">Contact</a>
         </div>
       </div>
     </footer>

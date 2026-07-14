@@ -16,7 +16,6 @@ type Props = {
 export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle, showLabel }: Props) {
   const [saved, setSaved] = useState(initialSaved);
   const [loading, setLoading] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const router = useRouter();
 
   async function toggle() {
@@ -52,17 +51,13 @@ export function SaveButton({ restaurantId, initialSaved, redirectPath, onToggle,
     setLoading(false);
   }
 
-  const color = saved ? "var(--accent)" : hovered ? "#FF9470" : "var(--accent)";
-
   return (
     <button
       onClick={toggle}
       disabled={loading}
       aria-label={saved ? "Unsave restaurant" : "Save restaurant"}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="flex items-center gap-1.5 transition-opacity disabled:opacity-40"
-      style={{ color }}
+      className="flex items-center gap-1.5 transition-opacity hover:opacity-70 disabled:opacity-40"
+      style={{ color: "var(--accent)" }}
     >
       {saved ? (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

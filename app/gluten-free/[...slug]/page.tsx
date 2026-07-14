@@ -255,18 +255,18 @@ export default async function LandingPage({ params }: Props) {
             <div className="flex items-center gap-2 flex-wrap mb-6">
               <Link
                 href="/rankings"
-                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
               >
                 Rankings
               </Link>
-              <span className="text-[oklch(0.3_0_0)]">/</span>
+              <span className="text-[var(--border-emphasis)]">/</span>
               <Link
                 href={`/rankings?city=${encodeURIComponent(city)}`}
-                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
               >
                 {city}
               </Link>
-              <span className="text-[oklch(0.3_0_0)]">/</span>
+              <span className="text-[var(--border-emphasis)]">/</span>
               <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
                 {catDef.label}
               </span>
@@ -496,22 +496,22 @@ export default async function LandingPage({ params }: Props) {
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <Link
               href="/rankings"
-              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
             >
               Rankings
             </Link>
-            <span className="text-[oklch(0.3_0_0)]">/</span>
+            <span className="text-[var(--border-emphasis)]">/</span>
             <Link
               href={`/rankings?city=${encodeURIComponent(city)}`}
-              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+              className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
             >
               {city}
             </Link>
-            <span className="text-[oklch(0.3_0_0)]">/</span>
+            <span className="text-[var(--border-emphasis)]">/</span>
             {categorySlug ? (
               <Link
                 href={`/gluten-free/${citySlug}/${neighborhoodSlug}`}
-                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-white transition-colors"
+                className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim hover:text-text-primary transition-colors"
               >
                 {neighborhood}
               </Link>
@@ -522,7 +522,7 @@ export default async function LandingPage({ params }: Props) {
             )}
             {catDef && (
               <>
-                <span className="text-[oklch(0.3_0_0)]">/</span>
+                <span className="text-[var(--border-emphasis)]">/</span>
                 <span className="font-mono text-ui-sm uppercase tracking-stamp text-text-tertiary">
                   {catDef.label}
                 </span>
