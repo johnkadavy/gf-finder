@@ -54,15 +54,17 @@ function AnalyticsIdentity() {
   useEffect(() => {
     const supabase = createClient();
 
-    function identify(userId: string | undefined) {
+    function identify(userId: string | undefined, email?: string | null) {
       if (!userId) return;
-      if (POSTHOG_KEY) posthog.identify(userId);
+      // Attach email as a person property so registered users are recognizable
+      // in PostHog (not just opaque IDs) and joinable back to Supabase.
+      if (POSTHOG_KEY) posthog.identify(userId, email ? { email } : undefined);
       // Tag Clarity replays with the same id so returning-user sessions are filterable.
       window.clarity?.("identify", userId);
     }
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      identify(user?.id);
+      identify(user?.id, user?.email);
       if (user && !sessionStorage.getItem("pinged")) {
         sessionStorage.setItem("pinged", "1");
         fetch("/api/ping", { method: "POST" }).catch(() => {});
@@ -75,7 +77,7 @@ function AnalyticsIdentity() {
       if (event === "SIGNED_OUT") {
         if (POSTHOG_KEY) posthog.reset();
       } else if (session?.user) {
-        identify(session.user.id);
+        identify(session.user.id, session.user.email);
       }
     });
 
