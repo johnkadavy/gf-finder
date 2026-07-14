@@ -61,7 +61,13 @@ function AnalyticsIdentity() {
       window.clarity?.("identify", userId);
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => identify(user?.id));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      identify(user?.id);
+      if (user && !sessionStorage.getItem("pinged")) {
+        sessionStorage.setItem("pinged", "1");
+        fetch("/api/ping", { method: "POST" }).catch(() => {});
+      }
+    });
 
     const {
       data: { subscription },
