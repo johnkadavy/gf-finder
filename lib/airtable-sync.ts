@@ -157,7 +157,7 @@ function buildRecord(record: AirtableRecord): {
   return { googlePlaceId, dossier, fields };
 }
 
-async function stampAirtableSynced(airtableIds: string[], syncedAt: string): Promise<void> {
+export async function stampAirtableSynced(airtableIds: string[], syncedAt: string): Promise<void> {
   const AT_BATCH = 10;
   for (let i = 0; i < airtableIds.length; i += AT_BATCH) {
     const chunk = airtableIds.slice(i, i + AT_BATCH);

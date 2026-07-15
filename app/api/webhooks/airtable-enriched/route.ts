@@ -4,6 +4,7 @@ import {
   isEnriched,
   syncAirtableRecordToSupabase,
 } from "../../admin/add-restaurant/route";
+import { stampAirtableSynced } from "@/lib/airtable-sync";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -77,6 +78,8 @@ export async function POST(req: Request) {
   try {
     const score = await syncAirtableRecordToSupabase(google_place_id, fields);
     console.log(`[airtable-webhook] Synced ${google_place_id} — score: ${score}`);
+    // Stamp last_synced_at on the Airtable record (non-fatal if it fails)
+    await stampAirtableSynced([recordId], new Date().toISOString());
     return Response.json({ status: "synced", score }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error(`[airtable-webhook] Sync failed for ${google_place_id}:`, err);

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { syncAirtableToSupabase } from "@/lib/airtable-sync";
 
-// The sync scans all Airtable records and re-scores changed rows — give it room.
-export const maxDuration = 300;
+// Incremental sync of the small "Needs sync" set — quick. 60s is the Hobby cap.
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
