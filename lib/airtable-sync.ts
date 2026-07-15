@@ -11,9 +11,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calculateScore, type VerifiedData } from "./score";
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!;
-const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME!;
+// Read at call time, not at import time — CLI scripts load dotenv after imports.
+function airtableCreds() {
+  return {
+    key: process.env.AIRTABLE_API_KEY!,
+    baseId: process.env.AIRTABLE_BASE_ID!,
+    tableName: process.env.AIRTABLE_TABLE_NAME!,
+  };
+}
 
 // Airtable views. The cron uses the incremental "Needs sync" view
 // (last_updated_at > last_synced_at). The manual CLI script uses a separate
@@ -69,14 +74,15 @@ async function fetchAirtableRecords(viewId: string): Promise<AirtableRecord[]> {
     "reservation_link", "dedicated_gf_kitchen", "display_name",
   ];
   do {
+    const { key, baseId, tableName } = airtableCreds();
     const url = new URL(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`
+      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`
     );
     fields.forEach((f) => url.searchParams.append("fields[]", f));
     url.searchParams.set("view", viewId);
     if (offset) url.searchParams.set("offset", offset);
     const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+      headers: { Authorization: `Bearer ${key}` },
     });
     if (!res.ok) throw new Error(`Airtable API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
@@ -155,11 +161,12 @@ async function stampAirtableSynced(airtableIds: string[], syncedAt: string): Pro
   const AT_BATCH = 10;
   for (let i = 0; i < airtableIds.length; i += AT_BATCH) {
     const chunk = airtableIds.slice(i, i + AT_BATCH);
+    const { key, baseId, tableName } = airtableCreds();
     await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`,
+      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`,
       {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ records: chunk.map((id) => ({ id, fields: { last_synced_at: syncedAt } })) }),
       }
     ).catch(() => { /* non-fatal */ });
