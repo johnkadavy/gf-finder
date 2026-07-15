@@ -21,7 +21,7 @@ const PLACE_TYPE_MAP: Record<string, string> = {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [restaurantsRes, landingRes] = await Promise.all([
-    supabase.from("restaurants").select("id, slug, updated_at").not("score", "is", null).order("id", { ascending: true }),
+    supabase.from("restaurants").select("id, slug, enriched_at, ingested_at").not("score", "is", null).order("id", { ascending: true }),
     // Egress control: pull only the two dossier paths the counts need, not the whole JSONB
     supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk").not("score", "is", null),
   ]);
@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((r) => r.slug)
     .map((r) => ({
       url: `${BASE_URL}/restaurant/${r.slug}`,
-      lastModified: r.updated_at ? new Date(r.updated_at) : new Date(),
+      lastModified: new Date(r.enriched_at ?? r.ingested_at ?? Date.now()),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     }));

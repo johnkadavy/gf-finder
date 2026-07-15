@@ -4,11 +4,30 @@
 
 CleanPlate is a **dense, dark, editorial UI**. Think data terminal crossed with a magazine: high-information density, all-caps monospace labels, a single coral accent on a near-black ground, zero rounded corners. Hierarchy comes from opacity and size — not weight or color variety.
 
-- **Dark-first.** The page background is essentially black. Surfaces layer upward in lightness.
+- **Dark by default, light supported.** The page background is essentially black; surfaces layer upward in lightness. A warm cream light theme (derived from the digest) ships behind a toggle — see **Theming** below. Because of that, every color *must* go through a token so it flips between themes.
 - **Monospace-first.** IBM Plex Mono is the primary label font. IBM Plex Sans appears only in long-form prose.
 - **All-caps always.** Nearly every UI label is uppercase with wide letter spacing.
 - **One chromatic color.** Coral (`#FF7444`) is the only non-neutral brand color. Score and signal colors exist to convey data meaning, not decoration.
 - **No radius.** All corners are sharp. `rounded-full` is used only for circular status dots.
+
+---
+
+## Theming — Light & Dark
+
+CleanPlate ships **two themes**: the original dark (default) and a warm cream **light** theme derived from the digest email. The active theme is a `dark` or `light` class on `<html>`.
+
+**How it works**
+- `:root` holds the **dark** values (the default). `html.light` (in `app/globals.css`) overrides surfaces, text, borders, `--grid-line`, and the neutral signal tokens with the light palette. Chromatic tokens — the coral accent and the score/signal colors — carry across both themes; the muted signal *text* colors are darkened under `html.light` for contrast on cream.
+- A no-flash inline script in `app/layout.tsx` sets the class before first paint: `localStorage.theme` → OS `prefers-color-scheme` → dark fallback. `ThemeToggle` (`app/components/ThemeToggle.tsx`) flips and persists it, and `color-scheme` is set per theme so native controls/scrollbars match.
+
+**The non-negotiable rule (doubly important now):** every color goes through a token, because hardcoded colors don't flip.
+- **Never** write a raw `oklch(...)` or hex in a component — it stays fixed and breaks in the other theme.
+- **Never** use `text-white`, `bg-white`, or `text-black` — they don't flip. Use `text-text-primary`, `bg-surface-*`, `text-surface-base`, etc.
+- Neutrals → surface/text/border tokens · data colors → signal/score tokens · brand → `--accent`.
+
+**Light palette** (`html.light`): page `#f4f3f1`, cards `#ffffff`, borders `#ececec`/`#e2e0dd`/`#d5d2ce`, text `#111`→`#b0b0b0`, grid `#ece9e4`; accent + score/signal hues unchanged.
+
+**Coral outline→fill buttons:** `--color-accent-foreground` is registered in `@theme` (so `text-accent-foreground` works), but these hover buttons use inline `onMouseEnter/onMouseLeave` handlers that set `backgroundColor: var(--accent)` + `color: var(--accent-foreground)` — done for reliability after a Tailwind utility-generation issue. Follow that inline pattern for new coral buttons.
 
 ---
 
@@ -74,6 +93,7 @@ All borders are 1px. Use the default border for most dividers; use subtle for gr
 | `--border-subtle` | `oklch(0.18 0 0)` | `border-border-subtle` | Grid lines, secondary dividers |
 | `--border-default` | `oklch(0.22 0 0)` | `border-border` | Primary border — most dividers |
 | `--border-emphasis` | `oklch(0.28 0 0)` | `border-border-emphasis` | Medium-emphasis separators |
+| `--grid-line` | `oklch(0.18 0 0)` | — | `.grid-bg` texture only — tuned per theme, not a general border |
 
 ---
 
@@ -296,7 +316,7 @@ Opacity communicates state, not depth. It is never used for color transparency (
 
 Two ambient textures applied globally at the layout level:
 
-**Grid background** (`.grid-bg`): `60px × 60px` rule grid using `--border-subtle` lines. Applied to full-bleed background sections.
+**Grid background** (`.grid-bg`): `60px × 60px` rule grid using the `--grid-line` token. This token is separate from `--border-subtle` so the grid can be tuned per theme — in light it's a faint warm gray (`#ece9e4`) so the texture whispers on cream instead of shouting. Applied to full-bleed background sections.
 
 **Noise overlay** (`.noise-overlay`): Fixed SVG fractal noise at `opacity: 0.035`. Applied in the root layout. Sits at `z-index: 1000` with `pointer-events: none`.
 
