@@ -26,31 +26,7 @@ export async function GET(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // 1. Select today's topic based on what was recently sent
-  const topic = await selectTopic();
-  console.log("[weekly-digest] selected topic:", topic.label);
-
-  // 2. Fetch matching restaurants
-  const { restaurants, totalCount } = await fetchRestaurants(topic);
-  if (!restaurants.length) {
-    console.error("[weekly-digest] no restaurants found for topic:", topic.label);
-    return NextResponse.json({ error: "No restaurants found for topic." }, { status: 500 });
-  }
-
-  // 2b. Enrich with editorial notes + Airtable record IDs (one API call)
-  const airtableMap = await lookupAirtableRestaurants(restaurants.map((r) => r.name));
-  const enrichedRestaurants = restaurants.map((r) => ({
-    ...r,
-    editorial_note: airtableMap.get(r.name)?.editorialNote ?? null,
-  }));
-  const airtableRecordIds = restaurants
-    .map((r) => airtableMap.get(r.name)?.recordId)
-    .filter((id): id is string => Boolean(id));
-
-  // 3. Generate subject line + intro copy via Claude Haiku
-  const { subject, intro } = await generateCopy(topic, enrichedRestaurants);
-
-  // 4. Get active subscribers, deduplicated by email
+  // 1. Get active subscribers, deduplicated by email
   const { data: allFollows, error: followsError } = await supabaseServer
     .from("follows")
     .select("email, confirmation_token, cadence")
@@ -74,13 +50,48 @@ export async function GET(req: Request) {
   const isMonday = new Date().getDay() === 1;
   const results = { sent: 0, skipped: 0, errors: 0 };
 
-  // 5. Send to each subscriber
+  // Split into who actually gets mail today vs. who's skipped by cadence — do this
+  // before any topic/content generation so a no-eligible-recipients day is a no-op.
+  const eligible: [string, { confirmation_token: string }][] = [];
   for (const [email, { confirmation_token, cadence }] of emailMap) {
     if ((cadence ?? "weekly") === "weekly" && !isMonday) {
       results.skipped++;
-      continue;
+    } else {
+      eligible.push([email, { confirmation_token }]);
     }
+  }
 
+  if (eligible.length === 0) {
+    console.log("[weekly-digest] no eligible recipients today, skipping generation", results);
+    return NextResponse.json({ topic: null, ...results });
+  }
+
+  // 2. Select today's topic based on what was recently sent
+  const topic = await selectTopic();
+  console.log("[weekly-digest] selected topic:", topic.label);
+
+  // 3. Fetch matching restaurants
+  const { restaurants, totalCount } = await fetchRestaurants(topic);
+  if (!restaurants.length) {
+    console.error("[weekly-digest] no restaurants found for topic:", topic.label);
+    return NextResponse.json({ error: "No restaurants found for topic." }, { status: 500 });
+  }
+
+  // 3b. Enrich with editorial notes + Airtable record IDs (one API call)
+  const airtableMap = await lookupAirtableRestaurants(restaurants.map((r) => r.name));
+  const enrichedRestaurants = restaurants.map((r) => ({
+    ...r,
+    editorial_note: airtableMap.get(r.name)?.editorialNote ?? null,
+  }));
+  const airtableRecordIds = restaurants
+    .map((r) => airtableMap.get(r.name)?.recordId)
+    .filter((id): id is string => Boolean(id));
+
+  // 4. Generate subject line + intro copy via Claude Haiku
+  const { subject, intro } = await generateCopy(topic, enrichedRestaurants);
+
+  // 5. Send to each eligible subscriber
+  for (const [email, { confirmation_token }] of eligible) {
     const unsubscribeUrl = `${SITE_URL}/api/follows/unsubscribe?token=${confirmation_token}`;
     const html = buildDigestEmail({
       label: topic.label,
@@ -107,8 +118,9 @@ export async function GET(req: Request) {
     }
   }
 
-  // 6. Log to Airtable as Sent (non-blocking — failure doesn't abort the run)
-  if (results.sent > 0 || results.errors === 0) {
+  // 6. Log to Airtable as Sent (non-blocking — failure doesn't abort the run) —
+  // only when something actually went out, so the log reflects real sends.
+  if (results.sent > 0) {
     logToAirtable(topic, subject, intro, results.sent, airtableRecordIds).catch((err) => {
       console.error("[weekly-digest] airtable log failed:", err);
     });
