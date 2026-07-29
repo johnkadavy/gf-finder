@@ -43,7 +43,7 @@ function LoginForm() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 justify-center">
-          <Image src="/guanaco_logo.svg" alt="Guanaco logo" width={28} height={28} />
+          <Image src="/guanaco_logo.svg" alt="Guanaco logo" width={28} height={28} style={{ transform: "translate(4px, -2px)" }} />
           <span className="font-[family-name:var(--font-display)] text-2xl tracking-wider text-text-primary">
             CleanPlate
           </span>

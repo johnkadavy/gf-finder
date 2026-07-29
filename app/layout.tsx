@@ -85,7 +85,7 @@ export default function RootLayout({
         >
           <div className="flex justify-between items-center px-4 md:px-8 h-16">
             <Link href="/" className="flex items-center gap-1.5">
-              <div className="relative group">
+              <div className="relative group" style={{ transform: "translate(4px, -2px)" }}>
                 <Image
                   src="/guanaco_logo.svg"
                   alt="Guanaco logo"
