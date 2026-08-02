@@ -14,6 +14,14 @@ export function isNewRestaurant(source: string | null | undefined, ingestedAt: s
 }
 
 /**
+ * Formats a date as M/D/YY, e.g. "8/2/26".
+ */
+export function formatShortDate(dateInput: string | Date): string {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear() % 100}`;
+}
+
+/**
  * Formats a restaurant location for display.
  * - Has neighborhood: "West Village / New York"
  * - No neighborhood, has region: "Montauk / Hamptons"

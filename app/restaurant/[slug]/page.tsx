@@ -14,7 +14,7 @@ import {
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
 import { StickyInfoBar } from "@/app/components/StickyInfoBar";
-import { isNewRestaurant, formatLocation } from "@/lib/utils";
+import { isNewRestaurant, formatLocation, formatShortDate } from "@/lib/utils";
 import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
@@ -66,6 +66,7 @@ type Restaurant = {
   google_place_id: string | null;
   source: string | null;
   ingested_at: string | null;
+  enriched_at: string | null;
   slug: string | null;
   gf_food_categories: string[] | null;
   restaurant_description: string | null;
@@ -218,7 +219,7 @@ const resolveRestaurant = cache(async (slugOrId: string) => {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
+    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
     .eq("slug", slugOrId)
     .single();
 
@@ -590,6 +591,14 @@ export default async function RestaurantPage({
                         }}
                       />
                       {d.data_quality.confidence} confidence
+                    </span>
+                  )}
+                  {r.enriched_at && (
+                    <span
+                      className="font-mono text-ui-sm uppercase tracking-label"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Updated {formatShortDate(r.enriched_at)}
                     </span>
                   )}
                 </div>
