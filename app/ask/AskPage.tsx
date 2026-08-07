@@ -127,6 +127,9 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [queriesRemaining, setQueriesRemaining] = useState<number | null>(null);
+  // Stable for the life of this page load — correlates every turn in
+  // agent_query_logs as belonging to the same conversation.
+  const [conversationId] = useState(() => crypto.randomUUID());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // Always-current ref so submit() reads live history without a stale closure
@@ -187,7 +190,7 @@ export function AskPage({ initialQuery = "" }: { initialQuery?: string }) {
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed, history }),
+        body: JSON.stringify({ query: trimmed, history, conversation_id: conversationId }),
       });
 
       // Limit reached — not a stream, plain JSON error

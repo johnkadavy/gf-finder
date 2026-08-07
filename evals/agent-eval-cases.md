@@ -112,19 +112,24 @@ ORDER BY score DESC;
 
 ## Case 5 — Vibe / occasion
 **Query:** "What's a good grab-and-go spot near me?"
-**Tests:** Agent interprets loose intent and maps to place_type (fast_casual, deli, cafe)
+**Tests:** Agent recognizes "near me" is unresolvable (no real location given, no browser geolocation available) and asks before searching, rather than silently defaulting to a city. Once a location is known, correctly maps "grab-and-go" to place_type.
+
+**Known conflict:** this criterion is intentionally stricter than the current system prompt, which defaults to NYC and only clarifies on a bare location with zero other context (rule 5 / rule 11 in `app/api/agent/route.ts`). This case is expected to fail against the live agent today — it's tracking a real product gap (silently assuming a location for "near me" can put a non-NYC user in the wrong city), not asserting current behavior is already correct.
+
 **Success criteria:**
+- Asks the user for their location before searching, instead of assuming a default city
 - Does not return sit-down fine dining restaurants
 - Uses place_type filter (fast_casual, deli, cafe, or similar)
-- Defaults to NYC (no location specified)
 - Results feel appropriate for a quick, casual meal
 
-**Ground truth query:**
+**Ground truth — two checks:**
+1. **Process (no DB needed):** did the agent ask a clarifying question about location before calling `search_restaurants`?
+2. **Data (fill in after the conversation, once you know what location you gave it):**
 ```sql
 SELECT name, neighborhood, score, place_type
 FROM restaurants
 WHERE place_type && ARRAY['fast_casual', 'cafe', 'deli']
-  AND city = 'New York'
+  AND city = '<city you answered with>'
   AND score IS NOT NULL
 ORDER BY score DESC
 LIMIT 10;
@@ -133,7 +138,7 @@ LIMIT 10;
 **Runs:**
 | Date | Result | Notes |
 |------|--------|-------|
-| 2026-05-05 | ✅ Pass | Asked for location + sensitivity level before searching (correct). Place type filtering correct (all results fast_casual/cafe/bakery). Scores accurate. Illness report caveat for Sushi Counter shows good judgment. Sensitivity question is a strong bonus — personalizes the score threshold. |
+| — | — | Previous row removed — it referenced the old (now-reversed) "defaults to NYC" criterion and its provenance couldn't be verified as a real test run. Log actual runs here going forward. |
 
 ---
 

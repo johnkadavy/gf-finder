@@ -166,16 +166,24 @@ async function getUsageContext(): Promise<UsageContext> {
 
 // ── Query logging ─────────────────────────────────────────────────────────────
 
+type ToolTraceEntry = { name: string; input: unknown; result: unknown };
+
 async function logQuery({
   userId,
+  conversationId,
   query,
+  responseText,
+  toolTrace,
   inputTokens,
   outputTokens,
   toolCalls,
   error,
 }: {
   userId: string | null;
+  conversationId: string | null;
   query: string;
+  responseText: string | null;
+  toolTrace: ToolTraceEntry[];
   inputTokens: number;
   outputTokens: number;
   toolCalls: number;
@@ -185,7 +193,10 @@ async function logQuery({
     .from("agent_query_logs")
     .insert({
       user_id: userId,
+      conversation_id: conversationId,
       query,
+      response_text: responseText,
+      tool_trace: toolTrace,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       tool_calls: toolCalls,
@@ -201,6 +212,7 @@ async function logQuery({
 export async function POST(request: Request) {
   let query: string;
   let history: Anthropic.MessageParam[];
+  let conversationId: string | null;
   try {
     const body = await request.json();
     query = (body.query ?? "").trim();
@@ -210,6 +222,10 @@ export async function POST(request: Request) {
       role: m.role === "assistant" ? "assistant" : "user",
       content: String(m.content ?? ""),
     }));
+    // Client-generated, stable for the browser session — correlates rows in
+    // agent_query_logs belonging to the same conversation. Optional so older
+    // clients (or a stale cached bundle) don't break the request.
+    conversationId = typeof body.conversation_id === "string" ? body.conversation_id : null;
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -277,6 +293,7 @@ export async function POST(request: Request) {
       let totalInputTokens = 0;
       let totalOutputTokens = 0;
       let totalToolCalls = 0;
+      const toolTrace: ToolTraceEntry[] = [];
 
       try {
         const model = selectModel(query, history.length > 0);
@@ -325,7 +342,10 @@ export async function POST(request: Request) {
             // Log the completed query
             await logQuery({
               userId,
+              conversationId,
               query,
+              responseText: roundText,
+              toolTrace,
               inputTokens: totalInputTokens,
               outputTokens: totalOutputTokens,
               toolCalls: totalToolCalls,
@@ -358,7 +378,7 @@ export async function POST(request: Request) {
                   .update({ agent_queries_used: usageCtx.count + 1 })
                   .eq("id", usageCtx.userId);
               }
-              await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: false });
+              await logQuery({ userId, conversationId, query, responseText: question, toolTrace, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: false });
               const newCount = isUnlimited ? null : queriesUsed + 1;
               send({ type: "done", queries_remaining: isUnlimited ? null : queryLimit - (newCount ?? 0) });
               controller.close();
@@ -390,6 +410,8 @@ export async function POST(request: Request) {
                 result = { error: `Tool execution failed: ${err instanceof Error ? err.message : String(err)}` };
               }
 
+              toolTrace.push({ name: block.name, input: block.input, result });
+
               toolResults.push({
                 type: "tool_result",
                 tool_use_id: block.id,
@@ -405,12 +427,12 @@ export async function POST(request: Request) {
           break;
         }
 
-        await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
+        await logQuery({ userId, conversationId, query, responseText: null, toolTrace, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
         send({ type: "error", message: "Agent did not produce a response" });
         controller.close();
       } catch (err) {
         console.error("[/api/agent] Error:", err);
-        await logQuery({ userId, query, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
+        await logQuery({ userId, conversationId, query, responseText: null, toolTrace, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, toolCalls: totalToolCalls, error: true });
         send({ type: "error", message: "Failed to get response from agent" });
         controller.close();
       }
