@@ -106,6 +106,10 @@ Key inputs from the dossier (JSONB in `restaurants.dossier`):
 
 ## Ingest pipeline (adding a new neighborhood/city)
 
+Two ways to source restaurants — pick based on the area, then both feed the same Airtable → sync → score steps.
+
+**Street-based** (`ingest-neighborhood.ts`) — queries Google Places per street name. Good default for dense NYC neighborhoods where `neighborhood_streets` coverage already exists.
+
 ```bash
 # 1. Set up neighborhood + get Claude's street suggestions
 npx tsx scripts/setup-neighborhood.ts --neighborhood "West Village" --city "New York" --state "NY" --region "New York City"
@@ -114,14 +118,31 @@ npx tsx scripts/setup-neighborhood.ts --neighborhood "West Village" --city "New 
 
 # 3. Ingest restaurants from Google Places
 npx tsx scripts/ingest-neighborhood.ts --neighborhood "West Village" --city "New York" --region "New York City"
+```
 
-# 4. Push new restaurants to Airtable (AI enrichment happens there)
+**Geo/tiled** (`ingest-neighborhood-geo.ts`) — divides a polygon into a grid of tiles and queries each one, giving uniform spatial coverage instead of street-name bias. Use for a whole new city (no per-street setup needed) or to top up an NYC neighborhood's coverage. Dedupes by `google_place_id`, so safe to re-run.
+
+```bash
+# Always dry-run first — prints tile count + query estimate, no API calls or DB writes
+npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Park City" --city "Park City" --geojson lib/city-boundaries.json --dry-run
+
+# Then run for real. Tune --cell-size up (e.g. 800–1000m) for lower-density areas
+# to avoid over-tiling — 400m default is tuned for dense NYC neighborhoods.
+npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Park City" --city "Park City" --geojson lib/city-boundaries.json --cell-size 800
+```
+
+Polygon source defaults to `lib/nyc-neighborhoods.json` (NYC neighborhood/NTA boundaries). For a new city, add its municipal boundary to `lib/city-boundaries.json` (FeatureCollection of `{name, borough?}` + Polygon/MultiPolygon geometry — `borough` is optional, cosmetic only) and pass `--geojson lib/city-boundaries.json`. Boundaries can be sourced from OpenStreetMap/Nominatim (`polygon_geojson=1` on the search endpoint). `--bbox minLat,maxLat,minLng,maxLng` skips GeoJSON entirely for a quick rectangle when a real polygon isn't worth sourcing.
+
+**Both paths continue the same way:**
+
+```bash
+# Push new restaurants to Airtable (AI enrichment happens there)
 npx tsx scripts/populate-airtable.ts --neighborhood "West Village" --city "New York"
 
-# 5. Wait for Airtable AI fields to finish, then sync back to Supabase
+# Wait for Airtable AI fields to finish, then sync back to Supabase
 npx tsx scripts/sync-airtable.ts
 
-# 6. Backfill scores if needed
+# Backfill scores if needed
 npx tsx scripts/backfill-scores.ts
 ```
 
@@ -138,7 +159,10 @@ npx tsx scripts/backfill-scores.ts
 | `app/map/MapView.tsx` | Interactive map — all map state, search, filter logic |
 | `app/map/MapViewLoader.tsx` | Dynamic import wrapper for MapView (ssr:false) |
 | `scripts/sync-airtable.ts` | Reads Airtable dossiers, calculates scores, writes to Supabase |
-| `scripts/ingest-neighborhood.ts` | Google Places → Supabase restaurants |
+| `scripts/ingest-neighborhood.ts` | Street-based ingest — Google Places → Supabase restaurants |
+| `scripts/ingest-neighborhood-geo.ts` | Tiled polygon-based ingest — Google Places → Supabase restaurants |
+| `lib/nyc-neighborhoods.json` | NYC neighborhood/NTA polygons (default `--geojson` source) |
+| `lib/city-boundaries.json` | Whole-city municipal boundaries for non-NYC `--geojson` ingest |
 
 ## Cuisine normalization
 Raw DB values (e.g. "Italian (Pizza & Pasta)", "Italian / Casual") normalize to canonical categories ("Italian") via `normalizeCuisine()` in `lib/cuisine.ts`. Both the rankings filter and map search use canonical values — always go through `normalizeCuisine` when comparing or filtering by cuisine.
