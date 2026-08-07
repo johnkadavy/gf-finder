@@ -11,10 +11,19 @@
  * Deduplicates by google_place_id — safe to run on already-ingested
  * neighborhoods as a top-up pass.
  *
+ * Polygon source defaults to lib/nyc-neighborhoods.json. Pass --geojson to
+ * point at a different FeatureCollection (e.g. lib/city-boundaries.json for
+ * whole-city, non-NYC boundaries) — see that file's header comment for how
+ * to add a new one. --bbox skips GeoJSON entirely for a quick rectangle.
+ *
+ * Use --dry-run to see the tile count and query estimate without spending
+ * any Google Places budget — always do this first on a new polygon.
+ *
  * Usage:
  *   npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "West Village" --city "New York" --region "New York City"
  *   npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Williamsburg" --city "New York" --region "New York City" --types restaurant,cafe,bakery
  *   npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Astoria" --city "New York" --region "New York City" --cell-size 300
+ *   npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Park City" --city "Park City" --geojson lib/city-boundaries.json --dry-run
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -41,25 +50,34 @@ const city         = getArg("--city");
 const region       = getArg("--region");
 const geoName      = getArg("--geo-name"); // GeoJSON polygon name if different from --neighborhood
 const bboxArg      = getArg("--bbox");     // "minLat,maxLat,minLng,maxLng" — bypasses GeoJSON lookup
+const geojsonArg   = getArg("--geojson");  // path to a FeatureCollection file; defaults to the NYC neighborhood set
 const typesArg     = getArg("--types") ?? "restaurant";
 const cellSizeM    = parseInt(getArg("--cell-size") ?? "400", 10);
 const placeTypes   = typesArg.split(",").map((s) => s.trim()).filter(Boolean);
+const dryRun       = process.argv.includes("--dry-run");
 
 if (!neighborhood || !city) {
   console.error(
-    "Usage: npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood <name> --city <name> [--region <name>] [--geo-name <geojson-name>] [--bbox minLat,maxLat,minLng,maxLng] [--types restaurant,cafe,bakery] [--cell-size 400]"
+    "Usage: npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood <name> --city <name> [--region <name>] [--geo-name <geojson-name>] [--geojson <path>] [--bbox minLat,maxLat,minLng,maxLng] [--types restaurant,cafe,bakery] [--cell-size 400] [--dry-run]"
   );
   process.exit(1);
 }
 
 // ── GeoJSON types ─────────────────────────────────────────────────────────────
+//
+// The default source is lib/nyc-neighborhoods.json (NYC neighborhood/NTA
+// polygons). For other cities/regions, pass --geojson pointing at any
+// FeatureCollection of this shape — e.g. lib/city-boundaries.json, which
+// holds whole-city municipal boundaries (currently: Park City, UT, sourced
+// from OpenStreetMap/Nominatim). `borough` is cosmetic (log output only) and
+// optional so non-NYC entries aren't forced to invent one.
 
 type Position = [number, number]; // [lng, lat]
 type Ring = Position[];
 
 interface NbrhdFeature {
   type: "Feature";
-  properties: { name: string; borough: string };
+  properties: { name: string; borough?: string };
   geometry:
     | { type: "Polygon"; coordinates: Ring[] }
     | { type: "MultiPolygon"; coordinates: Ring[][] };
@@ -294,8 +312,10 @@ async function main() {
     ]];
     console.log(`Using explicit bounding box`);
   } else {
-    const geojsonPath = path.join(process.cwd(), "lib", "nyc-neighborhoods.json");
-    process.stdout.write("Loading neighborhood polygon... ");
+    const geojsonPath = geojsonArg
+      ? path.resolve(process.cwd(), geojsonArg)
+      : path.join(process.cwd(), "lib", "nyc-neighborhoods.json");
+    process.stdout.write(`Loading polygon from ${path.relative(process.cwd(), geojsonPath)}... `);
     const geojson = JSON.parse(fs.readFileSync(geojsonPath, "utf8")) as FeatureCollection;
 
     const feature =
@@ -305,7 +325,7 @@ async function main() {
       );
 
     if (!feature) {
-      console.error(`\nNeighborhood "${geoName ?? neighborhood}" not found in nyc-neighborhoods.json.`);
+      console.error(`\n"${geoName ?? neighborhood}" not found in ${path.basename(geojsonPath)}.`);
       console.error(
         `Sample names: ${geojson.features.slice(0, 10).map((f) => f.properties.name).join(", ")}`
       );
@@ -313,11 +333,18 @@ async function main() {
     }
 
     rings = exteriorRings(feature.geometry);
-    console.log(`found (${feature.properties.borough})`);
+    console.log(`found${feature.properties.borough ? ` (${feature.properties.borough})` : ""}`);
   }
 
   const tiles = buildTileGrid(rings, cellSizeM);
   console.log(`  ${tiles.length} tiles at ${cellSizeM}m (${Math.round(cellSizeM * (1 - OVERLAP))}m step, 10% overlap)\n`);
+
+  if (dryRun) {
+    console.log(`Dry run — stopping before any Google Places queries.`);
+    console.log(`  Estimated queries: ${tiles.length * placeTypes.length} (tiles × types)`);
+    console.log(`  Estimated max results: up to ${tiles.length * placeTypes.length * 60} (3 pages × 20 per tile per type)\n`);
+    return;
+  }
 
   // 2. Query each tile for each place type
   const allPlaces = new Map<string, RawPlace>();
