@@ -1,6 +1,6 @@
 # CleanPlate — Priorities
 
-_Living doc. Update freely. Last updated: 2026-07-09._
+_Living doc. Update freely. Last updated: 2026-07-16._
 
 CleanPlate = GF/celiac-safe restaurant discovery (database of places + 0–100 safety scores + email digest). Two jobs at once: (1) a real product with early organic signups, (2) a portfolio piece proving applied-AI product chops for the job search.
 
@@ -31,7 +31,8 @@ Digest is in good shape: daily cron, topic rotation, hero images, editorial note
 | 4 | **Agent eval infra** | Promoted from backlog: two AI surfaces now ship user-facing output (ask agent + Claude-generated digest copy) with zero regression safety. Cases already exist in `evals/agent-eval-cases.md`; needs a runner that scores pass/fail and logs results. Also protects the #1 digest-quality work. | S–M |
 | 5 | **Plan restaurant-protocol capture** (differentiated DB) | The actual moat. Start with schema + a small manual pilot before automating. | M (plan), L (build) |
 | 6 | **Computer-use flows to capture Instagram data** (GF options, signature dishes) | Feeds the differentiated DB. Judge on data value; portfolio value is a bonus, not the driver. | M–L |
-| 7 | **Automated DB refresh cycle** (close-out + score updates) | Data trust. Can stay semi-manual until traffic justifies full automation. | M |
+
+**DB refresh sync — shipped (2026-07-16).** Daily Vercel cron (`/api/cron/sync-airtable`, Hobby, 08:00 UTC) syncs Airtable's incremental **"Needs sync" view** (`viworRquMdsABj223` — records where `last_updated_at` > `last_synced_at`) into Supabase: re-scores changed rows and stamps `enriched_at` (now the canonical "data last refreshed" field). Airtable's AI field agents refresh per-record ~monthly (configured in Airtable); the cron just reflects whatever's fresh, then stamps `last_synced_at` so records leave the view. Core logic in `lib/airtable-sync.ts` (shared by cron + CLI); manual ad-hoc sync via `npx tsx scripts/sync-airtable.ts` (points at a separate Airtable view). Also fixed the sitemap `lastModified` (was frozen `updated_at`; now `enriched_at`). **Still open: close-out detection** — periodically flag/remove permanently-closed restaurants via Google `business_status`. Not built yet; the natural next piece of "data trust." **Follow-up: double-check the pipeline is actually working** — confirm the cron is firing daily on schedule (Vercel cron logs), records are leaving the "Needs sync" view after sync, `enriched_at` is advancing on changed rows, and no silent failures are piling up unsynced records.
 
 ## Later (after the loop holds)
 
@@ -56,5 +57,5 @@ Digest is in good shape: daily cron, topic rotation, hero images, editorial note
 - **Account page improvements**
 - **Logo alignment** — review and fix logo positioning/alignment across pages.
 - **About page redesign**
-- **Dark / light mode toggle** — user-controlled theme switching, respecting system preference by default.
+- **Dark / light mode toggle — shipped (2026-07-16).** App-wide light theme (warm cream, derived from the digest) alongside dark, via a header toggle with system-preference default + no-flash script. All color drift tokenized; light/dark theming documented in `DESIGN_SYSTEM.md`.
 - **SMS interface for the CleanPlate agent** — text a CleanPlate number from your phone to interact with the agent instead of the mobile web app. Likely Twilio for the SMS layer, routing inbound messages to the existing agent with tool use. Natural fit for on-the-go "is this place safe?" queries.
