@@ -8,9 +8,8 @@ import { SafetyGauge } from "./components/SafetyGauge";
 import { SaveButton } from "./components/SaveButton";
 import { SearchForm } from "./components/SearchForm";
 import { ExploreSection } from "./components/ExploreSection";
-import { LocationBanner } from "./components/LocationBanner";
 import { calculateScore, getGaugeColor, type ScoringDossier, type VerifiedData } from "@/lib/score";
-import { getCityAccess, resolveCity, getSelectableCities } from "@/lib/cities";
+import { getCityAccess, resolveCity } from "@/lib/cities";
 import { SIGNAL_DOT } from "@/lib/tokens";
 import { CATEGORIES, toSlug, type CategoryDef } from "@/lib/categories";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
@@ -101,19 +100,6 @@ const getRequestAuth = cache(async () => {
 });
 
 // ── Cached DB queries ────────────────────────────────────────────────────────
-
-// Cached homepage metadata (city list + NYC count) — revalidates every hour
-const getHomepageMeta = unstable_cache(
-  async () => {
-    const { data: cityRows } = await supabase
-      .from("restaurants")
-      .select("city")
-      .not("score", "is", null);
-    return { cityRows: cityRows ?? [] };
-  },
-  ["homepage-meta"],
-  { revalidate: 3600 },
-);
 
 // NYC rated-restaurant count for the hero + metadata.
 // Kept OUT of unstable_cache and computed per request (React cache dedupes
@@ -251,16 +237,6 @@ function SignalChip({ signal }: { signal: Signal }) {
 }
 
 // ── Async server components (each deferred behind Suspense) ──────────────────
-
-async function LocationBannerServer() {
-  const [{ cityAccess }, { cityRows }] = await Promise.all([
-    getRequestAuth(),
-    getHomepageMeta(),
-  ]);
-  const allDbCities = Array.from(new Set(cityRows.map((r: { city: string }) => r.city))).sort();
-  const selectableCities = getSelectableCities(cityAccess, allDbCities);
-  return <LocationBanner cities={selectableCities} />;
-}
 
 async function HeroCount() {
   const totalCount = await getNycRatedCount();
@@ -509,11 +485,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_JSON_LD) }}
       />
-
-      {/* LocationBanner — deferred, doesn't block hero */}
-      <Suspense fallback={null}>
-        <LocationBannerServer />
-      </Suspense>
 
       {/* Hero — static shell renders immediately; count streams in */}
       <section className="grid-bg min-h-[280px] md:min-h-[400px] flex flex-col items-center justify-center px-6 pt-8 md:pt-12 relative pb-6 md:pb-16">
