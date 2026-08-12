@@ -242,7 +242,7 @@ async function HeroCount() {
   const totalCount = await getNycRatedCount();
   const roundedCount = Math.floor(totalCount / 100) * 100;
   return (
-    <p className="font-mono text-ui-md uppercase tracking-broad text-text-dim mt-3">
+    <p className="font-mono text-ui-md tracking-snug text-text-dim mt-3">
       {roundedCount > 0
         ? `${roundedCount.toLocaleString()}+ NYC restaurants rated for gluten-free safety`
         : "NYC restaurants rated for gluten-free safety"}
@@ -500,7 +500,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <br />
               <span style={{ color: "var(--accent)" }}>you go.</span>
             </h1>
-            <p className="font-mono text-ui-lg uppercase tracking-editorial text-text-secondary mt-5">
+            <p className="font-mono text-ui-lg tracking-snug text-text-secondary mt-5">
               Gluten-free safety scores for any restaurant in NYC.
             </p>
             {/* Count streams in — placeholder holds space */}
@@ -511,7 +511,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
           <div className="space-y-3">
             <SearchForm initialQuery={query} cities={[]} selectedCity={params.city ?? "all"} />
-            <p className="font-mono text-ui-sm uppercase tracking-editorial text-text-dim">
+            <p className="font-mono text-ui-sm tracking-snug text-text-dim">
               Have a more specific question?{" "}
               <Link href="/ask" className="text-accent hover:underline">Ask CleanPlate →</Link>
             </p>

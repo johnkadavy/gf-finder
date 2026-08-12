@@ -129,7 +129,7 @@ export function FollowPrompt({ variant, source }: Props) {
           <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-1">
             {EYEBROW}
           </p>
-          <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
+          <p className="font-mono text-ui-sm tracking-snug text-text-label">
             {HEADLINE}
           </p>
         </td>
@@ -155,7 +155,7 @@ export function FollowPrompt({ variant, source }: Props) {
           <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-1">
             {EYEBROW}
           </p>
-          <p className="font-mono text-ui-sm uppercase tracking-label text-text-label">
+          <p className="font-mono text-ui-sm tracking-snug text-text-label">
             {HEADLINE}
           </p>
         </div>
@@ -174,7 +174,7 @@ export function FollowPrompt({ variant, source }: Props) {
       <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-2">
         {EYEBROW}
       </p>
-      <p className="font-mono text-ui-md uppercase tracking-label text-text-secondary mb-4">
+      <p className="font-mono text-ui-md tracking-snug text-text-secondary mb-4">
         {HEADLINE}
       </p>
       {submitState === "success" ? (
