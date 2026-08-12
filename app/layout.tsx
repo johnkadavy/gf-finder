@@ -112,7 +112,7 @@ export default function RootLayout({
         </header>
 
         <Providers>
-          <div className="min-h-dvh pb-16 md:pb-0">{children}</div>
+          <div className="min-h-dvh">{children}</div>
         </Providers>
         <Analytics />
         <SpeedInsights />

@@ -525,7 +525,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </Suspense>
 
       {/* Subscribe to the NYC digest — top-of-funnel capture */}
-      <section className="max-w-3xl mx-auto px-4 md:px-8 pb-24">
+      <section className="max-w-3xl mx-auto px-4 md:px-8 pb-12 md:pb-16">
         <FollowPrompt variant="section" source="homepage" />
       </section>
     </main>
