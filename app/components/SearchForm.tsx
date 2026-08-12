@@ -170,7 +170,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
 
         {/* Search input + suggestions */}
         <div className="flex-1 relative">
-          <form onSubmit={handleSubmit}>
+          <form id="cp-search-form" onSubmit={handleSubmit}>
             <div
               className="flex items-center border px-5 py-3 transition-colors duration-200 focus-within:border-accent"
               style={{ backgroundColor: "var(--surface-raised)", borderColor: isOpen ? "var(--border-emphasis)" : "var(--border-default)" }}
@@ -188,7 +188,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
               <button
                 type="submit"
                 disabled={isPending}
-                className={`font-mono text-ui-md uppercase tracking-editorial px-6 py-2.5 border transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
+                className={`hidden md:inline-flex items-center font-mono text-ui-md uppercase tracking-editorial px-6 py-2.5 border transition-all duration-200 whitespace-nowrap ml-4 ${isPending ? "opacity-50" : ""}`}
                 style={{ borderColor: "var(--accent)", color: "var(--accent)", backgroundColor: "transparent" }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
@@ -232,6 +232,18 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
         </div>
           )}
         </div>
+
+        {/* Mobile-only submit — full width below the input so the field never
+            truncates on phones. Desktop keeps the inline button above. */}
+        <button
+          type="submit"
+          form="cp-search-form"
+          disabled={isPending}
+          className={`md:hidden w-full font-mono text-ui-md uppercase tracking-editorial px-6 py-3.5 border transition-colors duration-200 ${isPending ? "opacity-50" : ""}`}
+          style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }}
+        >
+          Search
+        </button>
 
         {/* City filter */}
         {cities.length > 0 && (
