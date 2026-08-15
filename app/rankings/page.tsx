@@ -241,7 +241,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       </Suspense>
       {/* Hero */}
       <section
-        className="grid-bg border-b px-4 md:px-8 py-16 md:py-24 relative"
+        className="grid-bg border-b px-4 md:px-8 py-8 md:py-24 relative"
         style={{ borderColor: "var(--border-default)" }}
       >
         <div
@@ -249,12 +249,12 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
           style={{ background: "linear-gradient(to bottom, transparent, var(--surface-base))" }}
         />
         <div className="max-w-6xl mx-auto">
-          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-label mb-6">
+          <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-label mb-3 md:mb-6">
             CleanPlate Rankings
           </p>
           <h1
-            className="font-[family-name:var(--font-display)] leading-none mb-10"
-            style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
+            className="font-[family-name:var(--font-display)] leading-none mb-6 md:mb-10"
+            style={{ fontSize: "clamp(2.25rem, 8vw, 5.5rem)", letterSpacing: "0.02em" }}
           >
             {filters.neighborhood !== "all" ? (
               <>Best Gluten-Free Restaurants<br /><span style={{ color: "var(--accent)" }}>in {filters.neighborhood}</span></>
