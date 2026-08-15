@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
-import { RankingsList, RankingsListSkeleton } from "./RankingsList";
+import { RankingsList, RankingsListSkeleton, RankingsResultCount } from "./RankingsList";
 import { FilterAnalytics } from "./FilterAnalytics";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 import { normalizeCuisine } from "@/lib/cuisine";
@@ -293,6 +293,16 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             regions={regions}
             towns={towns}
             neighborhoods={neighborhoods}
+            resultCount={
+              <Suspense fallback={<>Show results</>}>
+                <RankingsResultCount
+                  filters={filters}
+                  isAdmin={cityAccess.isAdmin}
+                  allowedCities={[...cityAccess.allowedCities]}
+                  rawCuisines={rawCuisines}
+                />
+              </Suspense>
+            }
           />
           <Suspense fallback={<RankingsListSkeleton />}>
             <RankingsList

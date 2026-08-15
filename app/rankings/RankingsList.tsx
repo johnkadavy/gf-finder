@@ -33,33 +33,52 @@ type Props = {
   rawCuisines: string[];
 };
 
-export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisines }: Props) {
+// Shared WHERE builder so the list query and the result-count query stay in
+// lockstep — "Show N results" always matches "showing X of Y".
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyRankingsFilters(query: any, filters: Filters, isAdmin: boolean, allowedCities: string[], rawCuisines: string[]) {
   const minScore = EXPERIENCE_OPTIONS.find((o) => o.value === filters.experience)?.minScore ?? 0;
+  let q = query;
+  if (filters.region !== "all")      q = q.eq("region", filters.region);
+  if (filters.city !== "all") {
+    q = q.eq("city", filters.city);
+  } else if (!isAdmin) {
+    q = q.in("city", allowedCities);
+  }
+  if (filters.neighborhood !== "all") q = q.eq("neighborhood", filters.neighborhood);
+  if (filters.priceLevel > 0)         q = q.lte("price_level", filters.priceLevel);
+  if (filters.cuisine !== "all") {
+    const matchingRaw = Array.from(new Set(rawCuisines.filter((c) => normalizeCuisine(c) === filters.cuisine)));
+    if (matchingRaw.length > 0) q = q.in("cuisine", matchingRaw);
+  }
+  if (minScore > 0)                   q = q.gte("score", minScore);
+  if (filters.placeType !== "all")    q = q.contains("place_type", [filters.placeType]);
+  if (filters.gfCategory !== "all")   q = q.contains("gf_food_categories", [filters.gfCategory]);
+  if (filters.fryer)                  q = q.eq("dossier->operations->dedicated_equipment->>fryer", "true");
+  if (filters.labeled)                q = q.eq("dossier->menu->>gf_labeling", "clear");
+  return q;
+}
 
+// Streams the live match count for the current filters into the mobile sheet's
+// action button. Head-only count query, so it fetches no rows.
+export async function RankingsResultCount({ filters, isAdmin, allowedCities, rawCuisines }: Props) {
+  const query = applyRankingsFilters(
+    supabase.from("restaurants").select("id", { count: "exact", head: true }).not("score", "is", null),
+    filters, isAdmin, allowedCities, rawCuisines,
+  );
+  const { count } = await query;
+  const n = count ?? 0;
+  return <>{n === 0 ? "No matches" : `Show ${n.toLocaleString()} ${n === 1 ? "result" : "results"}`}</>;
+}
+
+export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisines }: Props) {
   let query = supabase
     .from("restaurants")
     .select("id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
-  if (filters.region !== "all")      query = query.eq("region", filters.region);
-  if (filters.city !== "all") {
-    query = query.eq("city", filters.city);
-  } else if (!isAdmin) {
-    query = query.in("city", allowedCities);
-  }
-  if (filters.neighborhood !== "all") query = query.eq("neighborhood", filters.neighborhood);
-  if (filters.priceLevel > 0)         query = query.lte("price_level", filters.priceLevel);
-  if (filters.cuisine !== "all") {
-    const matchingRaw = Array.from(new Set(rawCuisines.filter((c) => normalizeCuisine(c) === filters.cuisine)));
-    if (matchingRaw.length > 0) query = query.in("cuisine", matchingRaw);
-  }
-  if (minScore > 0)                   query = query.gte("score", minScore);
-  if (filters.placeType !== "all")    query = query.contains("place_type", [filters.placeType]);
-  if (filters.gfCategory !== "all")   query = query.contains("gf_food_categories", [filters.gfCategory]);
-  if (filters.fryer)                  query = query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
-  if (filters.labeled)                query = query.eq("dossier->menu->>gf_labeling", "clear");
-
+  query = applyRankingsFilters(query, filters, isAdmin, allowedCities, rawCuisines);
   query = query.range(0, filters.limit - 1);
 
   const { data, error, count } = await query;

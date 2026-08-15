@@ -200,12 +200,14 @@ export function RankingsSecondaryFilters({
   regions = [],
   towns = [],
   neighborhoods = [],
+  resultCount,
 }: {
   filters: Filters;
   cuisines: string[];
   regions?: string[];
   towns?: string[];
   neighborhoods?: string[];
+  resultCount?: ReactNode;
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -807,9 +809,9 @@ export function RankingsSecondaryFilters({
             <button
               onClick={() => setSheetOpen(false)}
               className="w-full font-mono text-ui-md uppercase tracking-editorial py-3 border transition-colors"
-              style={{ borderColor: "var(--border-emphasis)", color: "var(--text-tertiary)" }}
+              style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }}
             >
-              Done
+              {resultCount ?? "Done"}
             </button>
           </div>
         </div>
