@@ -254,11 +254,19 @@ export function RankingsSecondaryFilters({
   const activeCount = activePills.length;
 
   // Mobile folds location into the same sheet, so its count / clear-all also
-  // cover region, city and neighborhood (desktop keeps location in the hero).
+  // cover location. City is auto-resolved to the user's default (e.g. New York)
+  // by resolveCity, so it is NOT a user-applied filter on its own — it only
+  // counts as a town pick inside a multi-city region. The second-level control
+  // is a town selector (multi-city regions have towns) or a neighborhood
+  // selector (single-city regions), mirroring what the sheet actually renders.
+  const secondLevelLocationActive =
+    filters.region === "all"
+      ? false
+      : towns.length > 0
+        ? filters.city !== "all"
+        : filters.neighborhood !== "all";
   const locationActiveCount =
-    (filters.region !== "all" ? 1 : 0) +
-    (filters.city !== "all" ? 1 : 0) +
-    (filters.neighborhood !== "all" ? 1 : 0);
+    (filters.region !== "all" ? 1 : 0) + (secondLevelLocationActive ? 1 : 0);
   const mobileActiveCount = activeCount + locationActiveCount;
   const clearAllMobile = rankingsUrl(filters, {
     fryer: false, labeled: false, cuisine: "all", placeType: "all",
@@ -268,9 +276,9 @@ export function RankingsSecondaryFilters({
 
   // Collapsed-section summaries double as an at-a-glance active-filter readout.
   const locationSummary =
-    filters.neighborhood !== "all" ? filters.neighborhood :
-    filters.city !== "all" ? filters.city :
-    filters.region !== "all" ? filters.region : "All regions";
+    filters.region === "all" ? "All regions" :
+    towns.length > 0 ? (filters.city !== "all" ? filters.city : filters.region) :
+    filters.neighborhood !== "all" ? filters.neighborhood : filters.region;
   const priceSummary = filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Any";
   const placeTypeSummary = currentPlaceType?.label ?? "All types";
   const gfFoodSummary = currentGfCategory?.label ?? "All";
@@ -582,13 +590,6 @@ export function RankingsSecondaryFilters({
           )}
         </button>
 
-        {/* One high-value quick toggle kept inline */}
-        <MobileChip
-          label="GF Fryer"
-          active={filters.fryer}
-          href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
-        />
-
         {mobileActiveCount > 0 && (
           <Link
             href={clearAllMobile}
@@ -891,31 +892,6 @@ function FilterToggle({ label, active, href }: { label: string; active: boolean;
       >
         {active && <span className="text-ui-2xs leading-none" style={{ color: "var(--surface-base)", fontWeight: 700 }}>✓</span>}
       </span>
-      {label}
-    </Link>
-  );
-}
-
-function MobileChip({ label, active, href }: { label: string; active: boolean; href: string }) {
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      className="shrink-0 flex items-center gap-1.5 h-9 px-3 font-mono text-ui-sm uppercase tracking-label border transition-colors"
-      style={{
-        borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-        backgroundColor: active ? "var(--accent-tint-sm)" : "transparent",
-        color: active ? "var(--accent)" : "var(--text-label)",
-      }}
-    >
-      {active && (
-        <span
-          className="w-2.5 h-2.5 border flex items-center justify-center shrink-0"
-          style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent)" }}
-        >
-          <span className="text-[7px] leading-none font-bold" style={{ color: "var(--surface-base)" }}>✓</span>
-        </span>
-      )}
       {label}
     </Link>
   );
