@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { EXPERIENCE_OPTIONS, GF_CATEGORY_OPTIONS, PLACE_TYPE_OPTIONS, rankingsUrl, type Filters } from "./utils";
 
 // ── Reusable typeahead dropdown ─────────────────────────────────────────────
@@ -209,6 +209,7 @@ export function RankingsSecondaryFilters({
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
   const [placeTypeOpen, setPlaceTypeOpen] = useState(false);
@@ -264,6 +265,17 @@ export function RankingsSecondaryFilters({
     gfCategory: "all", priceLevel: 0, experience: "all",
     region: "all", city: "all", neighborhood: "all", limit: 25,
   });
+
+  // Collapsed-section summaries double as an at-a-glance active-filter readout.
+  const locationSummary =
+    filters.neighborhood !== "all" ? filters.neighborhood :
+    filters.city !== "all" ? filters.city :
+    filters.region !== "all" ? filters.region : "All regions";
+  const priceSummary = filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Any";
+  const placeTypeSummary = currentPlaceType?.label ?? "All types";
+  const gfFoodSummary = currentGfCategory?.label ?? "All";
+  const cuisineSummary = filters.cuisine !== "all" ? filters.cuisine : "All";
+  const experienceSummary = filters.experience !== "all" ? currentExp.label : "All";
 
   return (
     <div>
@@ -601,230 +613,190 @@ export function RankingsSecondaryFilters({
             className="absolute bottom-0 left-0 right-0 border-t px-6 pt-6 pb-10 max-h-[85vh] overflow-y-auto"
             style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
           >
-            <div className="w-8 h-px mx-auto mb-7" style={{ backgroundColor: "var(--border-emphasis)" }} />
+            <div className="w-8 h-px mx-auto mb-6" style={{ backgroundColor: "var(--border-emphasis)" }} />
 
-            {/* Location — region, then town (multi-city) or neighborhood (single-city) */}
-            {regions.length > 0 && (
-              <>
-                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-                  Region
-                </p>
-                <div className="flex flex-col gap-2 mb-7">
-                  {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
-                    <Link
-                      key={opt.value}
-                      href={rankingsUrl(filters, { region: opt.value, city: "all", neighborhood: "all", limit: 25 })}
-                      scroll={false}
-                      onClick={() => setSheetOpen(false)}
-                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                      style={{
-                        borderColor: filters.region === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                        backgroundColor: filters.region === opt.value ? "var(--accent-tint-md)" : "transparent",
-                        color: filters.region === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                      }}
-                    >
-                      {opt.label}
-                    </Link>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {filters.region !== "all" && towns.length > 0 && (
-              <>
-                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-                  Town
-                </p>
-                <div className="flex flex-col gap-2 mb-7">
-                  {[{ label: "All Towns", value: "all" }, ...towns.map((t) => ({ label: t, value: t }))].map((opt) => (
-                    <Link
-                      key={opt.value}
-                      href={rankingsUrl(filters, { city: opt.value, neighborhood: "all", limit: 25 })}
-                      scroll={false}
-                      onClick={() => setSheetOpen(false)}
-                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                      style={{
-                        borderColor: filters.city === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                        backgroundColor: filters.city === opt.value ? "var(--accent-tint-md)" : "transparent",
-                        color: filters.city === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                      }}
-                    >
-                      {opt.label}
-                    </Link>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
-              <>
-                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-                  Neighborhood
-                </p>
-                <div className="flex flex-col gap-2 mb-7">
-                  {[{ label: "All Neighborhoods", value: "all" }, ...neighborhoods.map((n) => ({ label: n, value: n }))].map((opt) => (
-                    <Link
-                      key={opt.value}
-                      href={rankingsUrl(filters, { neighborhood: opt.value, limit: 25 })}
-                      scroll={false}
-                      onClick={() => setSheetOpen(false)}
-                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                      style={{
-                        borderColor: filters.neighborhood === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                        backgroundColor: filters.neighborhood === opt.value ? "var(--accent-tint-md)" : "transparent",
-                        color: filters.neighborhood === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                      }}
-                    >
-                      {opt.label}
-                    </Link>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <div className="flex flex-col gap-2 mb-7">
+            {/* Simple on/off toggles stay visible at the top */}
+            <div className="flex flex-col gap-2 mb-2">
               <SheetToggle
                 label="GF Fryer"
                 active={filters.fryer}
                 href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
-                onNavigate={() => setSheetOpen(false)}
               />
               <SheetToggle
                 label="GF Menu Labels"
                 active={filters.labeled}
                 href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
-                onNavigate={() => setSheetOpen(false)}
               />
             </div>
 
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-              Price
-            </p>
-            <div className="flex gap-2 mb-7">
-              {[{ label: "Any", value: 0 }, { label: "$", value: 1 }, { label: "$$", value: 2 }, { label: "$$$", value: 3 }, { label: "$$$$", value: 4 }].map((opt) => (
-                <Link
-                  key={opt.value}
-                  href={rankingsUrl(filters, { priceLevel: opt.value, limit: 25 })}
-                  scroll={false}
-                  onClick={() => setSheetOpen(false)}
-                  className="font-mono text-ui-md tracking-snug px-3 py-2.5 border transition-colors duration-150 text-center"
-                  style={{
-                    borderColor: filters.priceLevel === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                    backgroundColor: filters.priceLevel === opt.value ? "var(--accent-tint-md)" : "transparent",
-                    color: filters.priceLevel === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                  }}
+            {/* Everything else grouped into collapsible sections. Selections
+                navigate but keep the sheet open, so the list updates live behind
+                it and you can refine several filters in one session. */}
+            <div className="border-t mb-6" style={{ borderColor: "var(--border-subtle)" }}>
+              {regions.length > 0 && (
+                <AccordionSection
+                  title="Location"
+                  summary={locationSummary}
+                  active={locationActiveCount > 0}
+                  isOpen={openSection === "location"}
+                  onToggle={() => setOpenSection((s) => (s === "location" ? null : "location"))}
                 >
-                  {opt.label}
-                </Link>
-              ))}
-            </div>
+                  <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Region</p>
+                  <div className="flex flex-col gap-2 mb-4">
+                    {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
+                      <SheetOption
+                        key={opt.value}
+                        label={opt.label}
+                        active={filters.region === opt.value}
+                        href={rankingsUrl(filters, { region: opt.value, city: "all", neighborhood: "all", limit: 25 })}
+                      />
+                    ))}
+                  </div>
+                  {filters.region !== "all" && towns.length > 0 && (
+                    <>
+                      <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Town</p>
+                      <div className="flex flex-col gap-2">
+                        {[{ label: "All Towns", value: "all" }, ...towns.map((t) => ({ label: t, value: t }))].map((opt) => (
+                          <SheetOption
+                            key={opt.value}
+                            label={opt.label}
+                            active={filters.city === opt.value}
+                            href={rankingsUrl(filters, { city: opt.value, neighborhood: "all", limit: 25 })}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
+                    <>
+                      <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Neighborhood</p>
+                      <div className="flex flex-col gap-2">
+                        {[{ label: "All Neighborhoods", value: "all" }, ...neighborhoods.map((n) => ({ label: n, value: n }))].map((opt) => (
+                          <SheetOption
+                            key={opt.value}
+                            label={opt.label}
+                            active={filters.neighborhood === opt.value}
+                            href={rankingsUrl(filters, { neighborhood: opt.value, limit: 25 })}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </AccordionSection>
+              )}
 
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-              Place Type
-            </p>
-            <div className="flex flex-col gap-2 mb-7">
-              {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
-                <Link
-                  key={opt.value}
-                  href={rankingsUrl(filters, { placeType: opt.value, limit: 25 })}
-                  scroll={false}
-                  onClick={() => setSheetOpen(false)}
-                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                  style={{
-                    borderColor: filters.placeType === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                    backgroundColor: filters.placeType === opt.value ? "var(--accent-tint-md)" : "transparent",
-                    color: filters.placeType === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                  }}
-                >
-                  {opt.label}
-                </Link>
-              ))}
-            </div>
-
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-              GF Food
-            </p>
-            <div className="flex flex-col gap-2 mb-7">
-              {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
-                <Link
-                  key={opt.value}
-                  href={rankingsUrl(filters, { gfCategory: opt.value, limit: 25 })}
-                  scroll={false}
-                  onClick={() => setSheetOpen(false)}
-                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                  style={{
-                    borderColor: filters.gfCategory === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                    backgroundColor: filters.gfCategory === opt.value ? "var(--accent-tint-md)" : "transparent",
-                    color: filters.gfCategory === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                  }}
-                >
-                  {opt.label}
-                </Link>
-              ))}
-            </div>
-
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-              Cuisine
-            </p>
-            <div className="flex flex-col gap-2 mb-7">
-              <Link
-                href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
-                scroll={false}
-                onClick={() => setSheetOpen(false)}
-                className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                style={{
-                  borderColor: filters.cuisine === "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                  backgroundColor: filters.cuisine === "all" ? "var(--accent-tint-md)" : "transparent",
-                  color: filters.cuisine === "all" ? "var(--accent)" : "var(--text-tertiary)",
-                }}
+              <AccordionSection
+                title="Price"
+                summary={priceSummary}
+                active={filters.priceLevel > 0}
+                isOpen={openSection === "price"}
+                onToggle={() => setOpenSection((s) => (s === "price" ? null : "price"))}
               >
-                All Cuisines
-              </Link>
-              {cuisines.map((c) => (
-                <Link
-                  key={c}
-                  href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
-                  scroll={false}
-                  onClick={() => setSheetOpen(false)}
-                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                  style={{
-                    borderColor: filters.cuisine === c ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                    backgroundColor: filters.cuisine === c ? "var(--accent-tint-md)" : "transparent",
-                    color: filters.cuisine === c ? "var(--accent)" : "var(--text-tertiary)",
-                  }}
-                >
-                  {c}
-                </Link>
-              ))}
-            </div>
+                <div className="flex gap-2">
+                  {[{ label: "Any", value: 0 }, { label: "$", value: 1 }, { label: "$$", value: 2 }, { label: "$$$", value: 3 }, { label: "$$$$", value: 4 }].map((opt) => (
+                    <Link
+                      key={opt.value}
+                      href={rankingsUrl(filters, { priceLevel: opt.value, limit: 25 })}
+                      scroll={false}
+                      className="flex-1 font-mono text-ui-md tracking-snug px-3 py-2.5 border transition-colors duration-150 text-center"
+                      style={{
+                        borderColor: filters.priceLevel === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                        backgroundColor: filters.priceLevel === opt.value ? "var(--accent-tint-md)" : "transparent",
+                        color: filters.priceLevel === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      }}
+                    >
+                      {opt.label}
+                    </Link>
+                  ))}
+                </div>
+              </AccordionSection>
 
-            <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
-              Experience
-            </p>
-            <div className="flex flex-col gap-2 mb-8">
-              {EXPERIENCE_OPTIONS.map((opt) => (
-                <Link
-                  key={opt.value}
-                  href={rankingsUrl(filters, { experience: opt.value, limit: 25 })}
-                  scroll={false}
-                  onClick={() => setSheetOpen(false)}
-                  className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
-                  style={{
-                    borderColor: filters.experience === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-                    backgroundColor: filters.experience === opt.value ? "var(--accent-tint-md)" : "transparent",
-                    color: filters.experience === opt.value ? "var(--accent)" : "var(--text-tertiary)",
-                  }}
-                >
-                  {opt.label}
-                </Link>
-              ))}
+              <AccordionSection
+                title="Place Type"
+                summary={placeTypeSummary}
+                active={filters.placeType !== "all"}
+                isOpen={openSection === "placeType"}
+                onToggle={() => setOpenSection((s) => (s === "placeType" ? null : "placeType"))}
+              >
+                <div className="flex flex-col gap-2">
+                  {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
+                    <SheetOption
+                      key={opt.value}
+                      label={opt.label}
+                      active={filters.placeType === opt.value}
+                      href={rankingsUrl(filters, { placeType: opt.value, limit: 25 })}
+                    />
+                  ))}
+                </div>
+              </AccordionSection>
+
+              <AccordionSection
+                title="GF Food"
+                summary={gfFoodSummary}
+                active={filters.gfCategory !== "all"}
+                isOpen={openSection === "gfFood"}
+                onToggle={() => setOpenSection((s) => (s === "gfFood" ? null : "gfFood"))}
+              >
+                <div className="flex flex-col gap-2">
+                  {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
+                    <SheetOption
+                      key={opt.value}
+                      label={opt.label}
+                      active={filters.gfCategory === opt.value}
+                      href={rankingsUrl(filters, { gfCategory: opt.value, limit: 25 })}
+                    />
+                  ))}
+                </div>
+              </AccordionSection>
+
+              <AccordionSection
+                title="Cuisine"
+                summary={cuisineSummary}
+                active={filters.cuisine !== "all"}
+                isOpen={openSection === "cuisine"}
+                onToggle={() => setOpenSection((s) => (s === "cuisine" ? null : "cuisine"))}
+              >
+                <div className="flex flex-col gap-2">
+                  <SheetOption
+                    label="All Cuisines"
+                    active={filters.cuisine === "all"}
+                    href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
+                  />
+                  {cuisines.map((c) => (
+                    <SheetOption
+                      key={c}
+                      label={c}
+                      active={filters.cuisine === c}
+                      href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
+                    />
+                  ))}
+                </div>
+              </AccordionSection>
+
+              <AccordionSection
+                title="Experience"
+                summary={experienceSummary}
+                active={filters.experience !== "all"}
+                isOpen={openSection === "experience"}
+                onToggle={() => setOpenSection((s) => (s === "experience" ? null : "experience"))}
+              >
+                <div className="flex flex-col gap-2">
+                  {EXPERIENCE_OPTIONS.map((opt) => (
+                    <SheetOption
+                      key={opt.value}
+                      label={opt.label}
+                      active={filters.experience === opt.value}
+                      href={rankingsUrl(filters, { experience: opt.value, limit: 25 })}
+                    />
+                  ))}
+                </div>
+              </AccordionSection>
             </div>
 
             {mobileActiveCount > 0 && (
               <Link
                 href={clearAllMobile}
                 scroll={false}
-                onClick={() => setSheetOpen(false)}
                 className="block w-full text-center font-mono text-ui-md uppercase tracking-editorial py-3 border mb-3 transition-colors"
                 style={{ borderColor: "var(--accent-tint-lg)", color: "var(--accent)", backgroundColor: "var(--accent-tint-xs)" }}
               >
@@ -846,6 +818,58 @@ export function RankingsSecondaryFilters({
 }
 
 // ── Shared sub-components ───────────────────────────────────────────────────
+
+function AccordionSection({ title, summary, active, isOpen, onToggle, children }: {
+  title: string;
+  summary: string;
+  active: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-3 py-4 text-left"
+      >
+        <span className="font-mono text-ui-sm uppercase tracking-stamp shrink-0" style={{ color: "var(--text-dim)" }}>
+          {title}
+        </span>
+        <span className="flex items-center gap-2 min-w-0">
+          <span
+            className="font-mono text-ui-sm uppercase tracking-label truncate"
+            style={{ color: active ? "var(--accent)" : "var(--text-tertiary)" }}
+          >
+            {summary}
+          </span>
+          <span className="text-ui-xs shrink-0 opacity-50" style={{ color: "var(--text-label)" }}>
+            {isOpen ? "▲" : "▼"}
+          </span>
+        </span>
+      </button>
+      {isOpen && <div className="pb-5">{children}</div>}
+    </div>
+  );
+}
+
+function SheetOption({ label, active, href }: { label: string; active: boolean; href: string }) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
+      style={{
+        borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+        backgroundColor: active ? "var(--accent-tint-md)" : "transparent",
+        color: active ? "var(--accent)" : "var(--text-tertiary)",
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
 
 function FilterToggle({ label, active, href }: { label: string; active: boolean; href: string }) {
   return (
@@ -898,7 +922,7 @@ function MobileChip({ label, active, href }: { label: string; active: boolean; h
 }
 
 function SheetToggle({ label, active, href, onNavigate }: {
-  label: string; active: boolean; href: string; onNavigate: () => void;
+  label: string; active: boolean; href: string; onNavigate?: () => void;
 }) {
   return (
     <Link
