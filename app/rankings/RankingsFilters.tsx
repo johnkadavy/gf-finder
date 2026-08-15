@@ -549,7 +549,7 @@ export function RankingsSecondaryFilters({
       >
         <button
           onClick={() => setSheetOpen(true)}
-          className="shrink-0 flex items-center gap-2 font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors"
+          className="shrink-0 flex items-center gap-2 h-9 px-3 font-mono text-ui-sm uppercase tracking-label border transition-colors"
           style={{
             borderColor: mobileActiveCount > 0 ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
             backgroundColor: mobileActiveCount > 0 ? "var(--accent-tint-sm)" : "transparent",
@@ -877,7 +877,7 @@ function MobileChip({ label, active, href }: { label: string; active: boolean; h
     <Link
       href={href}
       scroll={false}
-      className="shrink-0 flex items-center gap-1.5 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
+      className="shrink-0 flex items-center gap-1.5 h-9 px-3 font-mono text-ui-sm uppercase tracking-label border transition-colors"
       style={{
         borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
         backgroundColor: active ? "var(--accent-tint-sm)" : "transparent",
