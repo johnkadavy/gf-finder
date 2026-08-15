@@ -212,6 +212,8 @@ export function RankingsSecondaryFilters({
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [sheetCuisineQuery, setSheetCuisineQuery] = useState("");
+  const [sheetNeighborhoodQuery, setSheetNeighborhoodQuery] = useState("");
   const [expOpen, setExpOpen] = useState(false);
   const [cuisineOpen, setCuisineOpen] = useState(false);
   const [placeTypeOpen, setPlaceTypeOpen] = useState(false);
@@ -645,7 +647,7 @@ export function RankingsSecondaryFilters({
                   onToggle={() => setOpenSection((s) => (s === "location" ? null : "location"))}
                 >
                   <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Region</p>
-                  <div className="flex flex-col gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-2 mb-4">
                     {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
                       <SheetOption
                         key={opt.value}
@@ -658,7 +660,7 @@ export function RankingsSecondaryFilters({
                   {filters.region !== "all" && towns.length > 0 && (
                     <>
                       <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Town</p>
-                      <div className="flex flex-col gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {[{ label: "All Towns", value: "all" }, ...towns.map((t) => ({ label: t, value: t }))].map((opt) => (
                           <SheetOption
                             key={opt.value}
@@ -673,15 +675,29 @@ export function RankingsSecondaryFilters({
                   {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
                     <>
                       <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Neighborhood</p>
-                      <div className="flex flex-col gap-2">
-                        {[{ label: "All Neighborhoods", value: "all" }, ...neighborhoods.map((n) => ({ label: n, value: n }))].map((opt) => (
+                      <SheetSearch
+                        value={sheetNeighborhoodQuery}
+                        onChange={setSheetNeighborhoodQuery}
+                        placeholder="Search neighborhoods…"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        {!sheetNeighborhoodQuery && (
                           <SheetOption
-                            key={opt.value}
-                            label={opt.label}
-                            active={filters.neighborhood === opt.value}
-                            href={rankingsUrl(filters, { neighborhood: opt.value, limit: 25 })}
+                            label="All Neighborhoods"
+                            active={filters.neighborhood === "all"}
+                            href={rankingsUrl(filters, { neighborhood: "all", limit: 25 })}
                           />
-                        ))}
+                        )}
+                        {neighborhoods
+                          .filter((n) => n.toLowerCase().includes(sheetNeighborhoodQuery.toLowerCase()))
+                          .map((n) => (
+                            <SheetOption
+                              key={n}
+                              label={n}
+                              active={filters.neighborhood === n}
+                              href={rankingsUrl(filters, { neighborhood: n, limit: 25 })}
+                            />
+                          ))}
                       </div>
                     </>
                   )}
@@ -721,7 +737,7 @@ export function RankingsSecondaryFilters({
                 isOpen={openSection === "placeType"}
                 onToggle={() => setOpenSection((s) => (s === "placeType" ? null : "placeType"))}
               >
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[{ label: "All Types", value: "all" }, ...PLACE_TYPE_OPTIONS].map((opt) => (
                     <SheetOption
                       key={opt.value}
@@ -740,7 +756,7 @@ export function RankingsSecondaryFilters({
                 isOpen={openSection === "gfFood"}
                 onToggle={() => setOpenSection((s) => (s === "gfFood" ? null : "gfFood"))}
               >
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[{ label: "All Categories", value: "all" }, ...GF_CATEGORY_OPTIONS].map((opt) => (
                     <SheetOption
                       key={opt.value}
@@ -759,20 +775,29 @@ export function RankingsSecondaryFilters({
                 isOpen={openSection === "cuisine"}
                 onToggle={() => setOpenSection((s) => (s === "cuisine" ? null : "cuisine"))}
               >
-                <div className="flex flex-col gap-2">
-                  <SheetOption
-                    label="All Cuisines"
-                    active={filters.cuisine === "all"}
-                    href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
-                  />
-                  {cuisines.map((c) => (
+                <SheetSearch
+                  value={sheetCuisineQuery}
+                  onChange={setSheetCuisineQuery}
+                  placeholder="Search cuisines…"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  {!sheetCuisineQuery && (
                     <SheetOption
-                      key={c}
-                      label={c}
-                      active={filters.cuisine === c}
-                      href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
+                      label="All Cuisines"
+                      active={filters.cuisine === "all"}
+                      href={rankingsUrl(filters, { cuisine: "all", limit: 25 })}
                     />
-                  ))}
+                  )}
+                  {cuisines
+                    .filter((c) => c.toLowerCase().includes(sheetCuisineQuery.toLowerCase()))
+                    .map((c) => (
+                      <SheetOption
+                        key={c}
+                        label={c}
+                        active={filters.cuisine === c}
+                        href={rankingsUrl(filters, { cuisine: c, limit: 25 })}
+                      />
+                    ))}
                 </div>
               </AccordionSection>
 
@@ -783,7 +808,7 @@ export function RankingsSecondaryFilters({
                 isOpen={openSection === "experience"}
                 onToggle={() => setOpenSection((s) => (s === "experience" ? null : "experience"))}
               >
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {EXPERIENCE_OPTIONS.map((opt) => (
                     <SheetOption
                       key={opt.value}
@@ -857,12 +882,27 @@ function AccordionSection({ title, summary, active, isOpen, onToggle, children }
   );
 }
 
+function SheetSearch({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder: string;
+}) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full mb-3 bg-transparent border font-mono text-ui-md px-4 py-2.5 outline-none placeholder:opacity-40"
+      style={{ borderColor: "var(--border-emphasis)", color: "var(--text-secondary)" }}
+    />
+  );
+}
+
 function SheetOption({ label, active, href }: { label: string; active: boolean; href: string }) {
   return (
     <Link
       href={href}
       scroll={false}
-      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
+      className="font-mono text-ui-sm uppercase tracking-label px-3 py-3 border transition-colors duration-150 truncate"
       style={{
         borderColor: active ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
         backgroundColor: active ? "var(--accent-tint-md)" : "transparent",
