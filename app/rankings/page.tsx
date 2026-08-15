@@ -269,12 +269,17 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
             )}
           </h1>
 
-          <RankingsLocationFilters
-            regions={regions}
-            towns={towns}
-            neighborhoods={neighborhoods}
-            filters={filters}
-          />
+          {/* Desktop: inline location dropdowns in the hero. On mobile these
+              live inside the consolidated Filters sheet below (see
+              RankingsSecondaryFilters) so all filters share one surface. */}
+          <div className="hidden md:block">
+            <RankingsLocationFilters
+              regions={regions}
+              towns={towns}
+              neighborhoods={neighborhoods}
+              filters={filters}
+            />
+          </div>
 
         </div>
       </section>
@@ -282,7 +287,13 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
       {/* Rankings list */}
       <section className="px-4 md:px-8 pb-32 mt-8">
         <div className="max-w-6xl mx-auto">
-          <RankingsSecondaryFilters filters={filters} cuisines={cuisines} />
+          <RankingsSecondaryFilters
+            filters={filters}
+            cuisines={cuisines}
+            regions={regions}
+            towns={towns}
+            neighborhoods={neighborhoods}
+          />
           <Suspense fallback={<RankingsListSkeleton />}>
             <RankingsList
               filters={filters}

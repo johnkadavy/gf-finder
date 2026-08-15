@@ -197,9 +197,15 @@ export function RankingsLocationFilters({
 export function RankingsSecondaryFilters({
   filters,
   cuisines,
+  regions = [],
+  towns = [],
+  neighborhoods = [],
 }: {
   filters: Filters;
   cuisines: string[];
+  regions?: string[];
+  towns?: string[];
+  neighborhoods?: string[];
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -245,6 +251,19 @@ export function RankingsSecondaryFilters({
 
   const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", gfCategory: "all", priceLevel: 0, experience: "all", limit: 25 });
   const activeCount = activePills.length;
+
+  // Mobile folds location into the same sheet, so its count / clear-all also
+  // cover region, city and neighborhood (desktop keeps location in the hero).
+  const locationActiveCount =
+    (filters.region !== "all" ? 1 : 0) +
+    (filters.city !== "all" ? 1 : 0) +
+    (filters.neighborhood !== "all" ? 1 : 0);
+  const mobileActiveCount = activeCount + locationActiveCount;
+  const clearAllMobile = rankingsUrl(filters, {
+    fryer: false, labeled: false, cuisine: "all", placeType: "all",
+    gfCategory: "all", priceLevel: 0, experience: "all",
+    region: "all", city: "all", neighborhood: "all", limit: 25,
+  });
 
   return (
     <div>
@@ -523,99 +542,46 @@ export function RankingsSecondaryFilters({
         </div>
       )}
 
-      {/* Mobile filter chips row */}
+      {/* Mobile filter bar — single entry point into the sheet */}
       <div
-        className="md:hidden flex items-center gap-2 overflow-x-auto py-2.5 border-b"
-        style={{ scrollbarWidth: "none", borderColor: "var(--border-subtle)" }}
+        className="md:hidden flex items-center gap-2 py-2.5 border-b"
+        style={{ borderColor: "var(--border-subtle)" }}
       >
-        {/* Boolean toggles — always visible */}
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 flex items-center gap-2 font-mono text-ui-sm uppercase tracking-label px-3 py-2 border transition-colors"
+          style={{
+            borderColor: mobileActiveCount > 0 ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+            backgroundColor: mobileActiveCount > 0 ? "var(--accent-tint-sm)" : "transparent",
+            color: mobileActiveCount > 0 ? "var(--accent)" : "var(--text-label)",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+          </svg>
+          Filters
+          {mobileActiveCount > 0 && (
+            <span
+              className="flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-ui-2xs font-bold"
+              style={{ backgroundColor: "var(--accent)", color: "var(--surface-base)" }}
+            >
+              {mobileActiveCount}
+            </span>
+          )}
+        </button>
+
+        {/* One high-value quick toggle kept inline */}
         <MobileChip
           label="GF Fryer"
           active={filters.fryer}
           href={rankingsUrl(filters, { fryer: !filters.fryer, limit: 25 })}
         />
-        <MobileChip
-          label="GF Labels"
-          active={filters.labeled}
-          href={rankingsUrl(filters, { labeled: !filters.labeled, limit: 25 })}
-        />
 
-        {/* Price pill → opens sheet */}
-        <button
-          onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
-          style={{
-            borderColor: filters.priceLevel > 0 ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-            backgroundColor: filters.priceLevel > 0 ? "var(--accent-tint-sm)" : "transparent",
-            color: filters.priceLevel > 0 ? "var(--accent)" : "var(--text-label)",
-          }}
-        >
-          {filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Price"}
-          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
-        </button>
-
-        {/* Place Type pill → opens sheet */}
-        <button
-          onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
-          style={{
-            borderColor: filters.placeType !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-            backgroundColor: filters.placeType !== "all" ? "var(--accent-tint-sm)" : "transparent",
-            color: filters.placeType !== "all" ? "var(--accent)" : "var(--text-label)",
-          }}
-        >
-          {filters.placeType === "all" ? "Type" : (currentPlaceType?.label ?? filters.placeType)}
-          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
-        </button>
-
-        {/* GF Category pill → opens sheet */}
-        <button
-          onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
-          style={{
-            borderColor: filters.gfCategory !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-            backgroundColor: filters.gfCategory !== "all" ? "var(--accent-tint-sm)" : "transparent",
-            color: filters.gfCategory !== "all" ? "var(--accent)" : "var(--text-label)",
-          }}
-        >
-          {filters.gfCategory === "all" ? "GF Food" : (currentGfCategory?.label ?? filters.gfCategory)}
-          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
-        </button>
-
-        {/* Cuisine pill → opens sheet */}
-        <button
-          onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
-          style={{
-            borderColor: filters.cuisine !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-            backgroundColor: filters.cuisine !== "all" ? "var(--accent-tint-sm)" : "transparent",
-            color: filters.cuisine !== "all" ? "var(--accent)" : "var(--text-label)",
-          }}
-        >
-          {filters.cuisine === "all" ? "Cuisine" : filters.cuisine}
-          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
-        </button>
-
-        {/* Experience pill → opens sheet */}
-        <button
-          onClick={() => setSheetOpen(true)}
-          className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors"
-          style={{
-            borderColor: filters.experience !== "all" ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
-            backgroundColor: filters.experience !== "all" ? "var(--accent-tint-sm)" : "transparent",
-            color: filters.experience !== "all" ? "var(--accent)" : "var(--text-label)",
-          }}
-        >
-          {filters.experience === "all" ? "Experience" : currentExp.label}
-          <span className="ml-1.5 text-ui-2xs opacity-40">▼</span>
-        </button>
-
-        {/* Clear all */}
-        {activeCount > 0 && (
+        {mobileActiveCount > 0 && (
           <Link
-            href={clearAll}
+            href={clearAllMobile}
             scroll={false}
-            className="shrink-0 font-mono text-ui-sm uppercase tracking-editorial px-2 py-1.5 whitespace-nowrap transition-colors"
+            className="shrink-0 ml-auto font-mono text-ui-sm uppercase tracking-editorial px-2 py-1.5 whitespace-nowrap transition-colors"
             style={{ color: "var(--text-label)" }}
           >
             Clear all
@@ -636,6 +602,85 @@ export function RankingsSecondaryFilters({
             style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-emphasis)" }}
           >
             <div className="w-8 h-px mx-auto mb-7" style={{ backgroundColor: "var(--border-emphasis)" }} />
+
+            {/* Location — region, then town (multi-city) or neighborhood (single-city) */}
+            {regions.length > 0 && (
+              <>
+                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
+                  Region
+                </p>
+                <div className="flex flex-col gap-2 mb-7">
+                  {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
+                    <Link
+                      key={opt.value}
+                      href={rankingsUrl(filters, { region: opt.value, city: "all", neighborhood: "all", limit: 25 })}
+                      scroll={false}
+                      onClick={() => setSheetOpen(false)}
+                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
+                      style={{
+                        borderColor: filters.region === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                        backgroundColor: filters.region === opt.value ? "var(--accent-tint-md)" : "transparent",
+                        color: filters.region === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      }}
+                    >
+                      {opt.label}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {filters.region !== "all" && towns.length > 0 && (
+              <>
+                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
+                  Town
+                </p>
+                <div className="flex flex-col gap-2 mb-7">
+                  {[{ label: "All Towns", value: "all" }, ...towns.map((t) => ({ label: t, value: t }))].map((opt) => (
+                    <Link
+                      key={opt.value}
+                      href={rankingsUrl(filters, { city: opt.value, neighborhood: "all", limit: 25 })}
+                      scroll={false}
+                      onClick={() => setSheetOpen(false)}
+                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
+                      style={{
+                        borderColor: filters.city === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                        backgroundColor: filters.city === opt.value ? "var(--accent-tint-md)" : "transparent",
+                        color: filters.city === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      }}
+                    >
+                      {opt.label}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
+              <>
+                <p className="font-mono text-ui-sm uppercase tracking-stamp text-text-dim mb-3">
+                  Neighborhood
+                </p>
+                <div className="flex flex-col gap-2 mb-7">
+                  {[{ label: "All Neighborhoods", value: "all" }, ...neighborhoods.map((n) => ({ label: n, value: n }))].map((opt) => (
+                    <Link
+                      key={opt.value}
+                      href={rankingsUrl(filters, { neighborhood: opt.value, limit: 25 })}
+                      scroll={false}
+                      onClick={() => setSheetOpen(false)}
+                      className="font-mono text-ui-md uppercase tracking-label px-4 py-3 border transition-colors duration-150"
+                      style={{
+                        borderColor: filters.neighborhood === opt.value ? "var(--accent-tint-xl)" : "var(--border-emphasis)",
+                        backgroundColor: filters.neighborhood === opt.value ? "var(--accent-tint-md)" : "transparent",
+                        color: filters.neighborhood === opt.value ? "var(--accent)" : "var(--text-tertiary)",
+                      }}
+                    >
+                      {opt.label}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="flex flex-col gap-2 mb-7">
               <SheetToggle
@@ -775,9 +820,9 @@ export function RankingsSecondaryFilters({
               ))}
             </div>
 
-            {activeCount > 0 && (
+            {mobileActiveCount > 0 && (
               <Link
-                href={clearAll}
+                href={clearAllMobile}
                 scroll={false}
                 onClick={() => setSheetOpen(false)}
                 className="block w-full text-center font-mono text-ui-md uppercase tracking-editorial py-3 border mb-3 transition-colors"
