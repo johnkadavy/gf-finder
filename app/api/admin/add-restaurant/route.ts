@@ -257,7 +257,48 @@ async function lookupOrCreateRegion(
   return region;
 }
 
-function buildSupabaseRow(
+// ── Slug generation (mirrors scripts/backfill-slugs.ts logic) ──────────────────
+
+function toSlugPart(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[''`]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buildBaseSlug(name: string, neighborhood: string | null, city: string): string {
+  const namePart = toSlugPart(name);
+  const locationPart = toSlugPart(neighborhood ?? city);
+  if (namePart.endsWith(locationPart)) return namePart;
+  return `${namePart}-${locationPart}`;
+}
+
+/** Resolves a collision-free slug, excluding this restaurant's own existing row so re-adding it doesn't churn its URL. */
+async function assignSlug(
+  name: string,
+  neighborhood: string | null,
+  city: string,
+  placeId: string,
+): Promise<string> {
+  const base = buildBaseSlug(name, neighborhood, city);
+  let candidate = base;
+  let suffix = 2;
+  while (true) {
+    const { data } = await supabaseServer
+      .from("restaurants")
+      .select("id")
+      .eq("slug", candidate)
+      .neq("google_place_id", placeId)
+      .maybeSingle();
+    if (!data) return candidate;
+    candidate = `${base}-${suffix}`;
+    suffix++;
+  }
+}
+
+async function buildSupabaseRow(
   placeId: string,
   details: PlaceDetails,
   cityOverride: string,
@@ -273,9 +314,10 @@ function buildSupabaseRow(
       ? lookupNycNeighborhood(details.location.latitude, details.location.longitude)
       : null);
   const exclude = new Set(["establishment", "point_of_interest", "food", "restaurant", "store"]);
+  const name = details.displayName?.text ?? "Unknown";
   return {
     google_place_id: placeId,
-    name: details.displayName?.text ?? "Unknown",
+    name,
     address: details.formattedAddress ?? null,
     lat: details.location?.latitude ?? null,
     lng: details.location?.longitude ?? null,
@@ -290,11 +332,7 @@ function buildSupabaseRow(
     neighborhood,
     region,
     source: "manual_add",
-    slug: [details.displayName?.text ?? "", city, placeId.slice(-6)]
-      .join("-")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, ""),
+    slug: await assignSlug(name, neighborhood, city, placeId),
     ingested_at: new Date().toISOString(),
   };
 }
@@ -322,7 +360,7 @@ export async function findAirtableRecord(placeId: string): Promise<string | null
 
 /** Creates a new Airtable record and returns its record ID. */
 async function createAirtableRecord(
-  row: ReturnType<typeof buildSupabaseRow>,
+  row: Awaited<ReturnType<typeof buildSupabaseRow>>,
 ): Promise<string> {
   const res = await fetch(
     `https://api.airtable.com/v0/${AT_BASE()}/${AT_TABLE()}`,
@@ -570,7 +608,7 @@ export async function POST(req: Request) {
           ? await lookupOrCreateRegion(resolvedCity, county, state).catch(() => null)
           : null;
 
-        const row = buildSupabaseRow(placeId, details, city, neighborhood.trim() || null, region);
+        const row = await buildSupabaseRow(placeId, details, city, neighborhood.trim() || null, region);
         const { data: inserted, error: upsertError } = await supabaseServer
           .from("restaurants")
           .upsert(row, { onConflict: "google_place_id" })
