@@ -312,8 +312,12 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
               rawCuisines={rawCuisines}
             />
           </Suspense>
-          {/* Subscribe prompt (NYC digest) — hidden when browsing non-NYC regions */}
-          {(filters.region === "New York City" || filters.region === "all") && (
+          {/* Subscribe prompt (NYC digest) — hidden when browsing non-NYC regions.
+              "all" doesn't necessarily mean NYC: a single-region user's implicit
+              region (e.g. a Hamptons-only account) counts too, but "all" with
+              multiple regions in scope (e.g. an admin) is genuinely ambiguous. */}
+          {(filters.region === "New York City" ||
+            (filters.region === "all" && (regions.length !== 1 || regions[0] === "New York City"))) && (
             <div className="mt-10">
               <FollowPrompt variant="section" source="rankings" />
             </div>

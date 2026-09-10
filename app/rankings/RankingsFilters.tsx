@@ -138,25 +138,33 @@ export function RankingsLocationFilters({
 
   if (regions.length === 0) return null;
 
+  // A user only ever sees one region here when their access is scoped to a
+  // single city (e.g. logged-out NYC default) — there's nothing to pick, so
+  // the selector is pure noise and the location is already resolved.
+  const hasRegionChoice = regions.length > 1;
+  const regionResolved = filters.region !== "all" || !hasRegionChoice;
+
   return (
     <div className="flex flex-wrap gap-3 items-end">
-      {/* Region selector */}
-      <LocationDropdown
-        value={filters.region}
-        options={regions}
-        allLabel="All Regions"
-        searchPlaceholder="Search regions…"
-        isActive={filters.region !== "all"}
-        onSelect={(region) =>
-          router.push(rankingsUrl(filters, { region, city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
-        }
-        onClear={() =>
-          router.push(rankingsUrl(filters, { region: "all", city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
-        }
-      />
+      {/* Region selector — only when there's more than one region in scope */}
+      {hasRegionChoice && (
+        <LocationDropdown
+          value={filters.region}
+          options={regions}
+          allLabel="All Regions"
+          searchPlaceholder="Search regions…"
+          isActive={filters.region !== "all"}
+          onSelect={(region) =>
+            router.push(rankingsUrl(filters, { region, city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
+          }
+          onClear={() =>
+            router.push(rankingsUrl(filters, { region: "all", city: "all", neighborhood: "all", limit: 25 }), { scroll: false })
+          }
+        />
+      )}
 
       {/* Town selector — multi-city regions (e.g. Long Island) */}
-      {filters.region !== "all" && towns.length > 0 && (
+      {regionResolved && towns.length > 0 && (
         <LocationDropdown
           value={filters.city}
           options={towns}
@@ -173,7 +181,7 @@ export function RankingsLocationFilters({
       )}
 
       {/* Neighborhood selector — single-city regions (e.g. NYC) */}
-      {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
+      {regionResolved && neighborhoods.length > 0 && towns.length === 0 && (
         <LocationDropdown
           value={filters.neighborhood}
           options={neighborhoods}
@@ -257,6 +265,12 @@ export function RankingsSecondaryFilters({
   const clearAll = rankingsUrl(filters, { fryer: false, labeled: false, cuisine: "all", placeType: "all", gfCategory: "all", priceLevel: 0, experience: "all", limit: 25 });
   const activeCount = activePills.length;
 
+  // A user only ever sees one region here when their access is scoped to a
+  // single city (e.g. logged-out NYC default) — there's nothing to pick, so
+  // the region step is skipped and location is already resolved.
+  const hasRegionChoice = regions.length > 1;
+  const regionResolved = filters.region !== "all" || !hasRegionChoice;
+
   // Mobile folds location into the same sheet, so its count / clear-all also
   // cover location. City is auto-resolved to the user's default (e.g. New York)
   // by resolveCity, so it is NOT a user-applied filter on its own — it only
@@ -264,13 +278,13 @@ export function RankingsSecondaryFilters({
   // is a town selector (multi-city regions have towns) or a neighborhood
   // selector (single-city regions), mirroring what the sheet actually renders.
   const secondLevelLocationActive =
-    filters.region === "all"
+    !regionResolved
       ? false
       : towns.length > 0
         ? filters.city !== "all"
         : filters.neighborhood !== "all";
   const locationActiveCount =
-    (filters.region !== "all" ? 1 : 0) + (secondLevelLocationActive ? 1 : 0);
+    (hasRegionChoice && filters.region !== "all" ? 1 : 0) + (secondLevelLocationActive ? 1 : 0);
   const mobileActiveCount = activeCount + locationActiveCount;
   const clearAllMobile = rankingsUrl(filters, {
     fryer: false, labeled: false, cuisine: "all", placeType: "all",
@@ -279,10 +293,13 @@ export function RankingsSecondaryFilters({
   });
 
   // Collapsed-section summaries double as an at-a-glance active-filter readout.
-  const locationSummary =
-    filters.region === "all" ? "All regions" :
-    towns.length > 0 ? (filters.city !== "all" ? filters.city : filters.region) :
-    filters.neighborhood !== "all" ? filters.neighborhood : filters.region;
+  const locationSummary = !hasRegionChoice
+    ? (towns.length > 0
+        ? (filters.city !== "all" ? filters.city : "All towns")
+        : (filters.neighborhood !== "all" ? filters.neighborhood : "All neighborhoods"))
+    : filters.region === "all" ? "All regions" :
+      towns.length > 0 ? (filters.city !== "all" ? filters.city : filters.region) :
+      filters.neighborhood !== "all" ? filters.neighborhood : filters.region;
   const priceSummary = filters.priceLevel > 0 ? `Up to ${"$".repeat(filters.priceLevel)}` : "Any";
   const placeTypeSummary = currentPlaceType?.label ?? "All types";
   const gfFoodSummary = currentGfCategory?.label ?? "All";
@@ -646,18 +663,22 @@ export function RankingsSecondaryFilters({
                   isOpen={openSection === "location"}
                   onToggle={() => setOpenSection((s) => (s === "location" ? null : "location"))}
                 >
-                  <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Region</p>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
-                      <SheetOption
-                        key={opt.value}
-                        label={opt.label}
-                        active={filters.region === opt.value}
-                        href={rankingsUrl(filters, { region: opt.value, city: "all", neighborhood: "all", limit: 25 })}
-                      />
-                    ))}
-                  </div>
-                  {filters.region !== "all" && towns.length > 0 && (
+                  {hasRegionChoice && (
+                    <>
+                      <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Region</p>
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        {[{ label: "All Regions", value: "all" }, ...regions.map((r) => ({ label: r, value: r }))].map((opt) => (
+                          <SheetOption
+                            key={opt.value}
+                            label={opt.label}
+                            active={filters.region === opt.value}
+                            href={rankingsUrl(filters, { region: opt.value, city: "all", neighborhood: "all", limit: 25 })}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {regionResolved && towns.length > 0 && (
                     <>
                       <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Town</p>
                       <div className="grid grid-cols-2 gap-2">
@@ -672,7 +693,7 @@ export function RankingsSecondaryFilters({
                       </div>
                     </>
                   )}
-                  {filters.region !== "all" && neighborhoods.length > 0 && towns.length === 0 && (
+                  {regionResolved && neighborhoods.length > 0 && towns.length === 0 && (
                     <>
                       <p className="font-mono text-ui-xs uppercase tracking-editorial text-text-disabled mb-2">Neighborhood</p>
                       <SheetSearch
