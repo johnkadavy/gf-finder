@@ -15,6 +15,7 @@ export type AnalyticsEvent =
   | "agent_query"
   | "restaurant_viewed"
   | "home_ask_submitted"
+  | "home_search_submitted"
   | "signup_cta_clicked"
   // Mirrored to PostHog so the email-capture funnel is visible alongside
   // the logged-in events. These also fire to Vercel Analytics via track().

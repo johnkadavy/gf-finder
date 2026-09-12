@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition, useState, useEffect, useRef } from "react";
+import { capture } from "@/lib/analytics";
 
 type Suggestion = {
   id: number;
@@ -129,6 +130,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
     setValue(name);
     setIsOpen(false);
     setSuggestions([]);
+    capture("home_search_submitted", { query: name, city: selectedCity });
     startTransition(() => {
       router.push(buildUrl(name, selectedCity));
     });
@@ -138,6 +140,7 @@ export function SearchForm({ initialQuery, cities = [], selectedCity = "all" }: 
     e.preventDefault();
     const q = value.trim();
     setIsOpen(false);
+    if (q) capture("home_search_submitted", { query: q, city: selectedCity });
     startTransition(() => {
       router.push(buildUrl(q, selectedCity));
     });
