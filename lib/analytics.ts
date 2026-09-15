@@ -38,3 +38,28 @@ export function capture(
     // Analytics must never break a user action.
   }
 }
+
+/** CTA identifiers for the `restaurant_cta_clicked` event. */
+export type CtaName = "directions" | "website" | "reserve" | "phone";
+
+/** Where on the page a CTA was clicked. */
+export type CtaLocation = "hero" | "sticky_bar" | "info_section";
+
+/**
+ * Fire a `restaurant_cta_clicked` event. Single source of truth for the
+ * event's property shape so call sites (TrackedCtaLink, StickyInfoBar) can't
+ * drift apart.
+ */
+export function captureCtaClick(args: {
+  restaurantId: number;
+  cta: CtaName;
+  location: CtaLocation;
+  neighborhood?: string | null;
+}) {
+  capture("restaurant_cta_clicked", {
+    restaurant_id: args.restaurantId,
+    cta: args.cta,
+    location: args.location,
+    neighborhood: args.neighborhood ?? null,
+  });
+}

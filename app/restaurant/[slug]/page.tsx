@@ -437,7 +437,7 @@ export default async function RestaurantPage({
         neighborhood={r.neighborhood}
         city={r.city}
       />
-      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} />
+      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} neighborhood={r.neighborhood} />
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
@@ -458,6 +458,7 @@ export default async function RestaurantPage({
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="directions"
+                neighborhood={r.neighborhood}
                 location="hero"
                 href={r.google_maps_url}
                 target="_blank"
@@ -471,6 +472,7 @@ export default async function RestaurantPage({
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="website"
+                neighborhood={r.neighborhood}
                 location="hero"
                 href={r.website_url}
                 target="_blank"
@@ -484,6 +486,7 @@ export default async function RestaurantPage({
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="reserve"
+                neighborhood={r.neighborhood}
                 location="hero"
                 href={r.reservation_link}
                 target="_blank"
@@ -1020,6 +1023,7 @@ export default async function RestaurantPage({
                       <TrackedCtaLink
                         restaurantId={r.id}
                         cta="phone"
+                        neighborhood={r.neighborhood}
                         location="info_section"
                         href={`tel:${r.phone}`}
                         className="font-mono text-ui-md border-b pb-0.5 transition-colors"
@@ -1061,6 +1065,7 @@ export default async function RestaurantPage({
                       <TrackedCtaLink
                         restaurantId={r.id}
                         cta="website"
+                        neighborhood={r.neighborhood}
                         location="info_section"
                         href={r.website_url}
                         target="_blank"
@@ -1075,6 +1080,7 @@ export default async function RestaurantPage({
                       <TrackedCtaLink
                         restaurantId={r.id}
                         cta="directions"
+                        neighborhood={r.neighborhood}
                         location="info_section"
                         href={r.google_maps_url}
                         target="_blank"
