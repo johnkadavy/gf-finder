@@ -18,6 +18,7 @@ import { isNewRestaurant, formatLocation, formatShortDate } from "@/lib/utils";
 import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
+import { TrackedCtaLink } from "./TrackedCtaLink";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
@@ -436,7 +437,7 @@ export default async function RestaurantPage({
         neighborhood={r.neighborhood}
         city={r.city}
       />
-      <StickyInfoBar name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} />
+      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} />
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
@@ -454,27 +455,36 @@ export default async function RestaurantPage({
               <SaveState restaurantId={r.id} redirectPath={redirectPath} showLabel />
             </Suspense>
             {r.google_maps_url && (
-              <a
+              <TrackedCtaLink
+                restaurantId={r.id}
+                cta="directions"
+                location="hero"
                 href={r.google_maps_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
                 Directions <span style={{ opacity: 0.7 }}>↗</span>
-              </a>
+              </TrackedCtaLink>
             )}
             {r.website_url && (
-              <a
+              <TrackedCtaLink
+                restaurantId={r.id}
+                cta="website"
+                location="hero"
                 href={r.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
                 Website <span style={{ opacity: 0.7 }}>↗</span>
-              </a>
+              </TrackedCtaLink>
             )}
             {r.reservation_link && (
-              <a
+              <TrackedCtaLink
+                restaurantId={r.id}
+                cta="reserve"
+                location="hero"
                 href={r.reservation_link}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -482,7 +492,7 @@ export default async function RestaurantPage({
                 style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
               >
                 Reserve <span style={{ opacity: 0.7 }}>↗</span>
-              </a>
+              </TrackedCtaLink>
             )}
           </div>
         </div>
@@ -1007,13 +1017,16 @@ export default async function RestaurantPage({
                       <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
                         Phone
                       </div>
-                      <a
+                      <TrackedCtaLink
+                        restaurantId={r.id}
+                        cta="phone"
+                        location="info_section"
                         href={`tel:${r.phone}`}
                         className="font-mono text-ui-md border-b pb-0.5 transition-colors"
                         style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
                       >
                         {r.phone}
-                      </a>
+                      </TrackedCtaLink>
                     </div>
                   )}
                 </div>
@@ -1045,7 +1058,10 @@ export default async function RestaurantPage({
                   </div>
                   <div className="flex flex-col gap-2">
                     {r.website_url && (
-                      <a
+                      <TrackedCtaLink
+                        restaurantId={r.id}
+                        cta="website"
+                        location="info_section"
                         href={r.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1053,10 +1069,13 @@ export default async function RestaurantPage({
                         style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
                       >
                         Website ↗
-                      </a>
+                      </TrackedCtaLink>
                     )}
                     {r.google_maps_url && (
-                      <a
+                      <TrackedCtaLink
+                        restaurantId={r.id}
+                        cta="directions"
+                        location="info_section"
                         href={r.google_maps_url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1064,7 +1083,7 @@ export default async function RestaurantPage({
                         style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
                       >
                         Get Directions ↗
-                      </a>
+                      </TrackedCtaLink>
                     )}
                   </div>
                 </div>

@@ -14,6 +14,7 @@ export type AnalyticsEvent =
   | "map_search"
   | "agent_query"
   | "restaurant_viewed"
+  | "restaurant_cta_clicked"
   | "home_ask_submitted"
   | "home_search_submitted"
   | "signup_cta_clicked"

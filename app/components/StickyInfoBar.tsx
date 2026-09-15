@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { getGaugeColor } from "@/lib/score";
+import { capture } from "@/lib/analytics";
 
 export function StickyInfoBar({
+  restaurantId,
   name,
   score,
   googleMapsUrl,
 }: {
+  restaurantId: number;
   name: string;
   score: number | null;
   googleMapsUrl: string | null;
@@ -62,6 +65,9 @@ export function StickyInfoBar({
             style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
+            onClick={() =>
+              capture("restaurant_cta_clicked", { restaurant_id: restaurantId, cta: "directions", location: "sticky_bar" })
+            }
           >
             Directions
           </a>
