@@ -10,6 +10,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calculateScore, type VerifiedData } from "./score";
+import { parseOrderLinks } from "./order-links";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -71,7 +72,7 @@ async function fetchAirtableRecords(viewId: string): Promise<AirtableRecord[]> {
   const fields = [
     "google_place_id", "JSON dossier", "Sick reports JSON", "cuisine", "place_type",
     "gf_food_categories", "cc_risk_json", "restaurant_description", "menu_items",
-    "reservation_link", "dedicated_gf_kitchen", "display_name",
+    "reservation_link", "order_links", "dedicated_gf_kitchen", "display_name",
   ];
   do {
     const { key, baseId, tableName } = airtableCreds();
@@ -142,6 +143,7 @@ function buildRecord(record: AirtableRecord): {
   }
 
   const dedicatedRaw = aiText(record.fields["dedicated_gf_kitchen"]);
+  const orderLinks = parseOrderLinks(record.fields["order_links"]);
 
   const fields: Record<string, unknown> = {
     ...(cuisine ? { cuisine } : {}),
@@ -150,6 +152,7 @@ function buildRecord(record: AirtableRecord): {
     ...(aiText(record.fields["restaurant_description"]) ? { restaurant_description: aiText(record.fields["restaurant_description"]) } : {}),
     ...(menuItems ? { menu_items: menuItems } : {}),
     ...(aiText(record.fields["reservation_link"]) ? { reservation_link: aiText(record.fields["reservation_link"]) } : {}),
+    ...(orderLinks.length ? { order_links: orderLinks } : {}),
     ...(dedicatedRaw ? { dedicated_gf_kitchen: dedicatedRaw.toLowerCase() } : {}),
     ...(aiText(record.fields["display_name"]) ? { display_name: aiText(record.fields["display_name"]) } : {}),
   };

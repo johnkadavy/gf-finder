@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { calculateScore, type VerifiedData } from "@/lib/score";
 import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
+import { parseOrderLinks } from "@/lib/order-links";
 
 export const maxDuration = 30;
 
@@ -479,6 +480,7 @@ export async function syncAirtableRecordToSupabase(
   }
 
   const reservationLink = getAIFieldValue(fields["reservation_link"]) || null;
+  const orderLinks = parseOrderLinks(fields["order_links"]);
   const restaurantDescription = getAIFieldValue(fields["restaurant_description"]) || null;
 
   const { error: syncError } = await supabaseServer
@@ -491,6 +493,7 @@ export async function syncAirtableRecordToSupabase(
       ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
       ...(menuItems ? { menu_items: menuItems } : {}),
       ...(reservationLink ? { reservation_link: reservationLink } : {}),
+      ...(orderLinks.length ? { order_links: orderLinks } : {}),
       ...(restaurantDescription ? { restaurant_description: restaurantDescription } : {}),
     })
     .eq("google_place_id", placeId);

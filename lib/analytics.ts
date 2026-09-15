@@ -40,7 +40,7 @@ export function capture(
 }
 
 /** CTA identifiers for the `restaurant_cta_clicked` event. */
-export type CtaName = "directions" | "website" | "reserve" | "phone";
+export type CtaName = "directions" | "website" | "reserve" | "phone" | "order";
 
 /** Where on the page a CTA was clicked. */
 export type CtaLocation = "hero" | "sticky_bar" | "info_section";
@@ -55,11 +55,13 @@ export function captureCtaClick(args: {
   cta: CtaName;
   location: CtaLocation;
   neighborhood?: string | null;
+  provider?: string;
 }) {
   capture("restaurant_cta_clicked", {
     restaurant_id: args.restaurantId,
     cta: args.cta,
     location: args.location,
     neighborhood: args.neighborhood ?? null,
+    ...(args.provider ? { provider: args.provider } : {}),
   });
 }

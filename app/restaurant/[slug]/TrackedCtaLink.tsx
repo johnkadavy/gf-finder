@@ -9,6 +9,7 @@ export function TrackedCtaLink({
   cta,
   location,
   neighborhood,
+  provider,
   children,
   ...anchorProps
 }: {
@@ -16,12 +17,13 @@ export function TrackedCtaLink({
   cta: CtaName;
   location: CtaLocation;
   neighborhood?: string | null;
+  provider?: string;
   children: ReactNode;
 } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
     <a
       {...anchorProps}
-      onClick={() => captureCtaClick({ restaurantId, cta, location, neighborhood })}
+      onClick={() => captureCtaClick({ restaurantId, cta, location, neighborhood, provider })}
     >
       {children}
     </a>

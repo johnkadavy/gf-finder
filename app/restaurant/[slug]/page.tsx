@@ -19,6 +19,7 @@ import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
 import { TrackedCtaLink } from "./TrackedCtaLink";
+import { parseOrderLinks, orderProviderLabel, type OrderLink } from "@/lib/order-links";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
@@ -73,6 +74,7 @@ type Restaurant = {
   restaurant_description: string | null;
   menu_items: MenuData | null;
   reservation_link: string | null;
+  order_links: OrderLink[] | null;
 };
 
 type VerifiedVisit = {
@@ -220,7 +222,7 @@ const resolveRestaurant = cache(async (slugOrId: string) => {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link")
+    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
     .eq("slug", slugOrId)
     .single();
 
@@ -509,6 +511,23 @@ export default async function RestaurantPage({
                 Reserve <span style={{ opacity: 0.7 }}>↗</span>
               </TrackedCtaLink>
             )}
+            {parseOrderLinks(r.order_links).map((ol) => (
+              <TrackedCtaLink
+                key={ol.url}
+                restaurantId={r.id}
+                cta="order"
+                provider={ol.provider}
+                neighborhood={r.neighborhood}
+                location="hero"
+                href={ol.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
+                style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
+              >
+                {orderProviderLabel(ol.provider)} <span style={{ opacity: 0.7 }}>↗</span>
+              </TrackedCtaLink>
+            ))}
           </div>
         </div>
 
