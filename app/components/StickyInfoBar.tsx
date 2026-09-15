@@ -9,12 +9,14 @@ export function StickyInfoBar({
   name,
   score,
   googleMapsUrl,
+  phone,
   neighborhood,
 }: {
   restaurantId: number;
   name: string;
   score: number | null;
   googleMapsUrl: string | null;
+  phone?: string | null;
   neighborhood?: string | null;
 }) {
   const [visible, setVisible] = useState(false);
@@ -37,7 +39,7 @@ export function StickyInfoBar({
         borderBottom: "1px solid var(--border-default)",
       }}
     >
-      <div className="flex items-center justify-between gap-3 px-4 h-12">
+      <div className="flex items-center justify-between gap-2.5 px-4 h-12">
         {/* Name */}
         <span
           className="font-[family-name:var(--font-display)] text-text-primary leading-none truncate flex-1 min-w-0"
@@ -55,6 +57,20 @@ export function StickyInfoBar({
             <span>{score}</span>
             <span style={{ color: "var(--text-disabled)" }}>GF</span>
           </div>
+        )}
+
+        {/* Call */}
+        {phone && (
+          <a
+            href={`tel:${phone}`}
+            className="shrink-0 font-mono text-ui-sm uppercase tracking-label px-3 py-1.5 border transition-colors text-text-label"
+            style={{ borderColor: "var(--border-default)" }}
+            onClick={() =>
+              captureCtaClick({ restaurantId, cta: "phone", location: "sticky_bar", neighborhood })
+            }
+          >
+            Call
+          </a>
         )}
 
         {/* Directions */}

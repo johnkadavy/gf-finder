@@ -437,7 +437,7 @@ export default async function RestaurantPage({
         neighborhood={r.neighborhood}
         city={r.city}
       />
-      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} neighborhood={r.neighborhood} />
+      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} phone={r.phone} neighborhood={r.neighborhood} />
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
@@ -466,6 +466,18 @@ export default async function RestaurantPage({
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
                 Directions <span style={{ opacity: 0.7 }}>↗</span>
+              </TrackedCtaLink>
+            )}
+            {r.phone && (
+              <TrackedCtaLink
+                restaurantId={r.id}
+                cta="phone"
+                neighborhood={r.neighborhood}
+                location="hero"
+                href={`tel:${r.phone}`}
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
+              >
+                Call
               </TrackedCtaLink>
             )}
             {r.website_url && (
