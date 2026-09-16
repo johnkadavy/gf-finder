@@ -102,18 +102,26 @@ export function ClaimListing({
   }
 
   return (
-    <section className="px-6 py-8 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-      <div className="max-w-6xl mx-auto flex items-center gap-3 flex-wrap">
-        <span className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
-          Own this restaurant?
-        </span>
+    <div className="mb-12">
+      <div
+        className="flex items-center justify-between gap-5 flex-wrap px-6 py-5 border"
+        style={{ backgroundColor: "var(--surface-raised)", borderColor: "var(--border-default)" }}
+      >
+        <div>
+          <p className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
+            Own this restaurant?
+          </p>
+          <p className="font-mono text-ui-xs" style={{ color: "var(--text-dim)", marginTop: "6px", lineHeight: 1.5 }}>
+            Claim your page to keep its gluten-free information accurate.
+          </p>
+        </div>
         <button
           ref={triggerRef}
           type="button"
           onClick={openModal}
           aria-haspopup="dialog"
-          className="font-mono text-ui-sm uppercase tracking-label transition-colors hover:text-accent"
-          style={{ color: "var(--text-label)" }}
+          className="font-mono text-ui-sm uppercase tracking-label px-5 py-3 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md shrink-0"
+          style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
         >
           Claim this listing →
         </button>
@@ -182,6 +190,6 @@ export function ClaimListing({
         </div>,
         document.body,
       )}
-    </section>
+    </div>
   );
 }

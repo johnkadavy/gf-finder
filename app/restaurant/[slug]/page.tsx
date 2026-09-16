@@ -774,6 +774,8 @@ export default async function RestaurantPage({
           </div>
         )}
 
+        <ClaimListing restaurantId={r.id} googlePlaceId={r.google_place_id} restaurantName={r.display_name ?? r.name} neighborhood={r.neighborhood} />
+
         {/* ── Subscribe prompt (NYC digest) ── */}
         {r.city === "New York" && (
           <div className="mt-12">
@@ -1139,7 +1141,6 @@ export default async function RestaurantPage({
         </section>
       )}
 
-      <ClaimListing restaurantId={r.id} googlePlaceId={r.google_place_id} restaurantName={r.display_name ?? r.name} neighborhood={r.neighborhood} />
     </main>
   );
 }
