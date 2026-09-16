@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { capture } from "@/lib/analytics";
 import { type OrderLink, type OrderProvider } from "@/lib/order-links";
-import { ORDER_BRANDS, PROVIDERS_WITH_LOGO } from "@/lib/order-brands";
+import { ORDER_BRANDS } from "@/lib/order-brands";
 import { TrackedCtaLink } from "./TrackedCtaLink";
 
 const TRIGGER_CLASS =
@@ -18,10 +18,23 @@ const COMMERCE_STYLE = {
 /** Logo image when we have an official asset, otherwise the service name in its brand color. */
 function ProviderContent({ provider }: { provider: OrderProvider }) {
   const brand = ORDER_BRANDS[provider];
-  if (PROVIDERS_WITH_LOGO.has(provider)) {
+  const src = `/brands/${provider}.svg`;
+  const [hasLogo, setHasLogo] = useState(false);
+
+  // Auto-detect an official logo asset: if /public/brands/<provider>.svg exists,
+  // swap it in for the branded text. Drop a file in; no code change needed.
+  useEffect(() => {
+    let active = true;
+    const img = new window.Image();
+    img.onload = () => { if (active) setHasLogo(true); };
+    img.src = src;
+    return () => { active = false; };
+  }, [src]);
+
+  if (hasLogo) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={`/brands/${provider}.svg`} alt={brand.label} style={{ height: "24px", width: "auto" }} />
+      <img src={src} alt={brand.label} style={{ height: "24px", width: "auto" }} />
     );
   }
   return (

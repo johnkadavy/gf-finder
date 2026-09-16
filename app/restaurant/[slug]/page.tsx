@@ -21,6 +21,7 @@ import { ViewTracker } from "./ViewTracker";
 import { TrackedCtaLink } from "./TrackedCtaLink";
 import { parseOrderLinks, type OrderLink } from "@/lib/order-links";
 import { OrderMenu } from "./OrderMenu";
+import { ClaimListing } from "./ClaimListing";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
@@ -1137,6 +1138,8 @@ export default async function RestaurantPage({
           </div>
         </section>
       )}
+
+      <ClaimListing restaurantId={r.id} googlePlaceId={r.google_place_id} restaurantName={r.display_name ?? r.name} neighborhood={r.neighborhood} />
     </main>
   );
 }

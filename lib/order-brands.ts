@@ -8,10 +8,10 @@ import type { OrderProvider } from "./order-links";
  * dark and light modal surface; tweak freely. Uncertain/near-black brands fall
  * back to a neutral token so they stay legible in both themes.
  *
- * Real service logos are trademarked. To show actual logos, drop each service's
- * official SVG (from its brand/press kit) into /public/brands/<provider>.svg and
- * add the provider to PROVIDERS_WITH_LOGO below — OrderMenu renders the image
- * instead of the branded text.
+ * Real service logos are trademarked. To show an actual logo, drop that service's
+ * official SVG (from its brand/press kit) into /public/brands/<provider>.svg —
+ * OrderMenu auto-detects the file and renders the image instead of the branded
+ * text. No code change needed; providers with no file keep the branded text.
  */
 export type OrderBrand = { label: string; color: string };
 
@@ -27,6 +27,3 @@ export const ORDER_BRANDS: Record<OrderProvider, OrderBrand> = {
   direct:   { label: "Order Direct", color: "var(--accent)" },
   other:    { label: "Order Online", color: "var(--text-primary)" },
 };
-
-/** Providers that have an official logo asset at /public/brands/<provider>.svg. */
-export const PROVIDERS_WITH_LOGO = new Set<OrderProvider>([]);

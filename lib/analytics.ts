@@ -16,6 +16,8 @@ export type AnalyticsEvent =
   | "restaurant_viewed"
   | "restaurant_cta_clicked"
   | "order_options_opened"
+  | "claim_listing_click"
+  | "claim_completed"
   | "home_ask_submitted"
   | "home_search_submitted"
   | "signup_cta_clicked"
