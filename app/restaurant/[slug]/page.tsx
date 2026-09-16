@@ -19,7 +19,8 @@ import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
 import { TrackedCtaLink } from "./TrackedCtaLink";
-import { parseOrderLinks, orderProviderLabel, type OrderLink } from "@/lib/order-links";
+import { parseOrderLinks, type OrderLink } from "@/lib/order-links";
+import { OrderMenu } from "./OrderMenu";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
@@ -511,23 +512,7 @@ export default async function RestaurantPage({
                 Reserve <span style={{ opacity: 0.7 }}>↗</span>
               </TrackedCtaLink>
             )}
-            {parseOrderLinks(r.order_links).map((ol) => (
-              <TrackedCtaLink
-                key={ol.url}
-                restaurantId={r.id}
-                cta="order"
-                provider={ol.provider}
-                neighborhood={r.neighborhood}
-                location="hero"
-                href={ol.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
-                style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
-              >
-                {orderProviderLabel(ol.provider)} <span style={{ opacity: 0.7 }}>↗</span>
-              </TrackedCtaLink>
-            ))}
+            <OrderMenu restaurantId={r.id} neighborhood={r.neighborhood} orderLinks={parseOrderLinks(r.order_links)} />
           </div>
         </div>
 

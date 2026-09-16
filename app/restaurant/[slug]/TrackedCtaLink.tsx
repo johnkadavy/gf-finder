@@ -3,7 +3,7 @@
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { captureCtaClick, type CtaName, type CtaLocation } from "@/lib/analytics";
 
-/** Anchor that fires `restaurant_cta_clicked` on click, then behaves like a normal <a>. */
+/** Anchor that fires `restaurant_cta_clicked` on click, then runs any passed onClick. */
 export function TrackedCtaLink({
   restaurantId,
   cta,
@@ -11,6 +11,7 @@ export function TrackedCtaLink({
   neighborhood,
   provider,
   children,
+  onClick,
   ...anchorProps
 }: {
   restaurantId: number;
@@ -23,7 +24,10 @@ export function TrackedCtaLink({
   return (
     <a
       {...anchorProps}
-      onClick={() => captureCtaClick({ restaurantId, cta, location, neighborhood, provider })}
+      onClick={(e) => {
+        captureCtaClick({ restaurantId, cta, location, neighborhood, provider });
+        onClick?.(e);
+      }}
     >
       {children}
     </a>
