@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { capture } from "@/lib/analytics";
-import { orderProviderLabel, type OrderLink } from "@/lib/order-links";
+import { type OrderLink, type OrderProvider } from "@/lib/order-links";
+import { ORDER_BRANDS, PROVIDERS_WITH_LOGO } from "@/lib/order-brands";
 import { TrackedCtaLink } from "./TrackedCtaLink";
 
 const TRIGGER_CLASS =
@@ -13,6 +14,22 @@ const COMMERCE_STYLE = {
   color: "var(--accent)",
   backgroundColor: "var(--accent-tint-sm)",
 } as const;
+
+/** Logo image when we have an official asset, otherwise the service name in its brand color. */
+function ProviderContent({ provider }: { provider: OrderProvider }) {
+  const brand = ORDER_BRANDS[provider];
+  if (PROVIDERS_WITH_LOGO.has(provider)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={`/brands/${provider}.svg`} alt={brand.label} style={{ height: "24px", width: "auto" }} />
+    );
+  }
+  return (
+    <span style={{ color: brand.color, fontFamily: "var(--font-sans)", fontSize: "17px", fontWeight: 500 }}>
+      {brand.label}
+    </span>
+  );
+}
 
 /**
  * Adaptive order entry point:
@@ -42,9 +59,7 @@ export function OrderMenu({
     const trigger = triggerRef.current;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const raf = window.requestAnimationFrame(() => {
-      panelRef.current?.querySelector<HTMLElement>("a[href], button")?.focus();
-    });
+    const raf = window.requestAnimationFrame(() => panelRef.current?.focus());
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); close(); return; }
       if (e.key !== "Tab") return;
@@ -58,6 +73,7 @@ export function OrderMenu({
     };
     document.addEventListener("keydown", onKey);
     return () => {
+      window.cancelAnimationFrame(raf);
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
       trigger?.focus();
@@ -128,29 +144,35 @@ export function OrderMenu({
             role="dialog"
             aria-modal="true"
             aria-label="Order online"
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "min(340px, 100%)",
+              width: "min(460px, 100%)",
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
               backgroundColor: "var(--surface-overlay)",
               border: "1px solid var(--border-emphasis)",
-              boxShadow: "0 18px 50px rgba(0,0,0,0.55)",
+              boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
+              outline: "none",
             }}
           >
             <div
-              className="font-mono text-ui-xs uppercase tracking-label flex items-center justify-between"
-              style={{ color: "var(--text-dim)", padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}
+              className="font-mono uppercase tracking-label flex items-center justify-between"
+              style={{ fontSize: "12px", color: "var(--text-dim)", padding: "18px 22px", borderBottom: "1px solid var(--border-subtle)" }}
             >
               <span>Order online</span>
               <button
                 type="button"
                 onClick={close}
                 aria-label="Close"
-                style={{ color: "var(--text-dim)", background: "transparent", border: "none", cursor: "pointer", fontSize: "15px", lineHeight: 1 }}
+                className="transition-colors hover:text-accent"
+                style={{ color: "var(--text-tertiary)", background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", lineHeight: 1, padding: "2px 4px" }}
               >
                 ✕
               </button>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col" style={{ overflowY: "auto" }}>
               {orderLinks.map((ol) => (
                 <TrackedCtaLink
                   key={ol.url}
@@ -163,11 +185,11 @@ export function OrderMenu({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={close}
-                  className="font-mono text-ui-md flex items-center justify-between gap-4 transition-colors hover:text-accent"
-                  style={{ color: "var(--text-secondary)", padding: "13px 16px", borderBottom: "1px solid var(--border-subtle)" }}
+                  className="flex items-center justify-between gap-4 transition-colors hover:bg-accent-tint-xs"
+                  style={{ padding: "18px 22px", borderBottom: "1px solid var(--border-subtle)" }}
                 >
-                  <span>{orderProviderLabel(ol.provider)}</span>
-                  <span style={{ opacity: 0.5 }}>↗</span>
+                  <ProviderContent provider={ol.provider} />
+                  <span style={{ opacity: 0.45, fontSize: "15px" }}>↗</span>
                 </TrackedCtaLink>
               ))}
             </div>
