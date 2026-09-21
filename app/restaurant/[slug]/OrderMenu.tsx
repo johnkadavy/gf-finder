@@ -110,7 +110,7 @@ export function OrderMenu({
         className={TRIGGER_CLASS}
         style={COMMERCE_STYLE}
       >
-        Order Online <span style={{ opacity: 0.7 }}>↗</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>Order Online
       </TrackedCtaLink>
     );
   }
@@ -135,7 +135,7 @@ export function OrderMenu({
         className={TRIGGER_CLASS}
         style={COMMERCE_STYLE}
       >
-        Order Online <span style={{ opacity: 0.7, fontSize: "0.7em" }}>▼</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>Order Online <span style={{ opacity: 0.7, fontSize: "0.7em" }}>▼</span>
       </button>
 
       {mounted && open && createPortal(

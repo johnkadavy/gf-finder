@@ -469,7 +469,7 @@ export default async function RestaurantPage({
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                Directions <span style={{ opacity: 0.7 }}>↗</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-6-5.7-6-10a6 6 0 1112 0c0 4.3-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>Directions
               </TrackedCtaLink>
             )}
             {r.phone && (
@@ -481,7 +481,7 @@ export default async function RestaurantPage({
                 href={`tel:${r.phone}`}
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                Call
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.8 2z"/></svg>Call
               </TrackedCtaLink>
             )}
             {r.website_url && (
@@ -495,7 +495,7 @@ export default async function RestaurantPage({
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                Website <span style={{ opacity: 0.7 }}>↗</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg>Website
               </TrackedCtaLink>
             )}
             {r.reservation_link && (
@@ -510,7 +510,7 @@ export default async function RestaurantPage({
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
                 style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
               >
-                Reserve <span style={{ opacity: 0.7 }}>↗</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Reserve
               </TrackedCtaLink>
             )}
             <OrderMenu restaurantId={r.id} neighborhood={r.neighborhood} orderLinks={parseOrderLinks(r.order_links)} />
@@ -535,7 +535,7 @@ export default async function RestaurantPage({
 
               {/* Meta row */}
               <div
-                className="flex flex-wrap items-center gap-3 mb-6 font-mono text-ui-sm uppercase tracking-label"
+                className="flex flex-wrap items-center gap-3 mb-6 font-mono text-ui-md uppercase tracking-label"
                 style={{ color: "var(--text-dim)" }}
               >
                 {cuisine && <span>{cuisine}</span>}
@@ -607,30 +607,6 @@ export default async function RestaurantPage({
                   >
                     {scoreLabel}
                   </span>
-                  {d?.data_quality?.confidence && (
-                    <span
-                      className="font-mono text-ui-sm uppercase tracking-label flex items-center gap-2"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{
-                          backgroundColor: d.data_quality.confidence === "high"
-                            ? "var(--signal-positive)"
-                            : "var(--signal-warning)",
-                        }}
-                      />
-                      {d.data_quality.confidence} confidence
-                    </span>
-                  )}
-                  {r.enriched_at && (
-                    <span
-                      className="font-mono text-ui-sm uppercase tracking-label"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      Updated {formatShortDate(r.enriched_at)}
-                    </span>
-                  )}
                 </div>
               )}
 
@@ -648,11 +624,10 @@ export default async function RestaurantPage({
               {r.gf_food_categories && r.gf_food_categories.length > 0 && (
                 <div className="border-t pt-5 mt-auto" style={{ borderColor: "var(--border-subtle)" }}>
                   <p
-                    className="font-mono text-ui-xs uppercase tracking-label mb-3 flex items-center gap-2"
+                    className="font-mono text-ui-md uppercase tracking-label mb-3 flex items-center gap-2"
                     style={{ color: "var(--text-dim)" }}
                   >
-                    <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: "var(--signal-positive)" }} />
-                    Gluten-Free Offerings
+                    Highlights
                   </p>
                   <GfFoodTags categories={r.gf_food_categories} />
                 </div>
@@ -660,8 +635,13 @@ export default async function RestaurantPage({
             </div>
 
             {/* Right — score gauge */}
-            <div className="flex items-center justify-center py-4 md:py-0 order-first md:order-last">
+            <div className="flex flex-col items-center justify-center py-4 md:py-0 order-first md:order-last gap-4">
               <SafetyGauge score={score} size="lg" showDescriptor={false} />
+              {r.enriched_at && (
+                <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+                  Updated {formatShortDate(r.enriched_at)}
+                </span>
+              )}
             </div>
           </div>
         </div>
