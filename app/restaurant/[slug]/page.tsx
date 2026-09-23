@@ -130,21 +130,22 @@ const GF_FOOD_LABELS: Record<string, string> = {
   gf_soy_sauce:   "GF Soy Sauce",
 };
 
-function GfFoodTags({ categories }: { categories: string[] | null }) {
+function GfFoodTags({ categories, labeled }: { categories: string[] | null; labeled?: boolean }) {
   const tags = (categories ?? []).filter((c) => GF_FOOD_LABELS[c]);
-  if (tags.length === 0) return null;
+  if (tags.length === 0 && !labeled) return null;
+  const chipClass = "inline-flex items-center px-2.5 py-1 font-mono text-ui-xs uppercase tracking-label border";
+  const chipStyle = {
+    borderColor: SIGNAL_BORDER.positive,
+    backgroundColor: SIGNAL_BG.positive,
+    color: SIGNAL_COLORS.positive,
+  };
   return (
     <div className="flex flex-wrap gap-1.5">
+      {labeled && (
+        <span className={chipClass} style={chipStyle}>Menu labeled</span>
+      )}
       {tags.map((cat) => (
-        <span
-          key={cat}
-          className="inline-flex items-center px-2.5 py-1 font-mono text-ui-xs uppercase tracking-label border"
-          style={{
-            borderColor: SIGNAL_BORDER.positive,
-            backgroundColor: SIGNAL_BG.positive,
-            color: SIGNAL_COLORS.positive,
-          }}
-        >
+        <span key={cat} className={chipClass} style={chipStyle}>
           {GF_FOOD_LABELS[cat]}
         </span>
       ))}
@@ -318,52 +319,31 @@ export default async function RestaurantPage({
     d?.menu?.gf_labeling === "partial" ? "neutral"  :
     d?.menu?.gf_labeling === "none"    ? "negative" : "unknown";
 
-  const labelingText =
-    d?.menu?.gf_labeling === "clear"   ? "Clearly labeled" :
-    d?.menu?.gf_labeling === "partial" ? "Partially labeled" :
-    d?.menu?.gf_labeling === "none"    ? "Not labeled" : "Unknown";
-
   const optionsLevel: SignalLevel =
-    d?.menu?.gf_options_level === "many"  ? "positive" :
-    d?.menu?.gf_options_level === "ample" ? "positive" :
-    d?.menu?.gf_options_level === "few"   ? "warning"  :
-    d?.menu?.gf_options_level === "none"  ? "negative" : "unknown";
-
-  const optionsText =
-    d?.menu?.gf_options_level === "many"  ? "Many options" :
-    d?.menu?.gf_options_level === "ample" ? "Ample options" :
-    d?.menu?.gf_options_level === "few"   ? "Few options" :
-    d?.menu?.gf_options_level === "none"  ? "No options" : "Unknown";
-
-  const staffLevel: SignalLevel =
-    d?.operations?.staff_knowledge === "high"   ? "positive" :
-    d?.operations?.staff_knowledge === "medium" ? "neutral"  :
-    d?.operations?.staff_knowledge === "low"    ? "negative" : "unknown";
-
-  const staffText =
-    d?.operations?.staff_knowledge === "high"   ? "High" :
-    d?.operations?.staff_knowledge === "medium" ? "Medium" :
-    d?.operations?.staff_knowledge === "low"    ? "Low" : "Unknown";
-
-  const contamLevel: SignalLevel =
-    d?.operations?.cross_contamination_risk === "low"    ? "positive" :
-    d?.operations?.cross_contamination_risk === "medium" ? "warning"  :
-    d?.operations?.cross_contamination_risk === "high"   ? "negative" : "unknown";
-
-  const contamText =
-    d?.operations?.cross_contamination_risk === "low"    ? "Low" :
-    d?.operations?.cross_contamination_risk === "medium" ? "Medium" :
-    d?.operations?.cross_contamination_risk === "high"   ? "High" : "Unknown";
+    d?.menu?.gf_options_level === "many"     ? "positive" :
+    d?.menu?.gf_options_level === "ample"    ? "positive" :
+    d?.menu?.gf_options_level === "moderate" ? "neutral"  :
+    d?.menu?.gf_options_level === "few"      ? "warning"  :
+    d?.menu?.gf_options_level === "limited"  ? "warning"  :
+    d?.menu?.gf_options_level === "none"     ? "negative" : "unknown";
 
   const sentimentLevel: SignalLevel =
     d?.reviews?.recent_sentiment === "mostly_positive" ? "positive" :
     d?.reviews?.recent_sentiment === "mixed"           ? "neutral"  :
     d?.reviews?.recent_sentiment === "mostly_negative" ? "negative" : "unknown";
 
-  const sentimentText =
-    d?.reviews?.recent_sentiment === "mostly_positive" ? "Mostly positive" :
-    d?.reviews?.recent_sentiment === "mixed"           ? "Mixed" :
-    d?.reviews?.recent_sentiment === "mostly_negative" ? "Mostly negative" : "Unknown";
+  const optionsValue =
+    d?.menu?.gf_options_level === "many"     ? "Ample" :
+    d?.menu?.gf_options_level === "ample"    ? "Ample" :
+    d?.menu?.gf_options_level === "moderate" ? "Some" :
+    d?.menu?.gf_options_level === "few"      ? "Limited" :
+    d?.menu?.gf_options_level === "limited"  ? "Limited" :
+    d?.menu?.gf_options_level === "none"     ? "None" : "Unknown";
+
+  const sentimentValue =
+    sentimentLevel === "positive" ? "Positive" :
+    sentimentLevel === "neutral"  ? "Mixed" :
+    sentimentLevel === "negative" ? "Negative" : "Unknown";
 
   // ── JSON-LD ──────────────────────────────────────────────────────────────
   const reviewCount = (d?.reviews?.positive_count ?? 0) + (d?.reviews?.negative_count ?? 0);
@@ -621,7 +601,7 @@ export default async function RestaurantPage({
               )}
 
               {/* GF food tags */}
-              {r.gf_food_categories && r.gf_food_categories.length > 0 && (
+              {((r.gf_food_categories ?? []).some((c) => GF_FOOD_LABELS[c]) || d?.menu?.gf_labeling === "clear") && (
                 <div className="border-t pt-5 mt-auto" style={{ borderColor: "var(--border-subtle)" }}>
                   <p
                     className="font-mono text-ui-md uppercase tracking-label mb-3 flex items-center gap-2"
@@ -629,7 +609,7 @@ export default async function RestaurantPage({
                   >
                     Highlights
                   </p>
-                  <GfFoodTags categories={r.gf_food_categories} />
+                  <GfFoodTags categories={r.gf_food_categories} labeled={d?.menu?.gf_labeling === "clear"} />
                 </div>
               )}
             </div>
@@ -646,65 +626,37 @@ export default async function RestaurantPage({
           </div>
         </div>
 
-        {/* ── Risk strip — 3 primary signals ── */}
+        {/* ── Signals — options, illness, sentiment ── */}
         {d && (
           <div
-            className="grid grid-cols-1 md:grid-cols-3 border mb-px"
+            className="grid grid-cols-1 md:grid-cols-3 border mb-16"
             style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
           >
-            {/* Cross-contamination */}
+            {/* GF Options */}
             <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
               <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(contamLevel) }} />
-                Cross-Contamination
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(optionsLevel) }} />
+                GF Options
               </div>
-              <div
-                className="font-[family-name:var(--font-display)] text-3xl mb-3"
-                style={{ color: signalColor(contamLevel), letterSpacing: "0.02em" }}
-              >
-                {contamText}
+              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(optionsLevel), letterSpacing: "0.02em" }}>
+                {optionsValue}
               </div>
               <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {contamLevel === "positive" ? "Low risk of cross-contamination reported." :
-                 contamLevel === "warning"  ? "Shared prep surfaces or fryer. Confirm practices on arrival." :
-                 contamLevel === "negative" ? "High cross-contamination risk in this kitchen." :
-                 "Contamination risk level not yet assessed."}
+                {optionsLevel === "positive" ? "Plenty of gluten-free dishes across the menu." :
+                 optionsLevel === "neutral"  ? "Some gluten-free dishes to choose from." :
+                 optionsLevel === "warning"  ? "A limited gluten-free selection." :
+                 optionsLevel === "negative" ? "No dedicated gluten-free options." :
+                 "Gluten-free options not yet assessed."}
               </p>
             </div>
 
-            {/* Staff knowledge */}
+            {/* Illness Reports */}
             <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
               <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(staffLevel) }} />
-                Staff Knowledge
-              </div>
-              <div
-                className="font-[family-name:var(--font-display)] text-3xl mb-3"
-                style={{ color: signalColor(staffLevel), letterSpacing: "0.02em" }}
-              >
-                {staffText}
-              </div>
-              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {staffLevel === "positive" ? "Staff are knowledgeable and can guide GF diners confidently." :
-                 staffLevel === "neutral"  ? "Staff have some GF awareness but may need prompting." :
-                 staffLevel === "negative" ? "Limited staff knowledge reported — ask for a manager." :
-                 "Staff knowledge level not yet assessed."}
-              </p>
-            </div>
-
-            {/* Illness reports */}
-            <div className="p-7">
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: signalColor(sickCount > 0 ? "negative" : "positive") }}
-                />
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(sickCount > 0 ? "negative" : "positive") }} />
                 Illness Reports
               </div>
-              <div
-                className="font-[family-name:var(--font-display)] text-3xl mb-3"
-                style={{ color: signalColor(sickCount > 0 ? "negative" : "positive"), letterSpacing: "0.02em" }}
-              >
+              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(sickCount > 0 ? "negative" : "positive"), letterSpacing: "0.02em" }}>
                 {sickCount > 0 ? `${sickCount} Reported` : "None"}
               </div>
               <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
@@ -713,43 +665,22 @@ export default async function RestaurantPage({
                   : "No GF-related illness reports found in recent data."}
               </p>
             </div>
-          </div>
-        )}
 
-        {/* ── Secondary strip — 3 supplementary signals ── */}
-        {d && (
-          <div
-            className="grid grid-cols-1 md:grid-cols-3 gap-px mb-16"
-            style={{ backgroundColor: "var(--border-subtle)" }}
-          >
-            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(labelingLevel) }} />
-                GF Labeling
-              </div>
-              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
-                {labelingText}
-              </div>
-            </div>
-
-            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(optionsLevel) }} />
-                GF Options
-              </div>
-              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
-                {gfItemCount > 0 ? `${gfItemCount} item${gfItemCount !== 1 ? "s" : ""} identified` : optionsText}
-              </div>
-            </div>
-
-            <div className="px-7 py-5" style={{ backgroundColor: "var(--surface-base)" }}>
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2" style={{ color: "var(--text-dim)" }}>
+            {/* GF Sentiment */}
+            <div className="p-7">
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(sentimentLevel) }} />
                 GF Sentiment
               </div>
-              <div className="font-mono text-ui-md uppercase tracking-label" style={{ color: "var(--text-secondary)" }}>
-                {sentimentText}
+              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(sentimentLevel), letterSpacing: "0.02em" }}>
+                {sentimentValue}
               </div>
+              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                {sentimentLevel === "positive" ? "Consistently positive feedback from gluten-free diners." :
+                 sentimentLevel === "neutral"  ? "Mixed feedback from gluten-free diners." :
+                 sentimentLevel === "negative" ? "Recent negative reports from gluten-free diners." :
+                 "Not enough recent gluten-free reviews yet."}
+              </p>
             </div>
           </div>
         )}
