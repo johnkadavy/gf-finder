@@ -15,7 +15,7 @@ import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
 import { StickyInfoBar } from "@/app/components/StickyInfoBar";
 import { isNewRestaurant, formatLocation, formatShortDate } from "@/lib/utils";
-import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER } from "@/lib/tokens";
+import { SIGNAL_COLORS, SIGNAL_BG, SIGNAL_BORDER, SCORE_COLORS } from "@/lib/tokens";
 import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
 import { TrackedCtaLink } from "./TrackedCtaLink";
@@ -306,7 +306,6 @@ export default async function RestaurantPage({
   const gfSections: MenuSection[] = allSections
     .map((s) => ({ ...s, items: s.items.filter((item) => item.gf === true) }))
     .filter((s) => s.items.length > 0);
-  const gfItemCount = gfSections.flatMap((s) => s.items).length;
   const sickCount = d?.reviews?.sick_reports_recent ?? 0;
   const sickSourceUrl = d?.reviews?.sick_reports_details?.find((r) => r.source_url)?.source_url ?? null;
   const price = priceSymbol(r.price_level);
@@ -339,6 +338,12 @@ export default async function RestaurantPage({
     d?.menu?.gf_options_level === "few"      ? "Limited" :
     d?.menu?.gf_options_level === "limited"  ? "Limited" :
     d?.menu?.gf_options_level === "none"     ? "None" : "Unknown";
+
+  // "Some" is a genuine middle-positive signal, not a downgrade — borrow the
+  // "Good Option" score-band color so it reads as valid next to the green tiles
+  // rather than a muted/gray weak result.
+  const optionsSignalColor =
+    optionsLevel === "neutral" ? SCORE_COLORS.good : signalColor(optionsLevel);
 
   const sentimentValue =
     sentimentLevel === "positive" ? "Positive" :
@@ -635,10 +640,10 @@ export default async function RestaurantPage({
             {/* GF Options */}
             <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
               <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(optionsLevel) }} />
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: optionsSignalColor }} />
                 GF Options
               </div>
-              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(optionsLevel), letterSpacing: "0.02em" }}>
+              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: optionsSignalColor, letterSpacing: "0.02em" }}>
                 {optionsValue}
               </div>
               <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
@@ -685,27 +690,18 @@ export default async function RestaurantPage({
           </div>
         )}
 
-        <ClaimListing restaurantId={r.id} googlePlaceId={r.google_place_id} restaurantName={r.display_name ?? r.name} neighborhood={r.neighborhood} />
-
-        {/* ── Subscribe prompt (NYC digest) ── */}
-        {r.city === "New York" && (
-          <div className="mt-12">
-            <FollowPrompt variant="section" source="restaurant_detail" />
-          </div>
-        )}
-
         {/* ── About ── */}
         {r.restaurant_description && (
           <section
-            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
           >
-            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+            <div className="font-mono text-ui-sm font-medium uppercase tracking-label mb-6" style={{ color: "var(--text-tertiary)" }}>
               About
             </div>
             <CollapsibleText
               text={r.restaurant_description.replace(/\[(high|medium|low)\]\s*$/i, "").trim()}
-              className="font-sans text-base leading-[1.6]"
+              className="font-sans text-base leading-[1.6] max-w-3xl"
               style={{ color: "var(--text-secondary)" }}
             />
           </section>
@@ -714,101 +710,79 @@ export default async function RestaurantPage({
         {/* ── GF Menu ── */}
         {gfSections.length > 0 && (
           <section
-            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
           >
-            <div>
-              <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
-                GF Menu
-              </div>
-              <div className="font-mono text-ui-xs uppercase tracking-label mt-1" style={{ color: "var(--text-disabled)" }}>
-                Snapshot — verify on arrival
-              </div>
-            </div>
-
-            <div>
-              {/* Section header */}
-              <div className="flex justify-between items-center mb-6">
-                <div className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
-                  {gfItemCount} item{gfItemCount !== 1 ? "s" : ""}
+            {/* Section header */}
+            <div className="flex justify-between items-start gap-6 mb-8">
+              <div>
+                <div className="font-mono text-ui-sm font-medium uppercase tracking-label" style={{ color: "var(--text-tertiary)" }}>
+                  Gluten-free menu
                 </div>
-                {menuData?.menu_source && (
-                  <a
-                    href={menuData.menu_source}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2"
-                    style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
-                  >
-                    View Full Menu <span style={{ opacity: 0.7 }}>↗</span>
-                  </a>
-                )}
+                <div className="font-mono text-ui-md leading-relaxed mt-3 max-w-sm" style={{ color: "var(--text-dim)" }}>
+                  Menus change, always verify with the restaurant.
+                </div>
               </div>
+              {menuData?.menu_source && (
+                <a
+                  href={menuData.menu_source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 shrink-0"
+                  style={{ borderColor: "var(--border-default)", color: "var(--text-label)" }}
+                >
+                  View Full Menu <span style={{ opacity: 0.7 }}>↗</span>
+                </a>
+              )}
+            </div>
 
               {/* Menu groups */}
               {gfSections.map((section, si) => (
-                <div key={si} className={si > 0 ? "mt-7" : ""}>
+                <div key={si} className={si > 0 ? "mt-12" : ""}>
                   {section.section && (
                     <div
-                      className="flex items-center gap-3 font-mono text-ui-xs uppercase tracking-label mb-3"
-                      style={{ color: "var(--text-dim)" }}
+                      className="flex items-center gap-4 font-mono text-ui-sm font-medium uppercase tracking-label mb-6"
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {section.section}
-                      <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
+                      <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-default)" }} />
                     </div>
                   )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="columns-1 sm:columns-2" style={{ columnGap: "3.5rem" }}>
                     {section.items.map((item, i) => {
                       const displayName = item.name === item.name.toUpperCase()
                         ? item.name.charAt(0) + item.name.slice(1).toLowerCase()
                         : item.name;
                       return (
-                        <div
-                          key={i}
-                          className="border p-5 flex flex-col gap-1.5"
-                          style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
-                        >
-                          <div className="font-sans text-base leading-snug" style={{ color: "var(--text-primary)" }}>
+                        <div key={i} className="break-inside-avoid mb-6">
+                          <div className="font-sans text-base font-medium leading-snug" style={{ color: "var(--text-primary)" }}>
                             {displayName}
                           </div>
                           {item.description && (
-                            <div className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-dim)" }}>
+                            <div className="font-sans text-sm leading-normal mt-1.5" style={{ color: "var(--text-tertiary)" }}>
                               {item.description}
                             </div>
                           )}
-                          <div className="flex gap-1.5 mt-1">
-                            <span
-                              className="font-mono text-ui-xs uppercase tracking-label px-1.5 py-0.5 border"
-                              style={{
-                                color: SIGNAL_COLORS.positive,
-                                borderColor: SIGNAL_BORDER.positive,
-                                backgroundColor: SIGNAL_BG.positive,
-                              }}
-                            >
-                              GF
-                            </span>
-                          </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
               ))}
-            </div>
           </section>
         )}
 
         {/* ── Reviews ── */}
         {(visit || r.google_place_id) && (
           <section
-            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
           >
-            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+            <div className="font-mono text-ui-sm font-medium uppercase tracking-label mb-6" style={{ color: "var(--text-tertiary)" }}>
               Reviews
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 max-w-3xl">
               {visit ? (
                 <div
                   className="border p-6 space-y-5"
@@ -923,16 +897,16 @@ export default async function RestaurantPage({
         )}
 
         {/* ── Logistics ── */}
-        {(r.address || r.phone || r.website_url || r.google_maps_url || (hours && hours.length > 0)) && (
+        {(r.address || r.phone || (hours && hours.length > 0)) && (
           <section
-            className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12 py-12 border-t"
+            className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
           >
-            <div className="font-mono text-ui-sm uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
-              Logistics
+            <div className="font-mono text-ui-sm font-medium uppercase tracking-label mb-6" style={{ color: "var(--text-tertiary)" }}>
+              Hours & Location
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl">
               {(r.address || r.phone) && (
                 <div className="flex flex-col gap-5">
                   {r.address && (
@@ -984,48 +958,17 @@ export default async function RestaurantPage({
                   </div>
                 </div>
               )}
-
-              {(r.website_url || r.google_maps_url) && (
-                <div>
-                  <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
-                    Links
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {r.website_url && (
-                      <TrackedCtaLink
-                        restaurantId={r.id}
-                        cta="website"
-                        neighborhood={r.neighborhood}
-                        location="info_section"
-                        href={r.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-ui-md border-b pb-0.5 transition-colors self-start"
-                        style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
-                      >
-                        Website ↗
-                      </TrackedCtaLink>
-                    )}
-                    {r.google_maps_url && (
-                      <TrackedCtaLink
-                        restaurantId={r.id}
-                        cta="directions"
-                        neighborhood={r.neighborhood}
-                        location="info_section"
-                        href={r.google_maps_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-ui-md border-b pb-0.5 transition-colors self-start"
-                        style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
-                      >
-                        Get Directions ↗
-                      </TrackedCtaLink>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </section>
+        )}
+
+        <ClaimListing restaurantId={r.id} googlePlaceId={r.google_place_id} restaurantName={r.display_name ?? r.name} neighborhood={r.neighborhood} />
+
+        {/* ── Subscribe prompt (NYC digest) ── */}
+        {r.city === "New York" && (
+          <div className="mt-12">
+            <FollowPrompt variant="section" source="restaurant_detail" />
+          </div>
         )}
 
       </div>
