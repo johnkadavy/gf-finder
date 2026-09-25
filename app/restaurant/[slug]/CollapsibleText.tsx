@@ -6,7 +6,9 @@ import type React from "react";
 export function CollapsibleText({ text, className, style }: { text: string; className?: string; style?: React.CSSProperties }) {
   const [expanded, setExpanded] = useState(false);
   const words = text.split(" ");
-  const isLong = words.length > 60;
+  // Only collapse genuinely long descriptions; typical blurbs (~60–90 words)
+  // render in full so "Read more" never hides just a trailing sentence.
+  const isLong = words.length > 100;
   const preview = isLong && !expanded ? words.slice(0, 60).join(" ") + "…" : text;
 
   return (
