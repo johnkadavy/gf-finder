@@ -174,7 +174,7 @@ export function FollowPrompt({ variant, source }: Props) {
       <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-2">
         {EYEBROW}
       </p>
-      <p className="font-mono text-ui-md tracking-snug text-text-secondary mb-4">
+      <p className="font-sans text-sm leading-normal text-text-secondary mb-4">
         {HEADLINE}
       </p>
       {submitState === "success" ? (

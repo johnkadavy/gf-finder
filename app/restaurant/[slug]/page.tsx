@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
-import { SaveButton } from "@/app/components/SaveButton";
 import {
   calculateScore,
   getGaugeColor,
@@ -173,36 +172,29 @@ function buildSignalSummary(d: ScoringDossier | null): string {
 
 // ── Auth — deferred behind Suspense so it never blocks the page shell ───────
 
-const getRestaurantAuth = cache(async (restaurantId: number) => {
+const getSignedIn = cache(async () => {
   const serverClient = await createClient();
   const { data: { user } } = await serverClient.auth.getUser();
-  if (!user) return false;
-  const { data: save } = await serverClient
-    .from("saved_restaurants")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("restaurant_id", restaurantId)
-    .maybeSingle();
-  return !!save;
+  return !!user;
 });
 
-async function SaveState({
-  restaurantId,
-  redirectPath,
-  showLabel,
-}: {
-  restaurantId: number;
-  redirectPath: string;
-  showLabel?: boolean;
-}) {
-  const initialSaved = await getRestaurantAuth(restaurantId);
+// Empty Reviews state — only shown to signed-in visitors (who can submit).
+// Anonymous visitors see nothing when there are no reviews.
+async function ReviewsEmptyState({ restaurantId, googlePlaceId }: { restaurantId: number; googlePlaceId: string | null }) {
+  const signedIn = await getSignedIn();
+  if (!signedIn || !googlePlaceId) return null;
   return (
-    <SaveButton
-      restaurantId={restaurantId}
-      initialSaved={initialSaved}
-      redirectPath={redirectPath}
-      showLabel={showLabel}
-    />
+    <section className="py-12 border-t" style={{ borderColor: "var(--border-default)" }}>
+      <div className="font-mono text-ui-sm font-medium uppercase tracking-label mb-6" style={{ color: "var(--text-tertiary)" }}>
+        Reviews
+      </div>
+      <div className="space-y-5 max-w-3xl">
+        <p className="font-mono text-ui-md" style={{ color: "var(--text-dim)" }}>
+          No verified reviews yet.
+        </p>
+        <ReviewForm restaurantId={restaurantId} googlePlaceId={googlePlaceId} />
+      </div>
+    </section>
   );
 }
 
@@ -411,8 +403,6 @@ export default async function RestaurantPage({
     } : {}),
   };
 
-  const redirectPath = `/restaurant/${r.slug ?? r.id}`;
-
   return (
     <main className="pt-16">
       <script
@@ -440,9 +430,6 @@ export default async function RestaurantPage({
             {fromMap ? "← Map" : "← Rankings"}
           </Link>
           <div className="flex flex-wrap gap-2">
-            <Suspense fallback={<SaveButton restaurantId={r.id} initialSaved={false} redirectPath={redirectPath} showLabel />}>
-              <SaveState restaurantId={r.id} redirectPath={redirectPath} showLabel />
-            </Suspense>
             {r.google_maps_url && (
               <TrackedCtaLink
                 restaurantId={r.id}
@@ -454,7 +441,7 @@ export default async function RestaurantPage({
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-6-5.7-6-10a6 6 0 1112 0c0 4.3-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>Directions
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-6-5.7-6-10a6 6 0 1112 0c0 4.3-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span className="sr-only md:not-sr-only">Directions</span>
               </TrackedCtaLink>
             )}
             {r.phone && (
@@ -466,7 +453,7 @@ export default async function RestaurantPage({
                 href={`tel:${r.phone}`}
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.8 2z"/></svg>Call
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.8 2z"/></svg><span className="sr-only md:not-sr-only">Call</span>
               </TrackedCtaLink>
             )}
             {r.website_url && (
@@ -480,7 +467,7 @@ export default async function RestaurantPage({
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg>Website
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg><span className="sr-only md:not-sr-only">Website</span>
               </TrackedCtaLink>
             )}
             {r.reservation_link && (
@@ -513,10 +500,10 @@ export default async function RestaurantPage({
             style={{ background: "radial-gradient(circle at 70% 50%, color-mix(in oklch, var(--score-good) 6%, transparent), transparent 60%)" }}
           />
 
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 p-8 md:p-14">
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 p-8 md:p-14">
 
-            {/* Left */}
-            <div className="flex flex-col">
+            {/* Identity — meta, name, illness (gauge follows on mobile) */}
+            <div className="md:col-start-1 md:row-start-1 flex flex-col">
 
               {/* Meta row */}
               <div
@@ -579,6 +566,20 @@ export default async function RestaurantPage({
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Score gauge — between identity and details on mobile, right column on desktop */}
+            <div className="md:col-start-2 md:row-start-1 md:row-span-2 flex flex-col items-center justify-center py-2 md:py-0 gap-4">
+              <SafetyGauge score={score} size="hero" showDescriptor={false} />
+              {r.enriched_at && (
+                <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
+                  Updated {formatShortDate(r.enriched_at)}
+                </span>
+              )}
+            </div>
+
+            {/* Details — verdict, summary, highlights */}
+            <div className="md:col-start-1 md:row-start-2 flex flex-col">
 
               {/* Verdict block */}
               {score !== null && (
@@ -618,16 +619,6 @@ export default async function RestaurantPage({
                 </div>
               )}
             </div>
-
-            {/* Right — score gauge */}
-            <div className="flex flex-col items-center justify-center py-4 md:py-0 order-first md:order-last gap-4">
-              <SafetyGauge score={score} size="lg" showDescriptor={false} />
-              {r.enriched_at && (
-                <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
-                  Updated {formatShortDate(r.enriched_at)}
-                </span>
-              )}
-            </div>
           </div>
         </div>
 
@@ -638,54 +629,60 @@ export default async function RestaurantPage({
             style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
           >
             {/* GF Options */}
-            <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+            <div className="p-5 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2.5 md:mb-4" style={{ color: "var(--text-dim)" }}>
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: optionsSignalColor }} />
                 GF Options
               </div>
-              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: optionsSignalColor, letterSpacing: "0.02em" }}>
-                {optionsValue}
+              <div className="flex flex-row md:flex-col items-baseline md:items-start gap-x-4">
+                <div className="font-[family-name:var(--font-display)] text-2xl shrink-0 md:mb-3" style={{ color: optionsSignalColor, letterSpacing: "0.02em" }}>
+                  {optionsValue}
+                </div>
+                <p className="font-sans text-sm leading-normal" style={{ color: "var(--text-tertiary)" }}>
+                  {optionsLevel === "positive" ? "Plenty of gluten-free dishes across the menu." :
+                   optionsLevel === "neutral"  ? "Some gluten-free dishes to choose from." :
+                   optionsLevel === "warning"  ? "A limited gluten-free selection." :
+                   optionsLevel === "negative" ? "No dedicated gluten-free options." :
+                   "Gluten-free options not yet assessed."}
+                </p>
               </div>
-              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {optionsLevel === "positive" ? "Plenty of gluten-free dishes across the menu." :
-                 optionsLevel === "neutral"  ? "Some gluten-free dishes to choose from." :
-                 optionsLevel === "warning"  ? "A limited gluten-free selection." :
-                 optionsLevel === "negative" ? "No dedicated gluten-free options." :
-                 "Gluten-free options not yet assessed."}
-              </p>
             </div>
 
             {/* Illness Reports */}
-            <div className="p-7 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+            <div className="p-5 border-b md:border-b-0 md:border-r" style={{ borderColor: "var(--border-default)" }}>
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2.5 md:mb-4" style={{ color: "var(--text-dim)" }}>
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(sickCount > 0 ? "negative" : "positive") }} />
                 Illness Reports
               </div>
-              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(sickCount > 0 ? "negative" : "positive"), letterSpacing: "0.02em" }}>
-                {sickCount > 0 ? `${sickCount} Reported` : "None"}
+              <div className="flex flex-row md:flex-col items-baseline md:items-start gap-x-4">
+                <div className="font-[family-name:var(--font-display)] text-2xl shrink-0 md:mb-3" style={{ color: signalColor(sickCount > 0 ? "negative" : "positive"), letterSpacing: "0.02em" }}>
+                  {sickCount > 0 ? `${sickCount} Reported` : "None"}
+                </div>
+                <p className="font-sans text-sm leading-normal" style={{ color: "var(--text-tertiary)" }}>
+                  {sickCount > 0
+                    ? `${sickCount} gluten-related illness report${sickCount !== 1 ? "s" : ""} in the past 6 months.`
+                    : "No GF-related illness reports found in recent data."}
+                </p>
               </div>
-              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {sickCount > 0
-                  ? `${sickCount} gluten-related illness report${sickCount !== 1 ? "s" : ""} in the past 6 months.`
-                  : "No GF-related illness reports found in recent data."}
-              </p>
             </div>
 
             {/* GF Sentiment */}
-            <div className="p-7">
-              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-4" style={{ color: "var(--text-dim)" }}>
+            <div className="p-5">
+              <div className="flex items-center gap-2 font-mono text-ui-xs uppercase tracking-label mb-2.5 md:mb-4" style={{ color: "var(--text-dim)" }}>
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: signalColor(sentimentLevel) }} />
                 GF Sentiment
               </div>
-              <div className="font-[family-name:var(--font-display)] text-3xl mb-3" style={{ color: signalColor(sentimentLevel), letterSpacing: "0.02em" }}>
-                {sentimentValue}
+              <div className="flex flex-row md:flex-col items-baseline md:items-start gap-x-4">
+                <div className="font-[family-name:var(--font-display)] text-2xl shrink-0 md:mb-3" style={{ color: signalColor(sentimentLevel), letterSpacing: "0.02em" }}>
+                  {sentimentValue}
+                </div>
+                <p className="font-sans text-sm leading-normal" style={{ color: "var(--text-tertiary)" }}>
+                  {sentimentLevel === "positive" ? "Consistently positive feedback from gluten-free diners." :
+                   sentimentLevel === "neutral"  ? "Mixed feedback from gluten-free diners." :
+                   sentimentLevel === "negative" ? "Recent negative reports from gluten-free diners." :
+                   "Not enough recent gluten-free reviews yet."}
+                </p>
               </div>
-              <p className="font-mono text-ui-md leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {sentimentLevel === "positive" ? "Consistently positive feedback from gluten-free diners." :
-                 sentimentLevel === "neutral"  ? "Mixed feedback from gluten-free diners." :
-                 sentimentLevel === "negative" ? "Recent negative reports from gluten-free diners." :
-                 "Not enough recent gluten-free reviews yet."}
-              </p>
             </div>
           </div>
         )}
@@ -773,7 +770,7 @@ export default async function RestaurantPage({
         )}
 
         {/* ── Reviews ── */}
-        {(visit || r.google_place_id) && (
+        {visit ? (
           <section
             className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
@@ -880,6 +877,10 @@ export default async function RestaurantPage({
               )}
             </div>
           </section>
+        ) : (
+          <Suspense fallback={null}>
+            <ReviewsEmptyState restaurantId={r.id} googlePlaceId={r.google_place_id} />
+          </Suspense>
         )}
 
         {/* ── Data confidence notice ── */}
@@ -975,7 +976,7 @@ export default async function RestaurantPage({
 
       {/* ── Neighborhood links ── */}
       {r.neighborhood && (
-        <section className="px-6 py-8 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+        <section className="px-6 pt-8 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8 border-t" style={{ borderColor: "var(--border-subtle)" }}>
           <div className="max-w-6xl mx-auto flex flex-wrap gap-3">
             <Link
               href={`/gluten-free/${r.city.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}/${r.neighborhood.toLowerCase().replace(/'/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`}
