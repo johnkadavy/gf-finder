@@ -13,8 +13,14 @@ declare global {
 }
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+// PostHog's managed reverse proxy for this project — client events route
+// through our own domain instead of a third-party one (avoids ad blockers).
+// Hardcoded (not env-driven) so it can't drift from NEXT_PUBLIC_POSTHOG_HOST,
+// which lib/analytics-server.ts still uses, unchanged, for direct server-side
+// ingestion. ui_host keeps toolbar/links pointed at the real PostHog app since
+// api_host is no longer a posthog.com domain.
+const POSTHOG_HOST = "https://e.trycleanplate.com";
+const POSTHOG_UI_HOST = "https://us.posthog.com";
 
 let initialized = false;
 
@@ -22,6 +28,7 @@ function initPostHog() {
   if (initialized || typeof window === "undefined" || !POSTHOG_KEY) return;
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
+    ui_host: POSTHOG_UI_HOST,
     // We capture pageviews manually below to handle App Router client navigation.
     capture_pageview: false,
     capture_pageleave: true,
