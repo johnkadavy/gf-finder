@@ -20,6 +20,10 @@ export type AnalyticsEvent =
   | "claim_completed"
   | "home_ask_submitted"
   | "home_search_submitted"
+  // Search quality: fired once per results render (incl. zero results) and
+  // on every tap from results or the suggestions list.
+  | "search_results_shown"
+  | "search_result_clicked"
   | "signup_cta_clicked"
   // Mirrored to PostHog so the email-capture funnel is visible alongside
   // the logged-in events. These also fire to Vercel Analytics via track().

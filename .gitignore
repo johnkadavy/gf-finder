@@ -43,3 +43,7 @@ next-env.d.ts
 # reference / prototype code
 v0 example code for GF finder/
 components/ui/
+
+# local / scratch
+.claude/settings.local.json
+Claude outputs/

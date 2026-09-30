@@ -3,13 +3,14 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { getCityAccess } from "@/lib/cities";
 import { normalizeCuisine } from "@/lib/cuisine";
+import { getNycLandingIndex, matchCategory, matchNeighborhoods } from "@/lib/landing-index";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
   const cityParam = req.nextUrl.searchParams.get("city")?.trim() ?? "";
 
   if (q.length < 1) {
-    return NextResponse.json({ restaurants: [], cuisines: [] });
+    return NextResponse.json({ restaurants: [], cuisines: [], neighborhoods: [], categories: [] });
   }
 
   // Resolve city access
@@ -26,9 +27,7 @@ export async function GET(req: NextRequest) {
   let restaurantQuery = supabase
     .from("restaurants")
     .select("id, name, city, neighborhood, lat, lng, cuisine, google_rating, price_level, address, website_url, score, slug")
-    .ilike("name", `%${q}%`)
-    .order("name")
-    .limit(6);
+    .ilike("name", `%${q}%`);
 
   // City enforcement: explicit city param > allowed cities filter
   if (cityParam && (cityAccess.isAdmin || cityAccess.allowedCities.includes(cityParam))) {
@@ -37,12 +36,22 @@ export async function GET(req: NextRequest) {
     restaurantQuery = restaurantQuery.in("city", cityAccess.allowedCities);
   }
 
-  if (swLat && swLng && neLat && neLng) {
+  const hasBounds = Boolean(swLat && swLng && neLat && neLng);
+  if (hasBounds) {
+    // Map search: unchanged alphabetical behavior within the viewport.
     restaurantQuery = restaurantQuery
-      .gte("lat", parseFloat(swLat))
-      .lte("lat", parseFloat(neLat))
-      .gte("lng", parseFloat(swLng))
-      .lte("lng", parseFloat(neLng));
+      .gte("lat", parseFloat(swLat!))
+      .lte("lat", parseFloat(neLat!))
+      .gte("lng", parseFloat(swLng!))
+      .lte("lng", parseFloat(neLng!))
+      .order("name")
+      .limit(6);
+  } else {
+    // Homepage search: safest matches first, unscored last.
+    restaurantQuery = restaurantQuery
+      .order("score", { ascending: false, nullsFirst: false })
+      .order("name")
+      .limit(5);
   }
 
   // ── Cuisine suggestions ────────────────────────────────────────────────────
@@ -59,14 +68,23 @@ export async function GET(req: NextRequest) {
     cuisineQuery = cuisineQuery.in("city", cityAccess.allowedCities);
   }
 
-  const [{ data: restaurantData, error }, { data: cuisineData }] = await Promise.all([
+  // Landing-page suggestions (NYC only — that's where the /gluten-free pages live).
+  const wantsLanding = !hasBounds && (!cityParam || cityParam === "New York") &&
+    (cityAccess.isAdmin || cityAccess.allowedCities.includes("New York"));
+
+  const [{ data: restaurantData, error }, { data: cuisineData }, landingIndex] = await Promise.all([
     restaurantQuery,
     cuisineQuery,
+    wantsLanding ? getNycLandingIndex() : Promise.resolve(null),
   ]);
 
   if (error) {
-    return NextResponse.json({ restaurants: [], cuisines: [] }, { status: 500 });
+    return NextResponse.json({ restaurants: [], cuisines: [], neighborhoods: [], categories: [] }, { status: 500 });
   }
+
+  const neighborhoods = landingIndex ? matchNeighborhoods(q, landingIndex.neighborhoods) : [];
+  const category = landingIndex ? matchCategory(q, landingIndex.categories) : null;
+  const categories = category ? [{ label: category.label, href: category.href, count: category.count, emoji: category.emoji }] : [];
 
   // Normalize to canonical categories, deduplicate, filter "Other", sort
   const cuisines = [...new Set(
@@ -77,5 +95,5 @@ export async function GET(req: NextRequest) {
       .filter((c: string) => c !== "Other")
   )].sort().slice(0, 4) as string[];
 
-  return NextResponse.json({ restaurants: restaurantData ?? [], cuisines });
+  return NextResponse.json({ restaurants: restaurantData ?? [], cuisines, neighborhoods, categories });
 }
