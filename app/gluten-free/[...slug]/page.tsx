@@ -8,7 +8,6 @@ import { RankedListFilters, type QuickFilter } from "@/app/components/RankedList
 import { getHighlights } from "@/lib/highlights";
 import { lookupBorough } from "@/lib/borough-lookup";
 import { FollowPrompt } from "./FollowPrompt";
-import { StatStrip, type TableRestaurant } from "./StatStrip";
 import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
 import type { CategoryDef } from "@/lib/categories";
 
@@ -174,12 +173,16 @@ function rowMatchesCategory(r: RestaurantRow, def: CategoryDef): boolean {
   return false;
 }
 
-/** One-line stats for phones (desktop keeps the StatStrip). */
-function MobileStats({ restaurants }: { restaurants: RestaurantRow[] }) {
+/**
+ * One-line summary under the intro (all widths). Replaced the three-box
+ * StatStrip — its "dedicated GF kitchens" count was often tiny and not
+ * reliable enough to headline.
+ */
+function HeroStats({ restaurants }: { restaurants: RestaurantRow[] }) {
   const excellent = restaurants.filter((r) => r.score >= 85).length;
-  const num = "font-[family-name:var(--font-display)] text-2xl leading-none mr-1.5";
+  const num = "font-[family-name:var(--font-display)] text-2xl md:text-4xl leading-none mr-1.5 md:mr-2";
   return (
-    <p className="md:hidden flex flex-wrap items-baseline gap-x-5 gap-y-1 mt-4 font-mono text-ui-md uppercase tracking-label text-text-label">
+    <p className="flex flex-wrap items-baseline gap-x-5 md:gap-x-8 gap-y-1 mt-4 md:mt-8 font-mono text-ui-md uppercase tracking-label text-text-label">
       <span><span className={num} style={{ color: "var(--accent)" }}>{restaurants.length}</span>rated</span>
       {excellent > 0 && (
         <span><span className={num} style={{ color: "var(--score-excellent)" }}>{excellent}</span>excellent · 85+</span>
@@ -340,16 +343,13 @@ export default async function LandingPage({ params }: Props) {
             <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
               {catDef.editorialIntro}
             </p>
-            <MobileStats restaurants={restaurants} />
+            <HeroStats restaurants={restaurants} />
           </div>
         </section>
 
         {/* ── Restaurant list ── */}
         <section className="px-4 md:px-8 pt-2 pb-10 md:py-10">
           <div className={isTableLayout ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
-            <div className="hidden md:block">
-              <StatStrip restaurants={restaurants as TableRestaurant[]} entityLabel={catDef.labelPlural} />
-            </div>
             <RankedListFilters
               filters={buildQuickFilters(restaurants, catSlug)}
               total={restaurants.length}
@@ -543,19 +543,13 @@ export default async function LandingPage({ params }: Props) {
           <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
             {intro}
           </p>
-          <MobileStats restaurants={restaurants} />
+          <HeroStats restaurants={restaurants} />
         </div>
       </section>
 
       {/* ── Restaurant list ── */}
       <section className="px-4 md:px-8 pt-2 pb-10 md:py-10">
         <div className="max-w-6xl mx-auto">
-          <div className="hidden md:block">
-            <StatStrip
-              restaurants={restaurants as TableRestaurant[]}
-              entityLabel={catDef ? catDef.labelPlural : "Restaurants"}
-            />
-          </div>
           <RankedListFilters
             filters={buildQuickFilters(restaurants, categorySlug)}
             total={restaurants.length}
