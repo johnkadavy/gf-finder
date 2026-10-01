@@ -64,3 +64,16 @@ export function normalizeCuisine(raw: string): CuisineCategory {
 
   return "Other";
 }
+
+/**
+ * Stable key for filtering list rows by canonical cuisine (data-cuisine on
+ * RankedList rows ↔ cuisine filter options). Null when the cuisine doesn't
+ * map to a canonical category.
+ */
+export function cuisineFilterKey(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  // Strip accents first: "Café" would otherwise miss the /cafe/ pattern
+  const c = normalizeCuisine(raw.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  if (c === "Other") return null;
+  return c.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}

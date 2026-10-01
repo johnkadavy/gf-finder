@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { isNewRestaurant, formatLocation } from "@/lib/utils";
 import { getHighlights, HIGHLIGHT_LABELS } from "@/lib/highlights";
+import { cuisineFilterKey } from "@/lib/cuisine";
 import { ScoreBadge } from "./ScoreBadge";
 
 /**
@@ -13,7 +14,7 @@ import { ScoreBadge } from "./ScoreBadge";
  *
  * Mobile vs desktop: every row change for phones is scoped below `md` —
  * the desktop row layout is intentionally unchanged.
- * Rows carry data-* flags (excellent / fryer / labeled / kitchen) so
+ * Rows carry data-* flags (excellent / fryer / labeled / kitchen, cuisine) so
  * RankedListFilters can filter in place with CSS (see globals.css).
  */
 
@@ -83,6 +84,7 @@ export function RankedList({ restaurants, countLabel, metaLine, loadMoreHref, in
               data-fryer={highlights.includes("fryer") ? "" : undefined}
               data-labeled={highlights.includes("labeled") ? "" : undefined}
               data-kitchen={highlights.includes("kitchen") ? "" : undefined}
+              data-cuisine={cuisineFilterKey(restaurant.cuisine) ?? undefined}
               className="group grid grid-cols-[1.75rem_1fr_auto] md:grid-cols-[5rem_1fr_auto] items-start md:items-center border-b gap-2.5 md:gap-10 py-3.5 md:py-6 pl-3 pr-4 md:px-6 transition-colors duration-150 hover:bg-surface-raised"
               style={{
                 borderColor: "var(--border-subtle)",

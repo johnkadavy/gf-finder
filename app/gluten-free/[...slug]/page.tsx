@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import type { ScoringDossier, VerifiedData } from "@/lib/score";
 import { RankedList, type RankedRestaurant } from "@/app/components/RankedList";
-import { RankedListFilters, type QuickFilter } from "@/app/components/RankedListFilters";
+import { RankedListFilters, type QuickFilter, type CuisineOption, type FilterRowMeta } from "@/app/components/RankedListFilters";
+import { cuisineFilterKey, normalizeCuisine } from "@/lib/cuisine";
 import { getHighlights } from "@/lib/highlights";
 import { lookupBorough } from "@/lib/borough-lookup";
 import { FollowPrompt } from "./FollowPrompt";
@@ -141,28 +142,51 @@ type RestaurantRow = {
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
 
-// Quick filters only where they help: long lists, and only filters that leave
-// a useful subset (≥3, not everything) and don't repeat the page's own filter.
+// Filters only where they help: long lists, and only options that leave a
+// useful subset — at least 3 places, and not (nearly) the whole list — that
+// don't repeat the page's own filter.
 const QUICK_FILTER_MIN_RESULTS = 15;
+const QUICK_FILTER_MAX_SHARE = 0.85;
+const CUISINE_MIN_COUNT = 3;
 
-function buildQuickFilters(rows: RestaurantRow[], pageCategory: string | null): QuickFilter[] {
-  if (rows.length < QUICK_FILTER_MIN_RESULTS) return [];
-  const hl = rows.map((r) => getHighlights(r));
+type ListFilters = { filters: QuickFilter[]; cuisines: CuisineOption[]; rows: FilterRowMeta[] };
+
+function buildListFilters(rows: RestaurantRow[], pageCategory: string | null): ListFilters {
+  const meta: FilterRowMeta[] = rows.map((r) => {
+    const flags: FilterRowMeta["flags"] = getHighlights(r);
+    if (r.score >= 85) flags.push("excellent");
+    return { flags, cuisine: cuisineFilterKey(r.cuisine) };
+  });
+  if (rows.length < QUICK_FILTER_MIN_RESULTS) return { filters: [], cuisines: [], rows: meta };
+
+  const countFlag = (k: QuickFilter["key"]) => meta.filter((m) => m.flags.includes(k)).length;
   const defs: (QuickFilter & { skip?: boolean })[] = [
-    { key: "excellent", label: "85+", count: rows.filter((r) => r.score >= 85).length, summary: "" },
-    { key: "fryer", label: "Dedicated fryer", count: hl.filter((h) => h.includes("fryer")).length, summary: "", skip: pageCategory === "fryer" },
-    { key: "labeled", label: "Menu labeled", count: hl.filter((h) => h.includes("labeled")).length, summary: "" },
-    { key: "kitchen", label: "Dedicated GF kitchen", count: hl.filter((h) => h.includes("kitchen")).length, summary: "", skip: pageCategory === "dedicated" },
+    { key: "excellent", label: "85+", count: countFlag("excellent") },
+    { key: "fryer", label: "Dedicated fryer", count: countFlag("fryer"), skip: pageCategory === "fryer" },
+    { key: "labeled", label: "Menu labeled", count: countFlag("labeled") },
+    { key: "kitchen", label: "Dedicated GF kitchen", count: countFlag("kitchen"), skip: pageCategory === "dedicated" },
   ];
-  const summaries: Record<QuickFilter["key"], (n: number) => string> = {
-    excellent: (n) => `${n} scored excellent · 85+`,
-    fryer: (n) => `${n} with a dedicated fryer`,
-    labeled: (n) => `${n} with a labeled GF menu`,
-    kitchen: (n) => `${n} with a dedicated GF kitchen`,
-  };
-  return defs
-    .filter((d) => !d.skip && d.count >= 3 && d.count < rows.length)
-    .map(({ key, label, count }) => ({ key, label, count, summary: summaries[key](count) }));
+  const filters = defs
+    .filter((d) => !d.skip && d.count >= 3 && d.count <= rows.length * QUICK_FILTER_MAX_SHARE)
+    .map(({ key, label, count }) => ({ key, label, count }));
+
+  // Cuisines: canonical categories with ≥3 places here, most common first.
+  // Only offered when there are at least two to choose between.
+  const byKey = new Map<string, CuisineOption>();
+  for (const r of rows) {
+    const key = cuisineFilterKey(r.cuisine);
+    if (!key || !r.cuisine) continue;
+    const label = normalizeCuisine(r.cuisine.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    const cur = byKey.get(key) ?? { key, label, count: 0 };
+    cur.count++;
+    byKey.set(key, cur);
+  }
+  const options = [...byKey.values()]
+    .filter((c) => c.count >= CUISINE_MIN_COUNT && c.count < rows.length)
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  const cuisines = options.length >= 2 ? options : [];
+
+  return { filters, cuisines, rows: meta };
 }
 
 function rowMatchesCategory(r: RestaurantRow, def: CategoryDef): boolean {
@@ -171,24 +195,6 @@ function rowMatchesCategory(r: RestaurantRow, def: CategoryDef): boolean {
   if (def.type === "fryer")                   return r.dossier?.operations?.dedicated_equipment?.fryer === true;
   if (def.type === "dedicated")               return r.dossier?.operations?.cross_contamination_risk === "low";
   return false;
-}
-
-/**
- * One-line summary under the intro (all widths). Replaced the three-box
- * StatStrip — its "dedicated GF kitchens" count was often tiny and not
- * reliable enough to headline.
- */
-function HeroStats({ restaurants }: { restaurants: RestaurantRow[] }) {
-  const excellent = restaurants.filter((r) => r.score >= 85).length;
-  const num = "font-[family-name:var(--font-display)] text-2xl md:text-4xl leading-none mr-1.5 md:mr-2";
-  return (
-    <p className="flex flex-wrap items-baseline gap-x-5 md:gap-x-8 gap-y-1 mt-4 md:mt-8 font-mono text-ui-md uppercase tracking-label text-text-label">
-      <span><span className={num} style={{ color: "var(--accent)" }}>{restaurants.length}</span>rated</span>
-      {excellent > 0 && (
-        <span><span className={num} style={{ color: "var(--score-excellent)" }}>{excellent}</span>excellent · 85+</span>
-      )}
-    </p>
-  );
 }
 
 const relatedTileClass =
@@ -301,7 +307,7 @@ export default async function LandingPage({ params }: Props) {
 
         {/* ── Hero ── */}
         <section
-          className="grid-bg border-b px-4 md:px-8 pt-6 pb-6 md:py-24 relative"
+          className="grid-bg border-b px-4 md:px-8 pt-6 pb-6 md:pt-24 md:pb-16 relative"
           style={{ borderColor: "var(--border-default)" }}
         >
           <div
@@ -343,7 +349,6 @@ export default async function LandingPage({ params }: Props) {
             <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
               {catDef.editorialIntro}
             </p>
-            <HeroStats restaurants={restaurants} />
           </div>
         </section>
 
@@ -351,8 +356,7 @@ export default async function LandingPage({ params }: Props) {
         <section className="px-4 md:px-8 pt-2 pb-10 md:py-10">
           <div className={isTableLayout ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
             <RankedListFilters
-              filters={buildQuickFilters(restaurants, catSlug)}
-              total={restaurants.length}
+              {...buildListFilters(restaurants, catSlug)}
               source={`/gluten-free/${s0}/${s1}`}
             >
               <RankedList
@@ -485,7 +489,7 @@ export default async function LandingPage({ params }: Props) {
 
       {/* ── Hero ── */}
       <section
-        className="grid-bg border-b px-4 md:px-8 pt-6 pb-6 md:py-24 relative"
+        className="grid-bg border-b px-4 md:px-8 pt-6 pb-6 md:pt-24 md:pb-16 relative"
         style={{ borderColor: "var(--border-default)" }}
       >
         <div
@@ -543,7 +547,6 @@ export default async function LandingPage({ params }: Props) {
           <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
             {intro}
           </p>
-          <HeroStats restaurants={restaurants} />
         </div>
       </section>
 
@@ -551,8 +554,7 @@ export default async function LandingPage({ params }: Props) {
       <section className="px-4 md:px-8 pt-2 pb-10 md:py-10">
         <div className="max-w-6xl mx-auto">
           <RankedListFilters
-            filters={buildQuickFilters(restaurants, categorySlug)}
-            total={restaurants.length}
+            {...buildListFilters(restaurants, categorySlug)}
             source={`/gluten-free/${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`}
           >
           <RankedList

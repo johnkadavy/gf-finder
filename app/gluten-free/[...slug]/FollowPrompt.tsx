@@ -143,23 +143,66 @@ export function FollowPrompt({ variant, source }: Props) {
     );
   }
 
-  // Mobile card list / non-table inline prompt
+  // Inline prompt inside a RankedList — built like a list row (same grid and
+  // padding, coral left border instead of a score color) so it reads as part
+  // of the list rather than a panel dropped into it.
   if (variant === "inline") {
     return (
       <div
         ref={containerRef as unknown as React.RefObject<HTMLDivElement>}
-        className="flex flex-col gap-3 px-5 py-4"
-        style={{ backgroundColor: "var(--accent-tint-sm)", borderBottom: "1px solid var(--border-subtle)" }}
+        className="md:grid md:grid-cols-[5rem_1fr_auto] md:items-center md:gap-10 pl-3 pr-4 py-4 md:px-6 md:py-5"
+        style={{ borderLeft: "2px solid var(--accent)" }}
       >
+        <span aria-hidden="true" className="hidden md:block text-right font-mono text-ui-2xl text-accent">✉</span>
         <div>
-          <p className="font-mono text-ui-xs uppercase tracking-stamp text-text-disabled mb-1">
+          <p className="font-mono text-ui-sm font-medium uppercase tracking-label text-accent mb-1">
             {EYEBROW}
           </p>
-          <p className="font-mono text-ui-sm tracking-snug text-text-label">
+          <p className="font-sans text-ui-2xl leading-snug text-text-secondary max-w-xl">
             {HEADLINE}
           </p>
         </div>
-        {formContent}
+        <div className="mt-3 md:mt-0 md:w-96">
+          {submitState === "success" ? (
+            <p className="font-mono text-ui-sm uppercase tracking-label text-signal-positive">
+              ✓ Check your inbox to confirm
+            </p>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex items-start gap-2">
+              <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                <label htmlFor={inputId} className="sr-only">Email address</label>
+                <input
+                  id={inputId}
+                  type="email"
+                  required
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={submitState === "loading"}
+                  className="w-full h-12 md:h-11 px-3 border font-mono text-ui-body md:text-ui-lg text-text-primary placeholder:text-text-disabled focus-visible:outline-none disabled:opacity-50"
+                  style={{ borderColor: "var(--border-emphasis)", backgroundColor: "var(--surface-raised)" }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; }}
+                />
+                {submitState === "error" && errorMsg && (
+                  <p className="font-mono text-ui-xs uppercase tracking-label text-signal-negative">
+                    {errorMsg}
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={submitState === "loading"}
+                className="h-12 md:h-11 px-4 shrink-0 border font-mono text-ui-sm uppercase tracking-label transition-colors duration-200 disabled:opacity-50 focus-visible:outline-none"
+                style={{ borderColor: "var(--accent)", color: "var(--accent)", backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent-foreground)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
+              >
+                {submitState === "loading" ? "…" : "Subscribe"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     );
   }
