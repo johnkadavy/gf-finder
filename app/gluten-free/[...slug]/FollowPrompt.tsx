@@ -93,7 +93,7 @@ export function FollowPrompt({ variant, source }: Props) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={submitState === "loading"}
-          className="w-full bg-transparent border font-mono text-ui-xl text-text-primary placeholder:text-text-disabled focus-visible:outline-none disabled:opacity-50"
+          className="w-full bg-transparent border font-mono text-ui-body md:text-ui-xl text-text-primary placeholder:text-text-disabled focus-visible:outline-none disabled:opacity-50"
           style={{ borderColor: "var(--border-emphasis)", padding: "0.5rem 0.75rem" }}
           onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
           onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; }}
@@ -193,7 +193,7 @@ export function FollowPrompt({ variant, source }: Props) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitState === "loading"}
-              className="w-full bg-transparent border font-mono text-ui-xl text-text-primary placeholder:text-text-disabled focus-visible:outline-none disabled:opacity-50"
+              className="w-full bg-transparent border font-mono text-ui-body md:text-ui-xl text-text-primary placeholder:text-text-disabled focus-visible:outline-none disabled:opacity-50"
               style={{ borderColor: "var(--border-emphasis)", padding: "0.75rem 1rem" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-emphasis)"; }}

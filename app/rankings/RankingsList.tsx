@@ -74,7 +74,7 @@ export async function RankingsResultCount({ filters, isAdmin, allowedCities, raw
 export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisines }: Props) {
   let query = supabase
     .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, source, ingested_at", { count: "exact" })
+    .select("id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, verified_data, dedicated_gf_kitchen, source, ingested_at", { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
