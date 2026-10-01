@@ -8,6 +8,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
+import { rescoreRestaurants } from "../lib/rescore";
 
 dotenv.config({ path: ".env.local" });
 
@@ -68,6 +69,9 @@ async function main() {
     }
 
     totalUpdated += updates.length;
+    // cuisine feeds the score's cross-contamination prior — keep stored scores in sync
+    const rescored = updates.length > 0 ? await rescoreRestaurants(supabase, { ids: updates.map((u) => u.id) }) : 0;
+    console.log(`  ↻ ${rescored} stored scores updated`);
     console.log(`  ✓ ${updates.length} cuisines written, ${data.length - updates.length} skipped (no cuisine in dossier)`);
 
     if (data.length < BATCH_SIZE) break;

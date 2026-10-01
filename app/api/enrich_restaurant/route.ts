@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { rescoreRestaurants } from "@/lib/rescore";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { DossierSchema } from "@/lib/dossier-schema";
@@ -165,6 +166,10 @@ ${researchText}`,
     }
 
     console.log("[enrich] Saved successfully. Rows affected:", count);
+
+    // Keep the stored score in sync with the new dossier (lists sort by it).
+    const rescored = await rescoreRestaurants(supabaseServer, { column: "google_place_id", value: google_place_id });
+    console.log("[enrich] Scores updated:", rescored);
     return NextResponse.json({ dossier });
 
   } catch (error: unknown) {

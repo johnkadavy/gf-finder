@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import {
-  calculateScore,
+  scoreRestaurant,
   getGaugeColor,
   getScoreLabel,
   type ScoringDossier,
@@ -217,7 +217,7 @@ const resolveRestaurant = cache(async (slugOrId: string) => {
 
   const { data } = await supabase
     .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
+    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
     .eq("slug", slugOrId)
     .single();
 
@@ -230,9 +230,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const data = await resolveRestaurant(slug);
   if (!data) return {};
 
-  const score = data.dossier
-    ? calculateScore(data.dossier as ScoringDossier, (data.verified_data ?? undefined) as VerifiedData | undefined)
-    : null;
+  const score = scoreRestaurant(data);
   const d = data.dossier as ScoringDossier | null;
   const location = formatLocation(data.neighborhood, data.city, data.region, ", ");
   const canonicalUrl = `/restaurant/${data.slug ?? slug}`;
@@ -285,7 +283,7 @@ export default async function RestaurantPage({
     : { data: null };
 
   const visit = visitData as VerifiedVisit | null;
-  const score = r.dossier ? calculateScore(r.dossier, r.verified_data ?? undefined) : null;
+  const score = scoreRestaurant(r);
 
   const { label: scoreLabel } = getScoreLabel(score);
   const color = getGaugeColor(score);

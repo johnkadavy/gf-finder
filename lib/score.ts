@@ -253,3 +253,24 @@ export function getGaugeColor(score: number | null): string {
   if (score >= 40)    return SCORE_COLORS.limited;
   return SCORE_COLORS.risk;
 }
+
+/**
+ * The one way to score a restaurant row. Stored `restaurants.score` and every
+ * live display must go through this so they agree — it always passes the
+ * cuisine / place-type context that calculateScore uses for its
+ * cross-contamination prior. See lib/rescore.ts for keeping the stored
+ * column fresh after writes.
+ */
+export function scoreRestaurant(r: {
+  dossier?: unknown;
+  verified_data?: unknown;
+  cuisine?: string | null;
+  place_type?: string[] | null;
+}): number | null {
+  if (!r.dossier) return null;
+  return calculateScore(
+    r.dossier as ScoringDossier,
+    (r.verified_data ?? undefined) as VerifiedData | undefined,
+    { cuisine: r.cuisine ?? null, placeTypes: r.place_type ?? null },
+  );
+}

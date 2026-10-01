@@ -142,9 +142,15 @@ npx tsx scripts/populate-airtable.ts --neighborhood "West Village" --city "New Y
 # Wait for Airtable AI fields to finish, then sync back to Supabase
 npx tsx scripts/sync-airtable.ts
 
-# Backfill scores if needed
+# Backfill scores if needed (unscored rows only)
 npx tsx scripts/backfill-scores.ts
+
+# Full rescore — after changing lib/score.ts or hand-editing scoring inputs in Supabase
+npx tsx scripts/backfill-scores.ts --all          # dry run: report what would change
+npx tsx scripts/backfill-scores.ts --all --write  # apply
 ```
+
+Stored `restaurants.score` (used by every list) must match the live score on restaurant pages. Always score via `scoreRestaurant()` (`lib/score.ts`), and after any write that changes `dossier`, `verified_data`, `cuisine` or `place_type`, call `rescoreRestaurants()` (`lib/rescore.ts`).
 
 ## Key files
 

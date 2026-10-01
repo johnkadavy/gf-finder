@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { supabase } from "@/lib/supabase";
-import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { scoreRestaurant, getGaugeColor, getScoreLabel } from "@/lib/score";
 import { loadBebasNeue } from "@/app/og-font";
 
 export const size = { width: 1200, height: 630 };
@@ -13,15 +13,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
   const isNumericId = /^\d+$/.test(slug);
   const { data } = await (isNumericId
-    ? supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data").eq("id", slug).single()
-    : supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data").eq("slug", slug).single()
+    ? supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data, cuisine, place_type").eq("id", slug).single()
+    : supabase.from("restaurants").select("name, city, neighborhood, dossier, verified_data, cuisine, place_type").eq("slug", slug).single()
   );
 
   const name = data?.name ?? "CleanPlate";
   const location = [data?.neighborhood, data?.city].filter(Boolean).join(" / ");
-  const score = data?.dossier
-    ? calculateScore(data.dossier as ScoringDossier, (data.verified_data ?? undefined) as VerifiedData | undefined)
-    : null;
+  const score = data ? scoreRestaurant(data) : null;
   const color = getGaugeColor(score);
   const { label } = getScoreLabel(score);
 

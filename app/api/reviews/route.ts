@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { calculateScore } from "@/lib/score";
+import { scoreRestaurant } from "@/lib/score";
 import { captureServer } from "@/lib/analytics-server";
 
 const supabaseAdmin = createAdminClient(
@@ -76,12 +76,12 @@ export async function POST(req: NextRequest) {
   // Recalculate score
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("dossier, verified_data")
+    .select("dossier, verified_data, cuisine, place_type")
     .eq("id", restaurant_id)
     .single();
 
   if (restaurant?.dossier) {
-    const score = calculateScore(restaurant.dossier, restaurant.verified_data ?? undefined);
+    const score = scoreRestaurant(restaurant);
     if (score !== null) {
       await supabaseAdmin
         .from("restaurants")

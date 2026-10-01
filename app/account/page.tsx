@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import { supabase as publicSupabase } from "@/lib/supabase";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { calculateScore, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { scoreRestaurant, getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
 import { normalizeCuisine } from "@/lib/cuisine";
 import { AccountFilters } from "./AccountFilters";
 import { CopyButton } from "@/app/components/CopyButton";
@@ -17,6 +17,7 @@ type SavedRestaurant = {
   city: string;
   neighborhood: string | null;
   cuisine: string | null;
+  place_type?: string[] | null;
   website_url: string | null;
   google_maps_url: string | null;
   slug: string | null;
@@ -82,7 +83,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
   if (ids.length > 0) {
     const { data } = await publicSupabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, cuisine, website_url, google_maps_url, slug, dossier, verified_data")
+      .select("id, name, city, neighborhood, cuisine, place_type, website_url, google_maps_url, slug, dossier, verified_data")
       .in("id", ids);
     const map = new Map((data ?? []).map((r) => [r.id, r]));
     allRestaurants = ids.map((id) => map.get(id)).filter(Boolean) as SavedRestaurant[];
@@ -240,9 +241,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
         ) : (
           <div>
             {restaurants.map((restaurant, index) => {
-              const score = restaurant.dossier
-                ? calculateScore(restaurant.dossier, restaurant.verified_data ?? undefined)
-                : null;
+              const score = scoreRestaurant(restaurant);
               const color = getGaugeColor(score);
               const { label } = getScoreLabel(score);
 

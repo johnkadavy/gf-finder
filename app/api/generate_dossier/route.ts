@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { DossierSchema } from "@/lib/dossier-schema";
+import { rescoreRestaurants } from "@/lib/rescore";
 
 const client = new Anthropic();
 
@@ -52,12 +53,13 @@ Today's date is ${new Date().toISOString().split("T")[0]}.`,
       );
     }
 
-    const { error } = await supabaseServer
+    const { data: saved, error } = await supabaseServer
       .from("restaurants")
       .upsert(
         { name: restaurantName, city, neighborhood, slug, dossier },
         { onConflict: "name,city,neighborhood" }
-      );
+      )
+      .select("id");
 
     if (error) {
       console.error(error);
@@ -66,6 +68,10 @@ Today's date is ${new Date().toISOString().split("T")[0]}.`,
         { status: 500 }
       );
     }
+
+    // Keep the stored score in sync with the new dossier (lists sort by it).
+    const ids = (saved ?? []).map((r: { id: number }) => r.id);
+    if (ids.length > 0) await rescoreRestaurants(supabaseServer, { ids });
 
     return NextResponse.json({ dossier });
   } catch (error) {

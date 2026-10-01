@@ -11,6 +11,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
+import { rescoreRestaurants } from "../lib/rescore";
 
 dotenv.config({ path: ".env.local" });
 
@@ -311,6 +312,7 @@ async function main() {
   let succeeded = 0;
   let failed = 0;
   let noContent = 0;
+  let rescored = 0;
 
   for (const row of toProcess) {
     const aiValue = row.dossier?.menu?.gf_labeling ?? "—";
@@ -370,14 +372,15 @@ async function main() {
       failed++;
     } else {
       succeeded++;
+      // verified menu labeling feeds the score — keep the stored score in sync
+      if (scrapedValue !== "unknown") rescored += await rescoreRestaurants(supabase, { column: "id", value: row.id });
     }
 
     // Small delay to be polite to restaurant websites
     await new Promise((r) => setTimeout(r, 500));
   }
 
-  console.log(`\nDone. ${succeeded} scraped, ${noContent} no content, ${failed} errors.`);
-  console.log("\nRun backfill-scores.ts to update stored scores with verified data.");
+  console.log(`\nDone. ${succeeded} scraped, ${noContent} no content, ${failed} errors. ${rescored} stored scores updated.`);
 }
 
 main();
