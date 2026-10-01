@@ -8,27 +8,43 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const ibmPlexSans = IBM_Plex_Sans({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
+// Fonts are self-hosted (app/fonts, latin subset, SIL OFL — licenses alongside)
+// rather than fetched from Google Fonts at build time: next/font/google
+// intermittently fails the build when Google returns extensionless
+// /l/font?kit=… URLs. Visitors get the same files from our domain either way.
+const ibmPlexSans = localFont({
+  src: [
+    { path: "./fonts/ibm-plex-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/ibm-plex-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-sans",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: "Arial",
 });
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
+const ibmPlexMono = localFont({
+  src: [
+    { path: "./fonts/ibm-plex-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
   preload: false,
+  fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+  adjustFontFallback: false,
 });
-const bebasNeue = Bebas_Neue({
+const bebasNeue = localFont({
+  src: "./fonts/bebas-neue-latin-400-normal.woff2",
   weight: "400",
-  subsets: ["latin"],
+  style: "normal",
   variable: "--font-display",
   display: "swap",
+  fallback: ["Impact", "sans-serif"],
+  adjustFontFallback: "Arial",
 });
 
 export const viewport: Viewport = {

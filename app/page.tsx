@@ -16,6 +16,13 @@ type HomePageProps = {
   searchParams: Promise<{ q?: string; city?: string; n?: string; low?: string }>;
 };
 
+// Content depends entirely on searchParams (query/city/pagination), so this
+// route is never actually static. Without this, the build attempts a static
+// prerender pass for "/" that hangs/times out on the Suspense-deferred
+// Supabase-backed content instead of just skipping straight to per-request
+// dynamic rendering (how it always ran anyway).
+export const dynamic = "force-dynamic";
+
 // ── Page metadata ────────────────────────────────────────────────────────────
 
 export async function generateMetadata(): Promise<Metadata> {
