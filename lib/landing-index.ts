@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, toSlug, type CategoryDef } from "@/lib/categories";
+import { QUALIFYING_SCORE, computeCityLandingIndex, type CityLandingIndex, type IndexRow as LandingIndexRow } from "@/lib/landing-copy";
 
 /**
  * Index of the NYC /gluten-free landing pages that actually exist.
@@ -116,4 +117,36 @@ export function matchNeighborhoods(query: string, neighborhoods: LandingLink[], 
       return name.startsWith(q) || q.includes(name) || name.split(/\s+/).some((w) => w.startsWith(q)) || (q.length >= 4 && name.includes(q));
     })
     .slice(0, limit);
+}
+
+// ── Per-city landing index (used to resolve link tokens in generated copy) ──
+
+/**
+ * Which landing pages exist in a city right now — neighborhoods, city guides,
+ * and neighborhood guides — so generated intro copy only links to live pages.
+ * Cached per city for an hour, like the NYC quick links.
+ */
+export const getCityLandingIndex = unstable_cache(
+  async (city: string): Promise<CityLandingIndex> => {
+    const { data } = await supabase
+      .from("restaurants")
+      // Plain columns only — copy never links to fryer/dedicated guides, so no dossier reads
+      .select("neighborhood, gf_food_categories, place_type")
+      .eq("city", city)
+      .gte("score", QUALIFYING_SCORE)
+      .limit(5000);
+    return computeCityLandingIndex(toSlug(city), (data ?? []) as LandingIndexRow[]);
+  },
+  ["city-landing-index"],
+  { revalidate: 3600 },
+);
+
+/** Stored intro copy for a landing page path (after /gluten-free/), if any. */
+export async function getLandingCopy(path: string): Promise<{ body: string; generated_at: string } | null> {
+  const { data } = await supabase
+    .from("landing_copy")
+    .select("body, generated_at")
+    .eq("path", path)
+    .maybeSingle();
+  return data ?? null;
 }

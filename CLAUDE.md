@@ -148,6 +148,10 @@ npx tsx scripts/backfill-scores.ts
 # Full rescore — after changing lib/score.ts or hand-editing scoring inputs in Supabase
 npx tsx scripts/backfill-scores.ts --all          # dry run: report what would change
 npx tsx scripts/backfill-scores.ts --all --write  # apply
+
+# Landing page intros (see docs/LANDING_COPY.md)
+npx tsx scripts/generate-landing-copy.ts          # dry run
+npx tsx scripts/generate-landing-copy.ts --write  # generate + save
 ```
 
 Stored `restaurants.score` (used by every list) must match the live score on restaurant pages. Always score via `scoreRestaurant()` (`lib/score.ts`), and after any write that changes `dossier`, `verified_data`, `cuisine` or `place_type`, call `rescoreRestaurants()` (`lib/rescore.ts`).

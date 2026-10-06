@@ -9,6 +9,8 @@ import { cuisineFilterKey, normalizeCuisine } from "@/lib/cuisine";
 import { getHighlights } from "@/lib/highlights";
 import { lookupBorough } from "@/lib/borough-lookup";
 import { FollowPrompt } from "./FollowPrompt";
+import { LandingIntro } from "./LandingIntro";
+import { getCityLandingIndex, getLandingCopy } from "@/lib/landing-index";
 import { CATEGORIES, applyCategoryFilter, toSlug } from "@/lib/categories";
 import type { CategoryDef } from "@/lib/categories";
 
@@ -284,6 +286,10 @@ export default async function LandingPage({ params }: Props) {
     const restaurants = (data ?? []) as RestaurantRow[];
     if (restaurants.length < 5) notFound();
 
+    // Generated intro (public.landing_copy) — falls back to the editorial intro
+    const copy = await getLandingCopy(`${s0}/${s1}`);
+    const cityIndex = copy ? await getCityLandingIndex(city) : null;
+
     const isTableLayout = restaurants.length >= TABLE_LAYOUT_MIN_RESULTS;
 
     const h1 = `${catDef.cityLabelPlural} in ${city}`;
@@ -346,9 +352,13 @@ export default async function LandingPage({ params }: Props) {
             </h1>
 
             {/* Editorial intro */}
-            <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
-              {catDef.editorialIntro}
-            </p>
+            {copy && cityIndex ? (
+              <LandingIntro body={copy.body} generatedAt={copy.generated_at} citySlug={s0} index={cityIndex} restaurantSlugs={restaurants.map((r) => r.slug).filter((x): x is string => !!x)} />
+            ) : (
+              <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
+                {catDef.editorialIntro}
+              </p>
+            )}
           </div>
         </section>
 
@@ -453,6 +463,10 @@ export default async function LandingPage({ params }: Props) {
 
   if (restaurants.length < 3) notFound();
 
+  // Generated intro (public.landing_copy) — falls back to the template intro
+  const copy = await getLandingCopy(`${citySlug}/${neighborhoodSlug}${categorySlug ? `/${categorySlug}` : ""}`);
+  const cityIndex = copy ? await getCityLandingIndex(city) : null;
+
   // ── Content ────────────────────────────────────────────────────────────────
   const h1 = catDef
     ? `Best ${catDef.labelPlural} in ${neighborhood}, ${city}`
@@ -544,9 +558,13 @@ export default async function LandingPage({ params }: Props) {
             <span style={{ color: "var(--accent)" }}>in {neighborhood}</span>
           </h1>
 
-          <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
-            {intro}
-          </p>
+          {copy && cityIndex ? (
+            <LandingIntro body={copy.body} generatedAt={copy.generated_at} citySlug={citySlug} nbhdSlug={neighborhoodSlug} index={cityIndex} restaurantSlugs={restaurants.map((r) => r.slug).filter((x): x is string => !!x)} />
+          ) : (
+            <p className="font-sans text-ui-2xl leading-normal md:leading-[1.8] text-text-secondary max-w-2xl">
+              {intro}
+            </p>
+          )}
         </div>
       </section>
 
