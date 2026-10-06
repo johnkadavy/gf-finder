@@ -28,7 +28,12 @@ export type AnalyticsEvent =
   // Mirrored to PostHog so the email-capture funnel is visible alongside
   // the logged-in events. These also fire to Vercel Analytics via track().
   | "follow_prompt_impression"
-  | "follow_submitted";
+  | "follow_submitted"
+  // "Did this help you decide?" on restaurant pages (rows also stored in
+  // Supabase restaurant_feedback via /api/feedback).
+  | "helpful_prompt_shown"
+  | "helpful_prompt_dismissed"
+  | "helpful_feedback_submitted";
 
 /**
  * Fire a client-side product-analytics event. No-ops when PostHog isn't

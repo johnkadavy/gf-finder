@@ -211,6 +211,7 @@ export function FollowPrompt({ variant, source }: Props) {
   return (
     <div
       ref={containerRef as unknown as React.RefObject<HTMLDivElement>}
+      data-follow-prompt
       className="px-5 py-6 border"
       style={{ backgroundColor: "var(--accent-tint-xs)", borderColor: "var(--accent-tint-xl)" }}
     >

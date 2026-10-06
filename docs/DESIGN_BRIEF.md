@@ -38,7 +38,7 @@ Restaurant owners (claim flow): findable, but never competing with the diner's s
 - Desktop and mobile are both first-class — designed responsively, not adapted after.
 
 ## Success measure
-Primary: a lightweight "Was this helpful?" (up / down) on the page — target **>= 80% helpful**. Secondary proxies: fast time-to-decision; action rate (directions / reserve / order) as evidence of a confident yes.
+Primary: a lightweight "Did this help you decide?" (up / down) on the page — target **>= 80% helpful**. Implemented in `app/restaurant/[slug]/HelpfulFeedback.tsx` (scroll-triggered bar on mobile, inline row on desktop); read results with `npx tsx scripts/feedback-report.ts`. Secondary proxies: fast time-to-decision; action rate (directions / reserve / order) as evidence of a confident yes.
 
 ## Non-goals
 Feeling like a directory / aggregator; burying the answer under detail; adding anything that doesn't serve the two questions; letting owner / monetization surfaces intrude on the diner's read.

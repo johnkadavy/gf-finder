@@ -21,6 +21,7 @@ import { TrackedCtaLink } from "./TrackedCtaLink";
 import { parseOrderLinks, type OrderLink } from "@/lib/order-links";
 import { OrderMenu } from "./OrderMenu";
 import { ClaimListing } from "./ClaimListing";
+import { HelpfulFeedback } from "./HelpfulFeedback";
 import { FollowPrompt } from "@/app/gluten-free/[...slug]/FollowPrompt";
 
 type OpeningHours = {
@@ -620,10 +621,11 @@ export default async function RestaurantPage({
           </div>
         </div>
 
-        {/* ── Signals — options, illness, sentiment ── */}
+        {/* ── Signals — options, illness, sentiment + "did this help?" ── */}
+        <div className="mb-16">
         {d && (
           <div
-            className="grid grid-cols-1 md:grid-cols-3 border mb-16"
+            className="grid grid-cols-1 md:grid-cols-3 border"
             style={{ borderColor: "var(--border-default)", backgroundColor: "var(--surface-raised)" }}
           >
             {/* GF Options */}
@@ -684,6 +686,8 @@ export default async function RestaurantPage({
             </div>
           </div>
         )}
+        <HelpfulFeedback restaurantId={r.id} score={score} attached={!!d} />
+        </div>
 
         {/* ── About ── */}
         {r.restaurant_description && (

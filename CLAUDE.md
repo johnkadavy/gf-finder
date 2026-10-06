@@ -85,6 +85,7 @@ For pipeline ingestion (`ingest-neighborhood.ts`), pass `--region` explicitly.
 | `county_region_map` | Maps county + state → region (e.g. Suffolk County/NY → Long Island). Claude adds unknown counties automatically |
 | `city_region_map` | City-level overrides that take precedence over county map (e.g. Southampton/NY → Hamptons) |
 | `saved_restaurants` | User-saved restaurants (auth-gated) |
+| `restaurant_feedback` | "Did this help you decide?" votes from restaurant pages — one row per (restaurant, browser), written only via `/api/feedback` (RLS on, no public policies). Results: `npx tsx scripts/feedback-report.ts` |
 
 ## Access control
 - All city access gates through `getCityAccess()` in `lib/cities.ts`
