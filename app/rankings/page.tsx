@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
-import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS } from "./utils";
+import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS, MAX_RANKINGS_LIMIT } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
 import { RankingsList, RankingsListSkeleton, RankingsResultCount } from "./RankingsList";
 import { FilterAnalytics } from "./FilterAnalytics";
@@ -180,7 +180,7 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
     fryer:        params.fryer   === "1",
     labeled:      params.labeled === "1",
     experience:   (["good", "great", "excellent"].includes(params.experience ?? "") ? params.experience : "all") as Experience,
-    limit:        Math.max(DEFAULT_LIMIT, parseInt(params.limit ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+    limit:        Math.min(MAX_RANKINGS_LIMIT, Math.max(DEFAULT_LIMIT, parseInt(params.limit ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)),
   };
 
   // Cached filter metadata — regions/cities/neighborhoods/cuisines, keyed by access scope

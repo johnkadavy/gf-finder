@@ -1,5 +1,8 @@
 export type Experience = "all" | "good" | "great" | "excellent";
 
+/** Upper bound for ?limit= on /rankings ("Load more" stops here). */
+export const MAX_RANKINGS_LIMIT = 200;
+
 export type Filters = {
   region: string;
   city: string;

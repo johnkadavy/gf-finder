@@ -180,6 +180,7 @@ export function RankedList({ restaurants, countLabel, metaLine, loadMoreHref, in
           <Link
             href={loadMoreHref}
             scroll={false}
+            rel="nofollow"
             className="font-mono text-ui-md uppercase tracking-editorial px-8 py-3.5 border transition-colors duration-150 text-text-tertiary hover:text-text-primary"
             style={{ borderColor: "var(--border-emphasis)" }}
           >

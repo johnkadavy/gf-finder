@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import type { ScoringDossier } from "@/lib/score";
 import { normalizeCuisine } from "@/lib/cuisine";
-import { rankingsUrl, type Filters, EXPERIENCE_OPTIONS } from "./utils";
+import { rankingsUrl, type Filters, EXPERIENCE_OPTIONS, MAX_RANKINGS_LIMIT } from "./utils";
 import { RankedList } from "@/app/components/RankedList";
+import { LIST_JSON_SELECT, LIST_JSON_SPEC, nestJsonPaths } from "@/lib/json-select";
 
 const DEFAULT_LIMIT = 25;
 
@@ -74,7 +75,7 @@ export async function RankingsResultCount({ filters, isAdmin, allowedCities, raw
 export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisines }: Props) {
   let query = supabase
     .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dossier, verified_data, dedicated_gf_kitchen, source, ingested_at", { count: "exact" })
+    .select(`id, name, display_name, city, neighborhood, region, website_url, google_maps_url, score, slug, dedicated_gf_kitchen, source, ingested_at, ${LIST_JSON_SELECT}`, { count: "exact" })
     .not("score", "is", null)
     .order("score", { ascending: false });
 
@@ -83,9 +84,10 @@ export async function RankingsList({ filters, isAdmin, allowedCities, rawCuisine
 
   const { data, error, count } = await query;
 
-  const restaurants = (data ?? []) as Restaurant[];
+  const restaurants = nestJsonPaths<Restaurant>(data as Record<string, unknown>[] | null, LIST_JSON_SPEC);
   const totalCount = count ?? 0;
-  const hasMore = restaurants.length < totalCount;
+  // Capped so crawlers can't walk "Load more" into thousands of rows.
+  const hasMore = restaurants.length < totalCount && filters.limit < MAX_RANKINGS_LIMIT;
 
   if (error) {
     return (

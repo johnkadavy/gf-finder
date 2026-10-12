@@ -1,3 +1,4 @@
+import { LIST_JSON_SELECT, LIST_JSON_SPEC, nestJsonPaths } from "@/lib/json-select";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -274,7 +275,7 @@ export default async function LandingPage({ params }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query: any = supabase
       .from("restaurants")
-      .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier, verified_data, gf_food_categories, place_type, source, ingested_at")
+      .select(`id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, gf_food_categories, place_type, source, ingested_at, ${LIST_JSON_SELECT}`)
       .not("score", "is", null)
       .eq("city", city)
       .gte("score", 75)
@@ -283,7 +284,7 @@ export default async function LandingPage({ params }: Props) {
     query = applyCategoryFilter(query, catDef);
 
     const { data } = await query;
-    const restaurants = (data ?? []) as RestaurantRow[];
+    const restaurants = nestJsonPaths<RestaurantRow>(data, LIST_JSON_SPEC);
     if (restaurants.length < 5) notFound();
 
     // Generated intro (public.landing_copy) — falls back to the editorial intro
@@ -448,7 +449,7 @@ export default async function LandingPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from("restaurants")
-    .select("id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, dossier, verified_data, gf_food_categories, place_type, source, ingested_at")
+    .select(`id, name, score, slug, neighborhood, cuisine, website_url, google_maps_url, dedicated_gf_kitchen, display_name, gf_food_categories, place_type, source, ingested_at, ${LIST_JSON_SELECT}`)
     .not("score", "is", null)
     .eq("city", city)
     .eq("neighborhood", neighborhood)
@@ -459,7 +460,7 @@ export default async function LandingPage({ params }: Props) {
   if (catDef) query = applyCategoryFilter(query, catDef);
 
   const { data } = await query;
-  const restaurants = (data ?? []) as RestaurantRow[];
+  const restaurants = nestJsonPaths<RestaurantRow>(data, LIST_JSON_SPEC);
 
   if (restaurants.length < 3) notFound();
 

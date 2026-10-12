@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { selectJsonPaths, nestJsonPaths } from "@/lib/json-select";
 import { getScoreLabel } from "./score";
 
 // ─── Input types ────────────────────────────────────────────────────────────
@@ -124,8 +125,27 @@ type DbRow = {
   } | null;
 };
 
+// Only the dossier fields toSummary/toDetails read — full dossiers are large and
+// the overview tool fetches whole neighborhoods (see lib/json-select.ts).
+const AGENT_DOSSIER_PATHS = [
+  ["summary", "short_summary"],
+  ["menu", "gf_labeling"],
+  ["menu", "gf_options_level"],
+  ["operations", "staff_knowledge"],
+  ["operations", "cross_contamination_risk"],
+  ["operations", "dedicated_equipment", "fryer"],
+  ["operations", "dedicated_equipment", "prep_area"],
+  ["reviews", "recent_sentiment"],
+  ["reviews", "positive_count"],
+  ["reviews", "negative_count"],
+  ["reviews", "sick_reports_recent"],
+] as const;
+
 const DB_SELECT =
-  "id, name, city, neighborhood, cuisine, score, slug, price_level, place_type, gf_food_categories, website_url, google_maps_url, opening_hours, dossier";
+  `id, name, city, neighborhood, cuisine, score, slug, price_level, place_type, gf_food_categories, website_url, google_maps_url, opening_hours, ${selectJsonPaths("dossier", AGENT_DOSSIER_PATHS)}`;
+
+const toDbRows = (data: unknown) =>
+  nestJsonPaths<DbRow>(data as Record<string, unknown>[] | null, { dossier: AGENT_DOSSIER_PATHS });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -244,7 +264,7 @@ export async function searchRestaurants(
   }
 
   const { data, count } = await q;
-  let rows = (data ?? []) as DbRow[];
+  let rows = toDbRows(data);
 
   if (input.open_now) {
     rows = rows.filter((r) => isOpenNow(r.opening_hours) === true).slice(0, requestedLimit);
@@ -271,7 +291,7 @@ export async function getRestaurantDetails(
   if (input.city) q = q.ilike("city", input.city);
 
   const { data } = await q;
-  const rows = (data ?? []) as DbRow[];
+  const rows = toDbRows(data);
 
   if (rows.length === 0) {
     return {
@@ -299,7 +319,7 @@ export async function getNeighborhoodOverview(
     .not("score", "is", null)
     .order("score", { ascending: false });
 
-  const rows = (data ?? []) as DbRow[];
+  const rows = toDbRows(data);
 
   const scores = rows.map((r) => r.score as number);
   const avgScore = scores.length > 0
