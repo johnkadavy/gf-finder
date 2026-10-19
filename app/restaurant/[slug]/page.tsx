@@ -342,7 +342,6 @@ export default async function RestaurantPage({
     sentimentLevel === "negative" ? "Negative" : "Unknown";
 
   // ── JSON-LD ──────────────────────────────────────────────────────────────
-  const reviewCount = (d?.reviews?.positive_count ?? 0) + (d?.reviews?.negative_count ?? 0);
   const summary = d?.summary?.short_summary;
 
   const openingHoursSpec: string[] = [];
@@ -391,13 +390,20 @@ export default async function RestaurantPage({
     ...(r.cuisine        ? { "servesCuisine": r.cuisine }                : {}),
     ...(r.price_level    ? { "priceRange": priceSymbol(r.price_level) }  : {}),
     ...(openingHoursSpec.length > 0 ? { "openingHours": openingHoursSpec } : {}),
-    ...(score !== null && reviewCount >= 3 ? {
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": (score / 20).toFixed(1),
-        "bestRating": "5",
-        "worstRating": "1",
-        "reviewCount": reviewCount,
+    // CleanPlate's own editorial rating — not an AggregateRating, since the
+    // score isn't an average of reviews collected on this site.
+    ...(score !== null ? {
+      "review": {
+        "@type": "Review",
+        "name": "Gluten-free safety rating",
+        "author": { "@type": "Organization", "name": "CleanPlate", "url": "https://trycleanplate.com" },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": Math.round(score),
+          "bestRating": 100,
+          "worstRating": 0,
+        },
+        ...(r.enriched_at ? { "datePublished": r.enriched_at.slice(0, 10) } : {}),
       },
     } : {}),
   };
