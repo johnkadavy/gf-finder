@@ -188,4 +188,6 @@ AIRTABLE_API_KEY
 AIRTABLE_BASE_ID
 AIRTABLE_TABLE_NAME
 ANTHROPIC_API_KEY
+RESEND_API_KEY
+ADMIN_NOTIFY_EMAIL              # receives a "new signup" email when a user first verifies (auth callback)
 ```

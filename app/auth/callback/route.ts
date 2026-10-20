@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { enrollInDigest } from "@/lib/digest-enroll";
 import { captureServer } from "@/lib/analytics-server";
+import { isNewSignup, notifyAdminOfNewUser } from "@/lib/email/new-user-notify";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -53,6 +54,17 @@ export async function GET(request: NextRequest) {
           !!user.created_at &&
           Date.now() - new Date(user.created_at).getTime() < 5 * 60 * 1000;
         await captureServer(user.id, "login_completed", { is_new_user: isNewUser });
+
+        if (isNewSignup(user)) {
+          // Runs after the redirect is sent, so it never slows or blocks login.
+          after(async () => {
+            try {
+              await notifyAdminOfNewUser(user, next);
+            } catch (err) {
+              console.error("[auth-callback] new-user notification failed:", err);
+            }
+          });
+        }
       }
       return NextResponse.redirect(`${origin}${next}`);
     }
