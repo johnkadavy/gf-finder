@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { verifiedVisitsTag } from "@/lib/cache-tags";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { scoreRestaurant } from "@/lib/score";
@@ -66,6 +68,9 @@ export async function POST(req: NextRequest) {
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  // Expire the restaurant page's cached visit so the new review shows right away.
+  revalidateTag(verifiedVisitsTag(google_place_id), { expire: 0 });
 
   await captureServer(user.id, "review_submitted", {
     restaurant_id,

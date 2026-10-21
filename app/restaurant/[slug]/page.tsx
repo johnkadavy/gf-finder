@@ -1,7 +1,9 @@
 import { cache, Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import { verifiedVisitsTag } from "@/lib/cache-tags";
 import { createClient } from "@/lib/supabase-server";
 import {
   scoreRestaurant,
@@ -201,8 +203,46 @@ async function ReviewsEmptyState({ restaurantId, googlePlaceId }: { restaurantId
 
 // ── Slug resolution ────────────────────────────────────────────────────────
 
+// Cached across requests for a day — matches the /gluten-free pages. The page
+// renders dynamically (auth cookies), so without this every view, crawlers
+// included, hit the database. Throws on query errors so a transient failure is
+// never cached as "not found".
+const fetchRestaurantBySlug = unstable_cache(
+  async (slug: string) => {
+    const { data, error } = await supabase
+      .from("restaurants")
+      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  ["restaurant-by-slug"],
+  { revalidate: 86400, tags: ["restaurants"] },
+);
+
+// Latest verified visit, tagged per place so a new review (POST /api/reviews)
+// shows up immediately instead of after the daily revalidation.
+function fetchLatestVisit(googlePlaceId: string) {
+  return unstable_cache(
+    async () => {
+      const { data, error } = await supabase
+        .from("verified_visits")
+        .select("visit_date, overall_sentiment, staff_knowledge, gf_labeling, gf_options_level, cross_contamination_risk, dedicated_fryer, notes")
+        .eq("google_place_id", googlePlaceId)
+        .order("visit_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as VerifiedVisit | null;
+    },
+    ["restaurant-latest-visit", googlePlaceId],
+    { revalidate: 86400, tags: [verifiedVisitsTag(googlePlaceId)] },
+  )();
+}
+
 // React cache() dedupes this across generateMetadata + the page render, so a
-// request hits the database once instead of twice (egress control).
+// request resolves the restaurant once instead of twice (egress control).
 const resolveRestaurant = cache(async (slugOrId: string) => {
   const isNumericId = /^\d+$/.test(slugOrId);
 
@@ -216,13 +256,11 @@ const resolveRestaurant = cache(async (slugOrId: string) => {
     return null;
   }
 
-  const { data } = await supabase
-    .from("restaurants")
-    .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
-    .eq("slug", slugOrId)
-    .single();
-
-  return data ?? null;
+  try {
+    return await fetchRestaurantBySlug(slugOrId);
+  } catch {
+    return null;
+  }
 });
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -273,17 +311,9 @@ export default async function RestaurantPage({
 
   const r = data as Restaurant;
 
-  const { data: visitData } = r.google_place_id
-    ? await supabase
-        .from("verified_visits")
-        .select("visit_date, overall_sentiment, staff_knowledge, gf_labeling, gf_options_level, cross_contamination_risk, dedicated_fryer, notes")
-        .eq("google_place_id", r.google_place_id)
-        .order("visit_date", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    : { data: null };
-
-  const visit = visitData as VerifiedVisit | null;
+  const visit = r.google_place_id
+    ? await fetchLatestVisit(r.google_place_id).catch(() => null)
+    : null;
   const score = scoreRestaurant(r);
 
   const { label: scoreLabel } = getScoreLabel(score);

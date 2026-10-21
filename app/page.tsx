@@ -1,6 +1,7 @@
 import { cache, Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase-server";
 import { SearchForm } from "./components/SearchForm";
@@ -83,18 +84,32 @@ const getRequestAuth = cache(async () => {
 // ── Cached DB queries ────────────────────────────────────────────────────────
 
 // NYC rated-restaurant count for the hero + metadata.
-// Kept OUT of unstable_cache and computed per request (React cache dedupes
-// within a request) using an estimated, index-based count. The old version
-// cached an exact count for an hour, so a single transient 0/null response got
-// served as "0+ restaurants" until the cache expired. Estimated + no long-lived
-// cache avoids that poisoning; callers still guard against a 0 for display.
+// Cached for an hour — this page is force-dynamic, so a per-request count was
+// the busiest restaurants query in the database. An earlier cached version got
+// poisoned when a transient 0/null response was served as "0+ restaurants" for
+// the full hour, so the fetcher throws on an error or empty count and nothing
+// is cached; that request falls back to 0, which callers already guard against.
+// select("id") keeps the head request from building every column of every row.
+const fetchNycRatedCount = unstable_cache(
+  async (): Promise<number> => {
+    const { count, error } = await supabase
+      .from("restaurants")
+      .select("id", { count: "exact", head: true })
+      .eq("city", "New York")
+      .not("score", "is", null);
+    if (error || !count) throw new Error(`NYC rated count unavailable: ${error?.message ?? count}`);
+    return count;
+  },
+  ["nyc-rated-count"],
+  { revalidate: 3600 },
+);
+
 const getNycRatedCount = cache(async (): Promise<number> => {
-  const { count } = await supabase
-    .from("restaurants")
-    .select("*", { count: "estimated", head: true })
-    .eq("city", "New York")
-    .not("score", "is", null);
-  return count ?? 0;
+  try {
+    return await fetchNycRatedCount();
+  } catch {
+    return 0;
+  }
 });
 
 // Homepage explore tiles — top slices of the shared landing-page index.

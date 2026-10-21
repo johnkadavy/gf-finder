@@ -22,7 +22,7 @@ const seoPageCanonical = unstable_cache(
     if (neighborhood) {
       const { count } = await supabase
         .from("restaurants")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .not("score", "is", null)
         .eq("city", city)
         .eq("neighborhood", neighborhood)
@@ -34,7 +34,7 @@ const seoPageCanonical = unstable_cache(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query: any = supabase
         .from("restaurants")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .not("score", "is", null)
         .eq("city", city)
         .gte("score", 75);

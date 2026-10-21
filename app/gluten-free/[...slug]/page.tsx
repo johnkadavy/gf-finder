@@ -2,6 +2,7 @@ import { LIST_JSON_SELECT, LIST_JSON_SPEC, nestJsonPaths } from "@/lib/json-sele
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import type { ScoringDossier, VerifiedData } from "@/lib/score";
 import { RankedList, type RankedRestaurant } from "@/app/components/RankedList";
@@ -84,36 +85,60 @@ function buildPageJsonLd({
 
 // ── Slug resolution ───────────────────────────────────────────────────────────
 
+type PlacePair = { city: string; neighborhood: string | null };
+
+const PLACE_PAGE_SIZE = 1000; // PostgREST max-rows; a single select silently stops here
+
+// Distinct scored (city, neighborhood) pairs, shared by every landing page.
+// Previously each page render (hundreds at once during a build) re-fetched the
+// whole table, and only saw the first 1,000 rows. Pages through all rows and
+// throws on error so a failed fetch is never cached.
+const getScoredPlaces = unstable_cache(
+  async (): Promise<PlacePair[]> => {
+    const pairs = new Map<string, PlacePair>();
+    for (let from = 0; ; from += PLACE_PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("restaurants")
+        .select("city, neighborhood")
+        .not("score", "is", null)
+        .order("id", { ascending: true })
+        .range(from, from + PLACE_PAGE_SIZE - 1);
+      if (error) throw error;
+      for (const r of data as PlacePair[]) pairs.set(`${r.city}||${r.neighborhood ?? ""}`, r);
+      if (data.length < PLACE_PAGE_SIZE) break;
+    }
+    if (pairs.size === 0) throw new Error("No scored places returned");
+    return [...pairs.values()];
+  },
+  ["gluten-free-scored-places"],
+  { revalidate: 86400 },
+);
+
+async function loadScoredPlaces(): Promise<PlacePair[] | null> {
+  try {
+    return await getScoredPlaces();
+  } catch {
+    return null;
+  }
+}
+
 async function resolveCity(citySlug: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("restaurants")
-    .select("city")
-    .not("score", "is", null);
-  if (!data) return null;
-  const cities = [...new Set(data.map((r: { city: string }) => r.city))];
+  const places = await loadScoredPlaces();
+  if (!places) return null;
+  const cities = [...new Set(places.map((p) => p.city))];
   return cities.find((c) => toSlug(c) === citySlug) ?? null;
 }
 
 async function resolveSlugs(citySlug: string, neighborhoodSlug: string) {
-  const { data } = await supabase
-    .from("restaurants")
-    .select("city, neighborhood")
-    .not("score", "is", null)
-    .not("neighborhood", "is", null);
+  const places = await loadScoredPlaces();
+  if (!places) return null;
+  const withNeighborhood = places.filter((p): p is { city: string; neighborhood: string } => p.neighborhood !== null);
 
-  if (!data) return null;
-
-  const cities = [...new Set(data.map((r: { city: string }) => r.city))];
+  const cities = [...new Set(withNeighborhood.map((p) => p.city))];
   const city = cities.find((c) => toSlug(c) === citySlug);
   if (!city) return null;
 
-  const neighborhoods = [
-    ...new Set(
-      data
-        .filter((r: { city: string; neighborhood: string | null }) => r.city === city)
-        .map((r: { neighborhood: string | null }) => r.neighborhood as string)
-    ),
-  ];
+  const neighborhoods = [...new Set(withNeighborhood.filter((p) => p.city === city).map((p) => p.neighborhood))];
   const neighborhood = neighborhoods.find((n) => toSlug(n) === neighborhoodSlug);
   if (!neighborhood) return null;
 
