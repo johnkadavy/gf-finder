@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { createClient } from "@/lib/supabase-server";
 import { getGaugeColor, getScoreLabel } from "@/lib/score";
 import { getCityAccess } from "@/lib/cities";
@@ -106,11 +107,12 @@ export async function GET(request: Request) {
   // Cached: this was a full cuisine-column scan on every filtered request.
   const resolveCuisineValues = unstable_cache(
     async (canonical: string, isAdmin: boolean, allowedCities: string[]): Promise<string[]> => {
-      let cq = supabase.from("restaurants").select("cuisine").not("cuisine", "is", null);
-      if (!isAdmin) cq = cq.in("city", allowedCities);
-      const { data: cData } = await cq;
+      const cData = await fetchAllRows<{ id: number; cuisine: string }>(() => {
+        const cq = supabase.from("restaurants").select("id, cuisine").not("cuisine", "is", null);
+        return isAdmin ? cq : cq.in("city", allowedCities);
+      });
       return [...new Set(
-        (cData ?? [])
+        cData
           .map((r: { cuisine: string }) => r.cuisine)
           .filter((c: string) => normalizeCuisine(c) === canonical)
       )];
@@ -120,7 +122,10 @@ export async function GET(request: Request) {
   );
 
   const cuisineRawValues: string[] = cuisine
-    ? await resolveCuisineValues(cuisine, cityAccess.isAdmin, [...cityAccess.allowedCities].sort())
+    ? await resolveCuisineValues(cuisine, cityAccess.isAdmin, [...cityAccess.allowedCities].sort()).catch((e) => {
+        console.error("[map-search] cuisine values fetch failed:", e);
+        return [];
+      })
     : [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

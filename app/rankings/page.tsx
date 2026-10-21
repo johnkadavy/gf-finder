@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { createClient } from "@/lib/supabase-server";
 import { type Filters, type Experience, EXPERIENCE_OPTIONS, PLACE_TYPE_OPTIONS, GF_CATEGORY_OPTIONS, MAX_RANKINGS_LIMIT } from "./utils";
 import { RankingsLocationFilters, RankingsSecondaryFilters } from "./RankingsFilters";
@@ -187,19 +188,23 @@ export default async function RankingsPage({ searchParams }: RankingsPageProps) 
   // Revalidates every hour; eliminates the heavy full-table scan on repeat page loads
   const getFilterMeta = unstable_cache(
     async (isAdmin: boolean, allowedCities: string[]) => {
-      let q = supabase
-        .from("restaurants")
-        .select("region, city, neighborhood, cuisine")
-        .not("score", "is", null);
-      if (!isAdmin) q = q.in("city", allowedCities);
-      const { data } = await q;
-      return (data ?? []) as { region: string | null; city: string; neighborhood: string | null; cuisine: string | null }[];
+      return fetchAllRows<{ id: number; region: string | null; city: string; neighborhood: string | null; cuisine: string | null }>(() => {
+        const q = supabase
+          .from("restaurants")
+          .select("id, region, city, neighborhood, cuisine")
+          .not("score", "is", null);
+        return isAdmin ? q : q.in("city", allowedCities);
+      });
     },
     ["rankings-filter-meta"],
     { revalidate: 3600 }
   );
 
-  const allRows = await getFilterMeta(cityAccess.isAdmin, [...cityAccess.allowedCities].sort());
+  // getFilterMeta throws on error so failures aren't cached; render with empty filters instead
+  const allRows = await getFilterMeta(cityAccess.isAdmin, [...cityAccess.allowedCities].sort()).catch((e) => {
+    console.error("[rankings] filter meta fetch failed:", e);
+    return [];
+  });
 
   // Derive selectable regions
   const regions = Array.from(new Set(allRows.map((r) => r.region).filter((r): r is string => !!r))).sort();

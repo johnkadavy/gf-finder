@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const revalidate = 86400; // regenerate sitemap at most once per 24 hours
 
@@ -19,15 +20,32 @@ const PLACE_TYPE_MAP: Record<string, string> = {
   cafe: "cafe", bar: "bar", "fine-dining": "fine_dining",
 };
 
+type Row = {
+  id: number;
+  slug: string | null;
+  enriched_at: string | null;
+  ingested_at: string | null;
+  city: string;
+  neighborhood: string | null;
+  gf_food_categories: string[] | null;
+  place_type: string[] | null;
+  score: number | null;
+  fryer: string | null;
+  ccr: string | null;
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [restaurantsRes, landingRes] = await Promise.all([
-    supabase.from("restaurants").select("id, slug, enriched_at, ingested_at").not("score", "is", null).order("id", { ascending: true }),
-    // Egress control: pull only the two dossier paths the counts need, not the whole JSONB
-    supabase.from("restaurants").select("city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk").not("score", "is", null),
-  ]);
+  // One paged pass over all scored rows feeds both the detail URLs and the landing counts.
+  // Egress control: pull only the two dossier paths the counts need, not the whole JSONB
+  const rows = await fetchAllRows<Row>(() =>
+    supabase
+      .from("restaurants")
+      .select("id, slug, enriched_at, ingested_at, city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
+      .not("score", "is", null),
+  );
 
   // ── Restaurant detail pages ──
-  const restaurantUrls: MetadataRoute.Sitemap = (restaurantsRes.data ?? [])
+  const restaurantUrls: MetadataRoute.Sitemap = rows
     .filter((r) => r.slug)
     .map((r) => ({
       url: `${BASE_URL}/restaurant/${r.slug}`,
@@ -37,17 +55,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   // ── Programmatic landing pages ──
-  type Row = {
-    city: string;
-    neighborhood: string | null;
-    gf_food_categories: string[] | null;
-    place_type: string[] | null;
-    score: number | null;
-    fryer: string | null;
-    ccr: string | null;
-  };
-  const rows = (landingRes.data ?? []) as Row[];
-
   // ── Per city+neighborhood counts (for neighborhood pages) ──
   type Entry = { count: number; catCounts: Map<string, number> };
   const nbhdMap = new Map<string, Entry>();

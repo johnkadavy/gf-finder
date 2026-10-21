@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { CATEGORIES, toSlug, type CategoryDef } from "@/lib/categories";
 import { QUALIFYING_SCORE, computeCityLandingIndex, type CityLandingIndex, type IndexRow as LandingIndexRow } from "@/lib/landing-copy";
 
@@ -31,6 +32,7 @@ export const CATEGORY_LINK_ORDER: CategoryLinkDef[] = [
 ];
 
 type IndexRow = {
+  id: number;
   neighborhood: string | null;
   gf_food_categories: string[] | null;
   place_type: string[] | null;
@@ -48,15 +50,17 @@ function rowMatchesCategory(r: IndexRow, def: CategoryDef): boolean {
 
 export type LandingIndex = { neighborhoods: LandingLink[]; categories: (LandingLink & { slug: string })[] };
 
-export const getNycLandingIndex = unstable_cache(
+// Throws on query errors so a failed or partial fetch is never cached.
+const cachedNycLandingIndex = unstable_cache(
   async (): Promise<LandingIndex> => {
-    const { data } = await supabase
-      .from("restaurants")
-      .select("neighborhood, gf_food_categories, place_type, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
-      .eq("city", "New York")
-      .not("score", "is", null)
-      .gte("score", 75);
-    const rows = (data ?? []) as IndexRow[];
+    const rows = await fetchAllRows<IndexRow>(() =>
+      supabase
+        .from("restaurants")
+        .select("id, neighborhood, gf_food_categories, place_type, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
+        .eq("city", "New York")
+        .not("score", "is", null)
+        .gte("score", 75),
+    );
 
     const nbhdCounts = new Map<string, number>();
     for (const r of rows) {
@@ -81,6 +85,15 @@ export const getNycLandingIndex = unstable_cache(
   ["nyc-landing-index"],
   { revalidate: 3600 },
 );
+
+export async function getNycLandingIndex(): Promise<LandingIndex> {
+  try {
+    return await cachedNycLandingIndex();
+  } catch (e) {
+    console.error("[landing-index] NYC index fetch failed:", e);
+    return { neighborhoods: [], categories: [] };
+  }
+}
 
 function normalize(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
@@ -126,20 +139,30 @@ export function matchNeighborhoods(query: string, neighborhoods: LandingLink[], 
  * and neighborhood guides — so generated intro copy only links to live pages.
  * Cached per city for an hour, like the NYC quick links.
  */
-export const getCityLandingIndex = unstable_cache(
+const cachedCityLandingIndex = unstable_cache(
   async (city: string): Promise<CityLandingIndex> => {
-    const { data } = await supabase
-      .from("restaurants")
-      // Plain columns only — copy never links to fryer/dedicated guides, so no dossier reads
-      .select("neighborhood, gf_food_categories, place_type")
-      .eq("city", city)
-      .gte("score", QUALIFYING_SCORE)
-      .limit(5000);
-    return computeCityLandingIndex(toSlug(city), (data ?? []) as LandingIndexRow[]);
+    const rows = await fetchAllRows<LandingIndexRow & { id: number }>(() =>
+      supabase
+        .from("restaurants")
+        // Plain columns only — copy never links to fryer/dedicated guides, so no dossier reads
+        .select("id, neighborhood, gf_food_categories, place_type")
+        .eq("city", city)
+        .gte("score", QUALIFYING_SCORE),
+    );
+    return computeCityLandingIndex(toSlug(city), rows);
   },
   ["city-landing-index"],
   { revalidate: 3600 },
 );
+
+export async function getCityLandingIndex(city: string): Promise<CityLandingIndex> {
+  try {
+    return await cachedCityLandingIndex(city);
+  } catch (e) {
+    console.error(`[landing-index] ${city} index fetch failed:`, e);
+    return computeCityLandingIndex(toSlug(city), []);
+  }
+}
 
 /** Stored intro copy for a landing page path (after /gluten-free/), if any. */
 export async function getLandingCopy(path: string): Promise<{ body: string; generated_at: string } | null> {
