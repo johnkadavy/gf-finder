@@ -2,14 +2,18 @@
  * Airtable → Supabase sync (shared by the CLI script and the cron route).
  *
  * Reads enriched dossiers from Airtable's AI fields and writes them to Supabase,
- * recalculating GF safety scores. Reads Airtable's "Needs sync" view (records
- * where last_updated_at is after last_synced_at), so only genuinely-refreshed
- * records are processed — no full-table diff, low egress. `enriched_at` is
- * stamped on each synced row, reflecting real content refreshes.
+ * recalculating GF safety scores. Reads Airtable's "Needs sync" view (NYC
+ * records where `LMT all synced fields` is after last_synced_at), so only
+ * genuinely-refreshed records are processed — no full-table diff, low egress.
+ * `enriched_at` is stamped on each synced row, reflecting real content refreshes.
+ *
+ * Work is committed chunk by chunk (Supabase write → rescore → Airtable
+ * last_synced_at stamp), so a run cut short by the cron's time limit still
+ * drains what it finished and the next run picks up the rest.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calculateScore, type VerifiedData } from "./score";
+import { rescoreRestaurants } from "./rescore";
 import { parseOrderLinks } from "./order-links";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
@@ -45,7 +49,12 @@ export interface SyncResult {
   updated: number;
   skipped: number;
   failed: number;
+  /** Stored scores that actually changed. */
   scored: number;
+  /** Airtable last_synced_at stamps that failed (those records will be re-synced). */
+  stampFailed: number;
+  /** True when the time budget ran out before all fetched records were processed. */
+  stoppedEarly: boolean;
 }
 
 // ── Field helpers ─────────────────────────────────────────────────────────────
@@ -66,7 +75,7 @@ function parseCsv(field: unknown): string[] | null {
   return vals.length > 0 ? vals : null;
 }
 
-async function fetchAirtableRecords(viewId: string): Promise<AirtableRecord[]> {
+async function fetchAirtableRecords(viewId: string, maxRecords?: number): Promise<AirtableRecord[]> {
   const records: AirtableRecord[] = [];
   let offset: string | undefined;
   const fields = [
@@ -81,6 +90,7 @@ async function fetchAirtableRecords(viewId: string): Promise<AirtableRecord[]> {
     );
     fields.forEach((f) => url.searchParams.append("fields[]", f));
     url.searchParams.set("view", viewId);
+    if (maxRecords) url.searchParams.set("maxRecords", String(maxRecords));
     if (offset) url.searchParams.set("offset", offset);
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${key}` },
@@ -160,89 +170,113 @@ function buildRecord(record: AirtableRecord): {
   return { googlePlaceId, dossier, fields };
 }
 
-export async function stampAirtableSynced(airtableIds: string[], syncedAt: string): Promise<void> {
+/**
+ * Stamp last_synced_at on Airtable records so they leave the "Needs sync" view.
+ * Returns how many records failed to stamp (they stay in the view and get re-synced).
+ */
+export async function stampAirtableSynced(airtableIds: string[], syncedAt: string): Promise<number> {
   const AT_BATCH = 10;
+  let failed = 0;
   for (let i = 0; i < airtableIds.length; i += AT_BATCH) {
     const chunk = airtableIds.slice(i, i + AT_BATCH);
     const { key, baseId, tableName } = airtableCreds();
-    await fetch(
-      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`,
-      {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ records: chunk.map((id) => ({ id, fields: { last_synced_at: syncedAt } })) }),
+    try {
+      const res = await fetch(
+        `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ records: chunk.map((id) => ({ id, fields: { last_synced_at: syncedAt } })) }),
+        }
+      );
+      if (!res.ok) {
+        console.error(`[airtable-sync] stamp failed (${res.status}): ${await res.text()}`);
+        failed += chunk.length;
       }
-    ).catch(() => { /* non-fatal */ });
+    } catch (err) {
+      console.error("[airtable-sync] stamp failed:", err);
+      failed += chunk.length;
+    }
   }
+  return failed;
 }
 
+const CHUNK = 25;
+
 /**
- * Sync Airtable dossiers into Supabase. Only writes rows whose dossier changed.
+ * Sync Airtable dossiers into Supabase, committing chunk by chunk.
  * @param log optional logger (the CLI passes console.log; the cron omits it)
+ * @param opts.maxRecords cap on records fetched per run (the cron's time limit)
+ * @param opts.deadline epoch ms after which no new chunk is started
  */
 export async function syncAirtableToSupabase(
   supabase: SupabaseClient,
   log: (msg: string) => void = () => {},
-  opts: { viewId?: string } = {}
+  opts: { viewId?: string; maxRecords?: number; deadline?: number } = {}
 ): Promise<SyncResult> {
   const viewId = opts.viewId ?? NEEDS_SYNC_VIEW;
+  // Run start, not stamp time: a record refreshed mid-run keeps
+  // LMT > last_synced_at and is picked up again next run.
   const now = new Date().toISOString();
-  const records = await fetchAirtableRecords(viewId);
+  const records = await fetchAirtableRecords(viewId, opts.maxRecords);
   log(`${records.length} records to sync`);
 
-  const result: SyncResult = { total: records.length, updated: 0, skipped: 0, failed: 0, scored: 0 };
-  const changedPlaceIds: string[] = [];
-  const syncedAirtableIds: string[] = [];
+  const result: SyncResult = {
+    total: records.length, updated: 0, skipped: 0, failed: 0, scored: 0, stampFailed: 0, stoppedEarly: false,
+  };
 
-  for (const record of records) {
-    const built = buildRecord(record);
-    if (!built) { result.skipped++; continue; }
-    const { googlePlaceId, dossier, fields } = built;
-
-    const { error } = await supabase
-      .from("restaurants")
-      .update({ dossier, enriched_at: now, ...fields })
-      .eq("google_place_id", googlePlaceId);
-
-    if (error) {
-      log(`  Failed ${googlePlaceId}: ${error.message}`);
-      result.failed++;
-    } else {
-      result.updated++;
-      changedPlaceIds.push(googlePlaceId);
-      syncedAirtableIds.push(record.id);
+  for (let i = 0; i < records.length; i += CHUNK) {
+    if (opts.deadline && Date.now() > opts.deadline) {
+      result.stoppedEarly = true;
+      log(`Time budget reached after ${i} records — the rest stay in the view for next run`);
+      break;
     }
-  }
 
-  log(`Updated: ${result.updated} | Skipped: ${result.skipped} | Failed: ${result.failed}`);
+    // Records to stamp: synced ones, plus ones we can't act on (no dossier yet,
+    // invalid JSON, no Supabase row) so they don't clog the view. A pending AI
+    // field re-stages the record when it finishes. Failed writes are not
+    // stamped — they're retried next run.
+    const toStamp: string[] = [];
+    const rowIds: number[] = [];
 
-  if (syncedAirtableIds.length > 0) await stampAirtableSynced(syncedAirtableIds, now);
+    await Promise.all(records.slice(i, i + CHUNK).map(async (record) => {
+      const built = buildRecord(record);
+      if (!built) {
+        result.skipped++;
+        toStamp.push(record.id);
+        return;
+      }
+      const { googlePlaceId, dossier, fields } = built;
 
-  // Recalculate scores for changed rows only.
-  if (changedPlaceIds.length > 0) {
-    const BATCH = 200;
-    const rows: { id: number; dossier: Dossier; verified_data: unknown; cuisine: string | null; place_type: string[] | null }[] = [];
-    for (let i = 0; i < changedPlaceIds.length; i += BATCH) {
-      const chunk = changedPlaceIds.slice(i, i + BATCH);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("restaurants")
-        .select("id, dossier, verified_data, cuisine, place_type")
-        .in("google_place_id", chunk);
-      rows.push(...((data ?? []) as typeof rows));
-    }
-    const updates = rows
-      .map((r) => ({ id: r.id, score: calculateScore(r.dossier, r.verified_data as VerifiedData | undefined, { cuisine: r.cuisine, placeTypes: r.place_type }) }))
-      .filter((u): u is { id: number; score: number } => u.score !== null);
+        .update({ dossier, enriched_at: now, ...fields })
+        .eq("google_place_id", googlePlaceId)
+        .select("id");
 
-    const CHUNK = 25;
-    for (let i = 0; i < updates.length; i += CHUNK) {
-      await Promise.all(updates.slice(i, i + CHUNK).map(async ({ id, score }) => {
-        const { error } = await supabase.from("restaurants").update({ score }).eq("id", id);
-        if (!error) result.scored++;
-      }));
-    }
-    log(`Scores written: ${result.scored}`);
+      if (error) {
+        log(`  Failed ${googlePlaceId}: ${error.message}`);
+        result.failed++;
+      } else if (!data?.length) {
+        log(`  No Supabase row for ${googlePlaceId}`);
+        result.skipped++;
+        toStamp.push(record.id);
+      } else {
+        result.updated++;
+        rowIds.push(...data.map((r: { id: number }) => r.id));
+        toStamp.push(record.id);
+      }
+    }));
+
+    // Rescore before stamping: if the rescore is cut off, the record is still
+    // in the view and gets re-synced (and rescored) next run.
+    if (rowIds.length) result.scored += await rescoreRestaurants(supabase, { ids: rowIds });
+    if (toStamp.length) result.stampFailed += await stampAirtableSynced(toStamp, now);
   }
 
+  log(
+    `Updated: ${result.updated} | Skipped: ${result.skipped} | Failed: ${result.failed} | ` +
+    `Scores changed: ${result.scored} | Stamp failures: ${result.stampFailed}`
+  );
   return result;
 }
