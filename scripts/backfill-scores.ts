@@ -8,7 +8,7 @@
  *   npx tsx scripts/backfill-scores.ts --all --write # recompute every row and save changes
  *
  * Run --all --write after changing the formula in lib/score.ts, or after
- * editing scoring inputs (dossier, verified_data, cuisine, place_type)
+ * editing scoring inputs (dossier, cuisine, place_type)
  * directly in the Supabase dashboard. App/scripted writes rescore themselves
  * via lib/rescore.ts.
  */
@@ -38,7 +38,6 @@ type Row = {
   neighborhood: string | null;
   score: number | null;
   dossier: unknown;
-  verified_data: unknown;
   cuisine: string | null;
   place_type: string[] | null;
 };
@@ -49,7 +48,7 @@ async function fetchRows(): Promise<Row[]> {
   while (true) {
     let q = supabase
       .from("restaurants")
-      .select("id, name, neighborhood, score, dossier, verified_data, cuisine, place_type")
+      .select("id, name, neighborhood, score, dossier, cuisine, place_type")
       .not("dossier", "is", null)
       .order("id")
       .range(offset, offset + BATCH_SIZE - 1);

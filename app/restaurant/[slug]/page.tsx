@@ -10,7 +10,6 @@ import {
   getGaugeColor,
   getScoreLabel,
   type ScoringDossier,
-  type VerifiedData,
 } from "@/lib/score";
 import { SafetyGauge } from "@/app/components/SafetyGauge";
 import { ReviewForm } from "@/app/components/ReviewForm";
@@ -68,7 +67,6 @@ type Restaurant = {
   cuisine: string | null;
   opening_hours: OpeningHours | null;
   dossier: Dossier | null;
-  verified_data: VerifiedData | null;
   google_place_id: string | null;
   source: string | null;
   ingested_at: string | null;
@@ -211,7 +209,7 @@ const fetchRestaurantBySlug = unstable_cache(
   async (slug: string) => {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, verified_data, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
+      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
       .eq("slug", slug)
       .maybeSingle();
     if (error) throw error;

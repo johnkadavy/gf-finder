@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
-import type { ScoringDossier, VerifiedData } from "@/lib/score";
+import type { ScoringDossier } from "@/lib/score";
 import { RankedList, type RankedRestaurant } from "@/app/components/RankedList";
 import { RankedListFilters, type QuickFilter, type CuisineOption, type FilterRowMeta } from "@/app/components/RankedListFilters";
 import { cuisineFilterKey, normalizeCuisine } from "@/lib/cuisine";
@@ -161,7 +161,6 @@ type RestaurantRow = {
   dedicated_gf_kitchen: string | null;
   display_name: string | null;
   dossier: (ScoringDossier & { summary?: { short_summary?: string } }) | null;
-  verified_data: VerifiedData | null;
   gf_food_categories: string[] | null;
   place_type: string[] | null;
   source: string | null;

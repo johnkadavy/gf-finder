@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   // Recalculate score
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("dossier, verified_data, cuisine, place_type")
+    .select("dossier, cuisine, place_type")
     .eq("id", restaurant_id)
     .single();
 

@@ -29,13 +29,6 @@ export function cuisineContamRisk(
   }
 }
 
-// Verified signals from scraping — takes precedence over AI-inferred dossier fields
-export type VerifiedData = {
-  menu?: {
-    gf_labeling?: "clear" | "partial" | "none" | "unknown";
-  };
-};
-
 // Scoring dossier — intentionally loose types (JSONB from Supabase may be partial)
 export type ScoringDossier = {
   reviews?: {
@@ -87,11 +80,10 @@ function clamp(v: number, min: number, max: number) {
  */
 export function calculateScore(
   dossier: ScoringDossier,
-  verifiedData?: VerifiedData,
   context?: { cuisine?: string | null; placeTypes?: string[] | null },
 ): number | null {
   const r = dossier.reviews;
-  const m = verifiedData?.menu ? { ...dossier.menu, ...verifiedData.menu } : dossier.menu;
+  const m = dossier.menu;
   const o = dossier.operations;
   const dq = dossier.data_quality;
 
@@ -263,14 +255,12 @@ export function getGaugeColor(score: number | null): string {
  */
 export function scoreRestaurant(r: {
   dossier?: unknown;
-  verified_data?: unknown;
   cuisine?: string | null;
   place_type?: string[] | null;
 }): number | null {
   if (!r.dossier) return null;
   return calculateScore(
     r.dossier as ScoringDossier,
-    (r.verified_data ?? undefined) as VerifiedData | undefined,
     { cuisine: r.cuisine ?? null, placeTypes: r.place_type ?? null },
   );
 }

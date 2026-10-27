@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { CityAccess } from "@/lib/cities";
-import { getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { getNycLandingIndex, matchCategory, matchNeighborhoods, type LandingLink } from "@/lib/landing-index";
 import { SearchResultsShown, TrackedResultLink } from "./SearchTracking";
 
@@ -20,16 +20,14 @@ type ResultRow = {
   slug: string | null;
   score: number | null;
   dossier: Dossier | null;
-  verified_data: VerifiedData | null;
 };
 
-const RESULT_COLUMNS = "id, name, city, neighborhood, slug, score, dossier, verified_data";
+const RESULT_COLUMNS = "id, name, city, neighborhood, slug, score, dossier";
 
 function buildHighlights(r: ResultRow): string[] {
   const d = r.dossier;
   const out: string[] = [];
-  const labeling = r.verified_data?.menu?.gf_labeling ?? d?.menu?.gf_labeling;
-  if (labeling === "clear") out.push("Menu labeled");
+  if (d?.menu?.gf_labeling === "clear") out.push("Menu labeled");
   if (d?.operations?.dedicated_equipment?.fryer === true) out.push("Dedicated fryer");
   if (d?.operations?.dedicated_equipment?.prep_area === "dedicated") out.push("Dedicated prep area");
   return out;

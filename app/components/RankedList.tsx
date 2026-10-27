@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { getGaugeColor, getScoreLabel, type ScoringDossier, type VerifiedData } from "@/lib/score";
+import { getGaugeColor, getScoreLabel, type ScoringDossier } from "@/lib/score";
 import { isNewRestaurant, formatLocation } from "@/lib/utils";
 import { getHighlights, HIGHLIGHT_LABELS } from "@/lib/highlights";
 import { cuisineFilterKey } from "@/lib/cuisine";
@@ -32,7 +32,6 @@ export type RankedRestaurant = {
   source?: string | null;
   ingested_at?: string | null;
   dedicated_gf_kitchen?: string | null;
-  verified_data?: VerifiedData | null;
 };
 
 type Props = {

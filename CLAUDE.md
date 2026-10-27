@@ -78,7 +78,7 @@ For pipeline ingestion (`ingest-neighborhood.ts`), pass `--region` explicitly.
 
 | Table | Purpose |
 |---|---|
-| `restaurants` | Core table — one row per restaurant. Key columns: `google_place_id`, `name`, `city`, `neighborhood`, `region`, `lat`, `lng`, `score`, `dossier` (JSONB), `cuisine`, `place_type`, `gf_food_categories`, `verified_data` |
+| `restaurants` | Core table — one row per restaurant. Key columns: `google_place_id`, `name`, `city`, `neighborhood`, `region`, `lat`, `lng`, `score`, `dossier` (JSONB), `cuisine`, `place_type`, `gf_food_categories` |
 | `profiles` | User profiles — `allowed_cities`, `default_city`, `is_admin` |
 | `neighborhoods` | Neighborhood registry for the ingest pipeline |
 | `neighborhood_streets` | Streets per neighborhood used by `ingest-neighborhood.ts` to query Google Places |
@@ -103,7 +103,6 @@ Key inputs from the dossier (JSONB in `restaurants.dossier`):
 - `operations.staff_knowledge`, `cross_contamination_risk`, `dedicated_equipment.fryer`
 - `data_quality.confidence` nudges score toward 50 (low confidence → less extreme)
 
-`verifiedData` (scraped signals) overrides the AI dossier for `gf_labeling`.
 
 ## Ingest pipeline (adding a new neighborhood/city)
 
@@ -155,7 +154,7 @@ npx tsx scripts/generate-landing-copy.ts          # dry run
 npx tsx scripts/generate-landing-copy.ts --write  # generate + save
 ```
 
-Stored `restaurants.score` (used by every list) must match the live score on restaurant pages. Always score via `scoreRestaurant()` (`lib/score.ts`), and after any write that changes `dossier`, `verified_data`, `cuisine` or `place_type`, call `rescoreRestaurants()` (`lib/rescore.ts`).
+Stored `restaurants.score` (used by every list) must match the live score on restaurant pages. Always score via `scoreRestaurant()` (`lib/score.ts`), and after any write that changes `dossier`, `cuisine` or `place_type`, call `rescoreRestaurants()` (`lib/rescore.ts`).
 
 ## Key files
 

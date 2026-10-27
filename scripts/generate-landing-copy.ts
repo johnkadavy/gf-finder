@@ -58,7 +58,7 @@ const SAMPLE = opt("--sample") ? Number(opt("--sample")) : 5;
 const MODEL = opt("--model") ?? "claude-sonnet-4-6";
 const PAGE_ROW_CAP = 100; // landing pages list at most 100 restaurants
 
-// Plain columns only: no dossier/verified_data (large JSON → expensive disk reads)
+// Plain columns only: no dossier (large JSON → expensive disk reads)
 const COLUMNS = "id, name, display_name, slug, city, neighborhood, score, cuisine, google_rating, dedicated_gf_kitchen, gf_food_categories, place_type, lat, lng";
 const PAGE = 500;
 

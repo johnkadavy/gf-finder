@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase-server";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { calculateScore, type VerifiedData } from "@/lib/score";
+import { scoreRestaurant } from "@/lib/score";
 import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 import { parseOrderLinks } from "@/lib/order-links";
 
@@ -502,13 +502,13 @@ export async function syncAirtableRecordToSupabase(
 
   const { data: forScore } = await supabaseServer
     .from("restaurants")
-    .select("id, dossier, verified_data, cuisine, place_type")
+    .select("id, dossier, cuisine, place_type")
     .eq("google_place_id", placeId)
     .single();
 
   if (!forScore) return null;
 
-  const score = calculateScore(forScore.dossier, forScore.verified_data as VerifiedData | undefined, { cuisine: forScore.cuisine as string | null, placeTypes: forScore.place_type as string[] | null });
+  const score = scoreRestaurant(forScore);
   if (score !== null) {
     await supabaseServer.from("restaurants").update({ score }).eq("id", forScore.id);
   }

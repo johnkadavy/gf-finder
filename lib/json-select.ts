@@ -1,6 +1,6 @@
 /**
- * Select only the JSON fields a list needs instead of the whole `dossier` /
- * `verified_data` blob. Full dossiers made list queries (sorted by score) spill
+ * Select only the JSON fields a list needs instead of the whole `dossier`
+ * blob. Full dossiers made list queries (sorted by score) spill
  * to disk as temp I/O; a handful of scalar paths keeps rows small.
  *
  *   .select(`id, name, ${selectJsonPaths("dossier", LIST_DOSSIER_PATHS)}`)
@@ -12,7 +12,7 @@
  */
 
 export type JsonPath = readonly string[];
-type JsonColumn = "dossier" | "verified_data";
+type JsonColumn = "dossier";
 
 const alias = (column: JsonColumn, path: JsonPath) => `${column}__${path.join("__")}`;
 
@@ -56,11 +56,6 @@ export const LIST_DOSSIER_PATHS = [
   ["menu", "gf_labeling"],
 ] as const satisfies readonly JsonPath[];
 
-export const LIST_VERIFIED_PATHS = [
-  ["menu", "gf_labeling"],
-] as const satisfies readonly JsonPath[];
+export const LIST_JSON_SELECT = selectJsonPaths("dossier", LIST_DOSSIER_PATHS);
 
-export const LIST_JSON_SELECT =
-  `${selectJsonPaths("dossier", LIST_DOSSIER_PATHS)}, ${selectJsonPaths("verified_data", LIST_VERIFIED_PATHS)}`;
-
-export const LIST_JSON_SPEC = { dossier: LIST_DOSSIER_PATHS, verified_data: LIST_VERIFIED_PATHS };
+export const LIST_JSON_SPEC = { dossier: LIST_DOSSIER_PATHS };

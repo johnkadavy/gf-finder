@@ -1,5 +1,5 @@
 import { deriveKitchenStatus } from "@/lib/kitchen-status";
-import type { ScoringDossier, VerifiedData } from "@/lib/score";
+import type { ScoringDossier } from "@/lib/score";
 
 /**
  * Concrete GF affordances shown as chips on list rows (and used as quick
@@ -16,12 +16,10 @@ export const HIGHLIGHT_LABELS: Record<HighlightKey, string> = {
 export function getHighlights(r: {
   dossier?: ScoringDossier | null;
   dedicated_gf_kitchen?: string | null;
-  verified_data?: VerifiedData | null;
 }): HighlightKey[] {
   const out: HighlightKey[] = [];
   if (deriveKitchenStatus(r.dedicated_gf_kitchen) === "dedicated") out.push("kitchen");
   if (r.dossier?.operations?.dedicated_equipment?.fryer === true) out.push("fryer");
-  const labeling = r.verified_data?.menu?.gf_labeling ?? r.dossier?.menu?.gf_labeling;
-  if (labeling === "clear") out.push("labeled");
+  if (r.dossier?.menu?.gf_labeling === "clear") out.push("labeled");
   return out;
 }
