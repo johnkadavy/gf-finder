@@ -114,24 +114,17 @@ const getScoredPlaces = unstable_cache(
   { revalidate: 86400 },
 );
 
-async function loadScoredPlaces(): Promise<PlacePair[] | null> {
-  try {
-    return await getScoredPlaces();
-  } catch {
-    return null;
-  }
-}
-
+// Fetch errors propagate rather than resolving to null: a failed lookup must
+// render the error boundary (and keep ISR's last good page), never notFound(),
+// which would cache a 404 for a real page.
 async function resolveCity(citySlug: string): Promise<string | null> {
-  const places = await loadScoredPlaces();
-  if (!places) return null;
+  const places = await getScoredPlaces();
   const cities = [...new Set(places.map((p) => p.city))];
   return cities.find((c) => toSlug(c) === citySlug) ?? null;
 }
 
 async function resolveSlugs(citySlug: string, neighborhoodSlug: string) {
-  const places = await loadScoredPlaces();
-  if (!places) return null;
+  const places = await getScoredPlaces();
   const withNeighborhood = places.filter((p): p is { city: string; neighborhood: string } => p.neighborhood !== null);
 
   const cities = [...new Set(withNeighborhood.map((p) => p.city))];
@@ -307,7 +300,8 @@ export default async function LandingPage({ params }: Props) {
       .limit(100);
     query = applyCategoryFilter(query, catDef);
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) throw new Error(`[gluten-free] ${s0}/${s1} restaurants fetch failed: ${error.message}`);
     const restaurants = nestJsonPaths<RestaurantRow>(data, LIST_JSON_SPEC);
     if (restaurants.length < 5) notFound();
 
@@ -483,7 +477,8 @@ export default async function LandingPage({ params }: Props) {
 
   if (catDef) query = applyCategoryFilter(query, catDef);
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) throw new Error(`[gluten-free] ${citySlug}/${neighborhoodSlug} restaurants fetch failed: ${error.message}`);
   const restaurants = nestJsonPaths<RestaurantRow>(data, LIST_JSON_SPEC);
 
   if (restaurants.length < 3) notFound();

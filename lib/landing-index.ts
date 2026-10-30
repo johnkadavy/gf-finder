@@ -164,12 +164,17 @@ export async function getCityLandingIndex(city: string): Promise<CityLandingInde
   }
 }
 
-/** Stored intro copy for a landing page path (after /gluten-free/), if any. */
+/**
+ * Stored intro copy for a landing page path (after /gluten-free/), if any.
+ * Throws on query errors so a failed fetch isn't cached as a page with the
+ * intro silently missing.
+ */
 export async function getLandingCopy(path: string): Promise<{ body: string; generated_at: string } | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("landing_copy")
     .select("body, generated_at")
     .eq("path", path)
     .maybeSingle();
+  if (error) throw new Error(`[landing-index] landing copy fetch failed for ${path}: ${error.message}`);
   return data ?? null;
 }
