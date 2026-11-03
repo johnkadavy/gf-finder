@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase";
 import { fetchAllRows } from "@/lib/fetch-all";
+import { SCORING_MODEL_UPDATED_AT } from "@/lib/score";
 
 export const revalidate = 86400; // regenerate sitemap at most once per 24 hours
 
@@ -49,7 +50,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((r) => r.slug)
     .map((r) => ({
       url: `${BASE_URL}/restaurant/${r.slug}`,
-      lastModified: new Date(r.enriched_at ?? r.ingested_at ?? Date.now()),
+      // A full rescore changes the page without touching enriched_at — floor at the model date
+      lastModified: new Date(Math.max(
+        new Date(r.enriched_at ?? r.ingested_at ?? Date.now()).getTime(),
+        new Date(SCORING_MODEL_UPDATED_AT).getTime(),
+      )),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     }));

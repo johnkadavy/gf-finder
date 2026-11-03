@@ -147,7 +147,7 @@ npx tsx scripts/backfill-scores.ts
 
 # Full rescore — after changing lib/score.ts or hand-editing scoring inputs in Supabase
 npx tsx scripts/backfill-scores.ts --all          # dry run: report what would change
-npx tsx scripts/backfill-scores.ts --all --write  # apply
+npx tsx scripts/backfill-scores.ts --all --write  # apply — then bump SCORING_MODEL_UPDATED_AT in lib/score.ts so the sitemap tells Google to re-crawl
 
 # Landing page intros (see docs/LANDING_COPY.md)
 npx tsx scripts/generate-landing-copy.ts          # dry run
