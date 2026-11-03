@@ -13,13 +13,13 @@
  * --days      link lifetime, default 30
  * --note      free-text note for yourself
  *
- * Prints the link once. Only the token's hash is stored, so it can't be shown
+ * Prints the Tally form link (hidden fields prefilled) once. Only the token's hash is stored, so it can't be shown
  * again — create a new invite if it's lost.
  */
 
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { hashInviteToken, inviteUrl, newInviteToken } from "../lib/invites";
+import { hashInviteToken, newInviteToken, tallyInviteUrl } from "../lib/invites";
 
 dotenv.config({ path: ".env.local" });
 
@@ -53,6 +53,7 @@ async function revoke(id: string) {
 }
 
 async function create() {
+  const formId = process.env.TALLY_PROTOCOL_FORM_ID ?? fail("TALLY_PROTOCOL_FORM_ID not set in .env.local");
   const ref = arg("restaurant") ?? fail("Missing --restaurant <id|slug>");
   const channel = arg("channel") ?? fail(`Missing --channel (${CHANNELS.join(" | ")})`);
   if (!(CHANNELS as readonly string[]).includes(channel)) fail(`--channel must be one of: ${CHANNELS.join(", ")}`);
@@ -62,7 +63,7 @@ async function create() {
   const days = Number(arg("days") ?? 30);
   if (!Number.isFinite(days) || days <= 0) fail("--days must be a positive number");
 
-  const query = supabase.from("restaurants").select("id, name, display_name, slug, score");
+  const query = supabase.from("restaurants").select("id, name, display_name, address, slug, score");
   const { data: restaurant, error: rErr } = await (/^\d+$/.test(ref) ? query.eq("id", Number(ref)) : query.eq("slug", ref)).maybeSingle();
   if (rErr) fail(`Lookup failed: ${rErr.message}`);
   if (!restaurant) fail(`No restaurant with id or slug "${ref}"`);
@@ -84,9 +85,11 @@ async function create() {
     .single();
   if (error) fail(`Insert failed: ${error.message}`);
 
+  const url = tallyInviteUrl(formId, token, { id: invite.id, price_variant: price, restaurant });
+
   console.log(`${restaurant.display_name ?? restaurant.name} (id ${restaurant.id}, score ${restaurant.score ?? "—"})`);
   console.log(`Invite ${invite.id} · ${channel}${sentTo ? ` → ${sentTo}` : ""} · expires ${expiresAt.toISOString().slice(0, 10)}${price != null ? ` · $${price}/yr` : ""}`);
-  console.log(`\n  ${inviteUrl(token)}\n`);
+  console.log(`\n  ${url}\n`);
   console.log("This link is shown once — copy it now.");
 }
 

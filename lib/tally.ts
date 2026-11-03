@@ -197,6 +197,22 @@ export type ProtocolAnswers = {
   unmapped: Record<string, string[]>;
 };
 
+/**
+ * Tally link fields don't require a scheme ("resy.com/ayat"). Add https://
+ * to anything that looks like a domain; drop anything that doesn't.
+ */
+export function normalizeUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s.replace(/^\/+/, "")}`;
+  try {
+    const u = new URL(withScheme);
+    return u.hostname.includes(".") ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Drop "None of the below" so display lists only hold real options. */
 const realOptions = (opts: string[]) => opts.filter((o) => norm(o) !== "none of the below");
 
@@ -220,7 +236,7 @@ export function parseProtocolAnswers(fields: TallyField[]): ProtocolAnswers {
   // The sign-off checkboxes have no question title of their own, so look for
   // their option text in any selected field rather than by label.
   const allSelected = fields.flatMap((f) => (f.options ? selected([f], f.label ?? "") : []));
-  const attestedAccurate = allSelected.some((t) => norm(t).startsWith("i work at"));
+  const attestedAccurate = allSelected.some((t) => /answers are accurate/.test(norm(t)));
   const attestedPublish = allSelected.some((t) => norm(t).startsWith("cleanplate may publish"));
 
   return {
@@ -259,17 +275,17 @@ export function parseProtocolAnswers(fields: TallyField[]): ProtocolAnswers {
     menu: {
       marking: one("How are gluten-free items marked on your menu?", MENU_MARKING),
       proudest_dishes: text(fields, "Which gluten-free dishes are you proudest of?"),
-      menu_link: text(fields, "Or link to your menu"),
+      menu_link: normalizeUrl(text(fields, "Or link to your menu")),
       menu_files: files(fields, "Upload your current menu"),
     },
     links: {
-      website: text(fields, "Website"),
+      website: normalizeUrl(text(fields, "Website")),
       guest_phone: text(fields, "Phone number for guests"),
-      reservations: text(fields, "Reservations link"),
+      reservations: normalizeUrl(text(fields, "Reservations link")),
       ordering: (text(fields, "Online ordering or delivery app links") ?? "")
         .split(/[\s,]+/)
-        .map((s) => s.trim())
-        .filter((s) => /^https?:\/\//i.test(s)),
+        .map(normalizeUrl)
+        .filter((s): s is string => !!s),
       instagram: text(fields, "Instagram handle")?.replace(/^@/, "") ?? null,
       page_corrections: text(fields, "Is anything else on your CleanPlate page wrong?"),
     },

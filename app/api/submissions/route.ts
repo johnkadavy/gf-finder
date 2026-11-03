@@ -17,8 +17,10 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024;
  * hidden fields, which anyone holding the link can edit.
  *
  * Everything is stored as `pending`; nothing touches a listing or the score
- * until an admin approves it. Invalid tokens are acknowledged with 200 (so
- * Tally doesn't retry) and dropped.
+ * until an admin approves it. A response on an expired or revoked invite is
+ * kept as `rejected` (and still emailed) so we can follow up with a fresh
+ * link. Missing or unknown tokens are acknowledged with 200 (so Tally doesn't
+ * retry) and dropped.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.TALLY_SIGNING_SECRET;
@@ -54,11 +56,12 @@ export async function POST(req: NextRequest) {
 
   const token = hiddenField(data.fields, "token");
   const state = token ? await resolveInvite(supabaseServer, token) : { status: "unknown" as const };
-  if (state.status !== "valid") {
-    console.warn(`[submissions] ${data.responseId}: invite ${state.status}; dropped`);
-    return NextResponse.json({ ignored: `invite ${state.status}` });
+  if (state.status === "unknown") {
+    console.warn(`[submissions] ${data.responseId}: no valid invite token; dropped`);
+    return NextResponse.json({ ignored: "invite unknown" });
   }
   const { invite } = state;
+  const inviteActive = state.status === "valid";
   const restaurantId = invite.restaurant.id;
   const restaurantName = invite.restaurant.display_name ?? invite.restaurant.name;
 
@@ -71,6 +74,7 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ success: true, duplicate: true });
 
   const notes: string[] = [];
+  if (!inviteActive) notes.push(`Invite ${state.status} — answers kept as rejected; send a fresh link to follow up.`);
   let answers: Record<string, unknown>;
   let menuFiles: TallyFile[] = [];
 
@@ -113,6 +117,7 @@ export async function POST(req: NextRequest) {
       schema_version: Number(hiddenField(data.fields, "schema_version")) || PROTOCOL_SCHEMA_VERSION,
       answers,
       raw_payload: payload,
+      status: inviteActive ? "pending" : "rejected",
       review_note: notes.length ? notes.join("\n") : null,
       score_before: restaurantRow?.score ?? null,
       submitted_at: data.createdAt,
@@ -127,7 +132,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insert failed." }, { status: 500 });
   }
 
-  if (form === "protocol") {
+  if (form === "protocol" && inviteActive) {
     // A newer protocol submission replaces any still-pending older ones.
     await supabaseServer
       .from("restaurant_submissions")
@@ -172,7 +177,7 @@ export async function POST(req: NextRequest) {
       submissionId: submission.id,
       restaurantName,
       restaurantId,
-      form,
+      form: inviteActive ? form : `${form} (invite ${state.status} — stored as rejected)`,
       contact: contact ? [contact.name, contact.role, contact.email].filter(Boolean).join(" · ") || "(no contact)" : "—",
       notes,
     });

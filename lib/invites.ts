@@ -24,10 +24,6 @@ export function hashInviteToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function inviteUrl(token: string): string {
-  return `${SITE_URL}/r/submit/${token}`;
-}
-
 export type ResolvedInvite = {
   id: string;
   price_variant: number | null;
@@ -40,9 +36,13 @@ export type ResolvedInvite = {
   };
 };
 
+/**
+ * Expired and revoked invites still resolve to their restaurant: the Tally
+ * link keeps working after expiry, so the webhook keeps those answers (as
+ * rejected) instead of losing a restaurant's time.
+ */
 export type InviteState =
-  | { status: "valid"; invite: ResolvedInvite }
-  | { status: "expired" | "revoked"; restaurantName: string }
+  | { status: "valid" | "expired" | "revoked"; invite: ResolvedInvite }
   | { status: "unknown" };
 
 /**
@@ -60,12 +60,14 @@ export async function resolveInvite(client: SupabaseClient, token: string): Prom
 
   if (error || !data || !data.restaurants) return { status: "unknown" };
 
-  const restaurant = data.restaurants as unknown as ResolvedInvite["restaurant"];
-  const restaurantName = restaurant.display_name ?? restaurant.name;
-  if (data.revoked_at) return { status: "revoked", restaurantName };
-  if (new Date(data.expires_at) < new Date()) return { status: "expired", restaurantName };
-
-  return { status: "valid", invite: { id: data.id, price_variant: data.price_variant, restaurant } };
+  const invite: ResolvedInvite = {
+    id: data.id,
+    price_variant: data.price_variant,
+    restaurant: data.restaurants as unknown as ResolvedInvite["restaurant"],
+  };
+  if (data.revoked_at) return { status: "revoked", invite };
+  if (new Date(data.expires_at) < new Date()) return { status: "expired", invite };
+  return { status: "valid", invite };
 }
 
 /**
@@ -84,4 +86,9 @@ export function tallyHiddenFields(token: string, invite: ResolvedInvite): Record
     schema_version: String(PROTOCOL_SCHEMA_VERSION),
     price_variant: invite.price_variant != null ? String(invite.price_variant) : "",
   };
+}
+
+/** The link we send: the Tally form itself, with hidden fields prefilled. */
+export function tallyInviteUrl(formId: string, token: string, invite: ResolvedInvite): string {
+  return `https://tally.so/r/${formId}?${new URLSearchParams(tallyHiddenFields(token, invite))}`;
 }
