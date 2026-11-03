@@ -502,7 +502,7 @@ export async function syncAirtableRecordToSupabase(
 
   const { data: forScore } = await supabaseServer
     .from("restaurants")
-    .select("id, dossier, cuisine, place_type")
+    .select("id, dossier, cuisine, place_type, reported_protocol")
     .eq("google_place_id", placeId)
     .single();
 

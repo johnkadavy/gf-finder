@@ -1,6 +1,6 @@
 /**
  * Keep the stored `restaurants.score` column in sync after any write that
- * changes scoring inputs (dossier, cuisine, place_type).
+ * changes scoring inputs (dossier, cuisine, place_type, reported_protocol).
  * Lists (rankings, landing pages, search) sort and display the stored score;
  * restaurant pages compute it live — both use scoreRestaurant(), so as long
  * as every writer calls this, they agree.
@@ -10,7 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scoreRestaurant } from "./score";
 
-export const SCORE_INPUT_COLUMNS = "id, score, dossier, cuisine, place_type";
+export const SCORE_INPUT_COLUMNS = "id, score, dossier, cuisine, place_type, reported_protocol";
 
 type ScoreRow = {
   id: number;
@@ -18,6 +18,7 @@ type ScoreRow = {
   dossier: unknown;
   cuisine: string | null;
   place_type: string[] | null;
+  reported_protocol: unknown;
 };
 
 /**

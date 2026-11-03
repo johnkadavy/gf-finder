@@ -13,8 +13,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
   const isNumericId = /^\d+$/.test(slug);
   const { data } = await (isNumericId
-    ? supabase.from("restaurants").select("name, city, neighborhood, dossier, cuisine, place_type").eq("id", slug).single()
-    : supabase.from("restaurants").select("name, city, neighborhood, dossier, cuisine, place_type").eq("slug", slug).single()
+    ? supabase.from("restaurants").select("name, city, neighborhood, dossier, cuisine, place_type, reported_protocol").eq("id", slug).single()
+    : supabase.from("restaurants").select("name, city, neighborhood, dossier, cuisine, place_type, reported_protocol").eq("slug", slug).single()
   );
 
   const name = data?.name ?? "CleanPlate";

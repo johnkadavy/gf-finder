@@ -82,7 +82,7 @@ export default async function AccountPage({ searchParams }: PageProps) {
   if (ids.length > 0) {
     const { data } = await publicSupabase
       .from("restaurants")
-      .select("id, name, city, neighborhood, cuisine, place_type, website_url, google_maps_url, slug, dossier")
+      .select("id, name, city, neighborhood, cuisine, place_type, website_url, google_maps_url, slug, dossier, reported_protocol")
       .in("id", ids);
     const map = new Map((data ?? []).map((r) => [r.id, r]));
     allRestaurants = ids.map((id) => map.get(id)).filter(Boolean) as SavedRestaurant[];

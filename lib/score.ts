@@ -64,6 +64,45 @@ export type ScoringDossier = {
 };
 
 /**
+ * Kitchen practices a restaurant reported through the submission form, as
+ * stored on `restaurants.reported_protocol` once an admin approves it
+ * (codes from lib/tally.ts). Only the fields below affect the score; the rest
+ * of the stored object is display-only.
+ *
+ * Rules (PRIORITIES.md item A):
+ * - "not_sure" / missing → no effect.
+ * - Admissions against interest (shared fryer, shared prep, shared equipment,
+ *   no training, menu not marked) count fully and override the dossier.
+ * - Positive claims count at REPORTED_CLAIM_WEIGHT, and only where the dossier
+ *   has no evidence of its own — they never override what reviews found.
+ * - Reporting never changes data_quality.confidence.
+ */
+export type ReportedProtocol = {
+  kitchen?: {
+    fully_gf?: string | null;
+    fryer?: string | null;
+    prep?: string | null;
+    shared_with_gluten?: string[];
+  };
+  order_handling?: { steps?: string[] };
+  staff?: { trained?: string | null; who?: string | null; frequency?: string | null };
+  menu?: { marking?: string | null };
+};
+
+/** Discount on uncorroborated positive self-reports. */
+export const REPORTED_CLAIM_WEIGHT = 0.5;
+
+/** Move `current` toward `target` by the claim discount; never moves it down. */
+function creditClaim(current: number, target: number) {
+  return target > current ? current + (target - current) * REPORTED_CLAIM_WEIGHT : current;
+}
+
+/** Shared-equipment items the restaurant admitted to (drops "none" / "not_sure"). */
+export function reportedSharedItems(rp: ReportedProtocol | null | undefined): string[] {
+  return (rp?.kitchen?.shared_with_gluten ?? []).filter((x) => x !== "none" && x !== "not_sure");
+}
+
+/**
  * Date the scoring model last changed every restaurant's score. Bump this
  * whenever you run `backfill-scores.ts --all --write` after editing this file —
  * the sitemap uses it as a lastModified floor so Google re-crawls stale snippets.
@@ -84,15 +123,18 @@ function clamp(v: number, min: number, max: number) {
  * Positive momentum: +5 if pos≥10 & mostly_positive, +8 if pos≥20 & mostly_positive
  * Soft floor:  if solid signals across all categories, score ≥ 72
  * Confidence:  medium → ×0.95 + 50×0.05 | low → ×0.88 + 50×0.12
+ * Reported:    restaurant-reported practices adjust menu labeling, staff,
+ *              cross-contam and equipment — see ReportedProtocol for the rules
  */
 export function calculateScore(
   dossier: ScoringDossier,
-  context?: { cuisine?: string | null; placeTypes?: string[] | null },
+  context?: { cuisine?: string | null; placeTypes?: string[] | null; reported?: ReportedProtocol | null },
 ): number | null {
   const r = dossier.reviews;
   const m = dossier.menu;
   const o = dossier.operations;
   const dq = dossier.data_quality;
+  const rp = context?.reported;
 
   // No meaningful data → no score
   if (!r && !m && !o) return null;
@@ -147,6 +189,11 @@ export function calculateScore(
     case "none":    labelingScore = 0;   break;
     default:        labelingScore = 50;  // unknown: neutral
   }
+  const marking = rp?.menu?.marking;
+  if (marking === "not_marked") labelingScore = 0;
+  else if ((marking === "labeled" || marking === "separate_menu") && (!m?.gf_labeling || m.gf_labeling === "unknown")) {
+    labelingScore = creditClaim(labelingScore, 100);
+  }
 
   let optionsScore: number;
   switch (m?.gf_options_level) {
@@ -172,6 +219,14 @@ export function calculateScore(
     case "medium": staffScore = 65;  break;
     case "low":    staffScore = 20;  break;
     default:       staffScore = 60;  // unknown: neutral
+  }
+  const staff = rp?.staff;
+  if (staff?.trained === "no") {
+    staffScore = Math.min(staffScore, 65);
+  } else if (staff?.trained === "yes" && (!o?.staff_knowledge || o.staff_knowledge === "unknown")) {
+    const regular = staff.frequency === "yearly" || staff.frequency === "more_than_yearly";
+    const target = staff.who === "all_foh" ? (regular ? 100 : 85) : staff.who === "some_foh" ? 75 : null;
+    if (target !== null) staffScore = creditClaim(staffScore, target);
   }
 
   const cuisinePrior = cuisineContamRisk(context?.cuisine, context?.placeTypes);
@@ -209,10 +264,40 @@ export function calculateScore(
     }
   }
 
+  // Reported kitchen practices: admitted shared equipment caps cross-contam;
+  // claimed separation only fills in when the dossier has no CC evidence.
+  const k = rp?.kitchen;
+  const shared = reportedSharedItems(rp);
+  if (shared.length >= 3) contamScore = Math.min(contamScore, 40);
+  else if (shared.length > 0) contamScore = Math.min(contamScore, 75);
+  if (rp?.order_handling?.steps?.includes("none")) contamScore = Math.min(contamScore, 75);
+
+  const reportedFullyGf =
+    k?.fully_gf === "yes" && shared.length === 0 && k.fryer !== "shared" && k.prep !== "shared";
+  const dossierHasCcEvidence = !!ccSignal || (!!aiRisk && aiRisk !== "unknown");
+  if (!dossierHasCcEvidence) {
+    if (reportedFullyGf) contamScore = creditClaim(contamScore, 100);
+    else if (k?.shared_with_gluten?.includes("none") && (k.prep === "separate_area" || k.prep === "separate_tools")) {
+      contamScore = creditClaim(contamScore, 90);
+    }
+  }
+
   let opsScore = staffScore * 0.7 + contamScore * 0.3;
-  if (o?.dedicated_equipment?.fryer === true)        opsScore += 8;
-  else if (o?.dedicated_equipment?.fryer === false)  opsScore -= 5;
-  if (o?.dedicated_equipment?.prep_area === "yes" || o?.dedicated_equipment?.prep_area === "dedicated")  opsScore += 7;  // "dedicated" from Airtable, "yes" from scoring schema
+
+  const dossierFryer = o?.dedicated_equipment?.fryer;
+  if (k?.fryer === "shared")                         opsScore -= 5;
+  else if (dossierFryer === true)                    opsScore += 8;
+  else if (dossierFryer === false)                   opsScore -= 5;
+  else if (k?.fryer === "dedicated")                 opsScore += 8 * REPORTED_CLAIM_WEIGHT;
+
+  const dossierPrep = o?.dedicated_equipment?.prep_area;
+  if (k?.prep === "shared") {
+    // admitted shared prep: no bonus, whatever the dossier says
+  } else if (dossierPrep === "yes" || dossierPrep === "dedicated") {
+    opsScore += 7;  // "dedicated" from Airtable, "yes" from scoring schema
+  } else if ((!dossierPrep || dossierPrep === "unknown") && (k?.prep === "separate_area" || reportedFullyGf)) {
+    opsScore += 7 * REPORTED_CLAIM_WEIGHT;
+  }
   opsScore = clamp(opsScore, 0, 100);
 
   // ── Combine ────────────────────────────────────────────────
@@ -257,17 +342,23 @@ export function getGaugeColor(score: number | null): string {
  * The one way to score a restaurant row. Stored `restaurants.score` and every
  * live display must go through this so they agree — it always passes the
  * cuisine / place-type context that calculateScore uses for its
- * cross-contamination prior. See lib/rescore.ts for keeping the stored
- * column fresh after writes.
+ * cross-contamination prior, and any approved restaurant-reported practices.
+ * Select at least the SCORE_INPUT_COLUMNS (lib/rescore.ts) so none are
+ * missed. See lib/rescore.ts for keeping the stored column fresh after writes.
  */
 export function scoreRestaurant(r: {
   dossier?: unknown;
   cuisine?: string | null;
   place_type?: string[] | null;
+  reported_protocol?: unknown;
 }): number | null {
   if (!r.dossier) return null;
   return calculateScore(
     r.dossier as ScoringDossier,
-    { cuisine: r.cuisine ?? null, placeTypes: r.place_type ?? null },
+    {
+      cuisine: r.cuisine ?? null,
+      placeTypes: r.place_type ?? null,
+      reported: (r.reported_protocol as ReportedProtocol | null) ?? null,
+    },
   );
 }

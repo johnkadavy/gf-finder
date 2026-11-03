@@ -20,6 +20,7 @@ import { CollapsibleText } from "./CollapsibleText";
 import { ViewTracker } from "./ViewTracker";
 import { TrackedCtaLink } from "./TrackedCtaLink";
 import { parseOrderLinks, type OrderLink } from "@/lib/order-links";
+import { parseReportedLinks } from "@/lib/reported-protocol";
 import { OrderMenu } from "./OrderMenu";
 import { ClaimListing } from "./ClaimListing";
 import { HelpfulFeedback } from "./HelpfulFeedback";
@@ -77,6 +78,9 @@ type Restaurant = {
   menu_items: MenuData | null;
   reservation_link: string | null;
   order_links: OrderLink[] | null;
+  reported_protocol: unknown;
+  reported_links: unknown;
+  reported_at: string | null;
 };
 
 type VerifiedVisit = {
@@ -209,7 +213,7 @@ const fetchRestaurantBySlug = unstable_cache(
   async (slug: string) => {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links")
+      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links, reported_protocol, reported_links, reported_at")
       .eq("slug", slug)
       .maybeSingle();
     if (error) throw error;
@@ -330,6 +334,14 @@ export default async function RestaurantPage({
   const price = priceSymbol(r.price_level);
   const hours = r.opening_hours?.weekdayDescriptions;
 
+  // Links the restaurant gave us (approved submissions) win over pipeline-found
+  // ones; ordering links keep the restaurant's own order.
+  const reported = parseReportedLinks(r.reported_links);
+  const phone = reported?.phone ?? r.phone;
+  const websiteUrl = reported?.website ?? r.website_url;
+  const reservationLink = reported?.reservations ?? r.reservation_link;
+  const orderLinks = reported?.ordering.length ? reported.ordering : parseOrderLinks(r.order_links);
+
   // ── Signal levels ──────────────────────────────────────────────────────
 
   const labelingLevel: SignalLevel =
@@ -411,8 +423,8 @@ export default async function RestaurantPage({
         "addressCountry": "US",
       },
     } : {}),
-    ...(r.phone          ? { "telephone": r.phone }                      : {}),
-    ...(r.website_url    ? { "url": r.website_url }                      : {}),
+    ...(phone            ? { "telephone": phone }                        : {}),
+    ...(websiteUrl       ? { "url": websiteUrl }                         : {}),
     ...(r.google_maps_url ? { "hasMap": r.google_maps_url,
                                "sameAs": r.google_maps_url }             : {}),
     ...(r.cuisine        ? { "servesCuisine": r.cuisine }                : {}),
@@ -449,7 +461,7 @@ export default async function RestaurantPage({
         neighborhood={r.neighborhood}
         city={r.city}
       />
-      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} phone={r.phone} neighborhood={r.neighborhood} />
+      <StickyInfoBar restaurantId={r.id} name={r.display_name ?? r.name} score={score} googleMapsUrl={r.google_maps_url} phone={phone} neighborhood={r.neighborhood} />
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-32">
 
@@ -477,25 +489,25 @@ export default async function RestaurantPage({
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-6-5.7-6-10a6 6 0 1112 0c0 4.3-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span className="sr-only md:not-sr-only">Directions</span>
               </TrackedCtaLink>
             )}
-            {r.phone && (
+            {phone && (
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="phone"
                 neighborhood={r.neighborhood}
                 location="hero"
-                href={`tel:${r.phone}`}
+                href={`tel:${phone}`}
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.8 2z"/></svg><span className="sr-only md:not-sr-only">Call</span>
               </TrackedCtaLink>
             )}
-            {r.website_url && (
+            {websiteUrl && (
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="website"
                 neighborhood={r.neighborhood}
                 location="hero"
-                href={r.website_url}
+                href={websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-label transition-all inline-flex items-center gap-2 hover:text-accent hover:border-accent"
@@ -503,13 +515,13 @@ export default async function RestaurantPage({
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg><span className="sr-only md:not-sr-only">Website</span>
               </TrackedCtaLink>
             )}
-            {r.reservation_link && (
+            {reservationLink && (
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="reserve"
                 neighborhood={r.neighborhood}
                 location="hero"
-                href={r.reservation_link}
+                href={reservationLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
@@ -518,7 +530,7 @@ export default async function RestaurantPage({
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Reserve
               </TrackedCtaLink>
             )}
-            <OrderMenu restaurantId={r.id} neighborhood={r.neighborhood} orderLinks={parseOrderLinks(r.order_links)} />
+            <OrderMenu restaurantId={r.id} neighborhood={r.neighborhood} orderLinks={orderLinks} />
           </div>
         </div>
 
@@ -607,6 +619,11 @@ export default async function RestaurantPage({
               {r.enriched_at && (
                 <span className="font-mono text-ui-xs uppercase tracking-label" style={{ color: "var(--text-dim)" }}>
                   Updated {formatShortDate(r.enriched_at)}
+                </span>
+              )}
+              {r.reported_protocol != null && r.reported_at && (
+                <span className="font-mono text-ui-xs uppercase tracking-label text-center" style={{ color: "var(--text-dim)" }}>
+                  Includes kitchen practices reported by the restaurant · {formatShortDate(r.reported_at)}
                 </span>
               )}
             </div>
@@ -934,7 +951,7 @@ export default async function RestaurantPage({
         )}
 
         {/* ── Logistics ── */}
-        {(r.address || r.phone || (hours && hours.length > 0)) && (
+        {(r.address || phone || (hours && hours.length > 0)) && (
           <section
             className="py-12 border-t"
             style={{ borderColor: "var(--border-default)" }}
@@ -944,7 +961,7 @@ export default async function RestaurantPage({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl">
-              {(r.address || r.phone) && (
+              {(r.address || phone) && (
                 <div className="flex flex-col gap-5">
                   {r.address && (
                     <div>
@@ -956,7 +973,7 @@ export default async function RestaurantPage({
                       </div>
                     </div>
                   )}
-                  {r.phone && (
+                  {phone && (
                     <div>
                       <div className="font-mono text-ui-xs uppercase tracking-label mb-1.5" style={{ color: "var(--text-dim)" }}>
                         Phone
@@ -966,11 +983,11 @@ export default async function RestaurantPage({
                         cta="phone"
                         neighborhood={r.neighborhood}
                         location="info_section"
-                        href={`tel:${r.phone}`}
+                        href={`tel:${phone}`}
                         className="font-mono text-ui-md border-b pb-0.5 transition-colors"
                         style={{ color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
                       >
-                        {r.phone}
+                        {phone}
                       </TrackedCtaLink>
                     </div>
                   )}

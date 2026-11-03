@@ -40,6 +40,7 @@ type Row = {
   dossier: unknown;
   cuisine: string | null;
   place_type: string[] | null;
+  reported_protocol: unknown;
 };
 
 async function fetchRows(): Promise<Row[]> {
@@ -48,7 +49,7 @@ async function fetchRows(): Promise<Row[]> {
   while (true) {
     let q = supabase
       .from("restaurants")
-      .select("id, name, neighborhood, score, dossier, cuisine, place_type")
+      .select("id, name, neighborhood, score, dossier, cuisine, place_type, reported_protocol")
       .not("dossier", "is", null)
       .order("id")
       .range(offset, offset + BATCH_SIZE - 1);
