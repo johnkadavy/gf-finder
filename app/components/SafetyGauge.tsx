@@ -16,12 +16,12 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
   const gaugeColor = getGaugeColor(score);
   const targetPct = score ?? 0;
   const s = sizes[size];
+  // Only the ring animates. The number is rendered statically so the
+  // server HTML (what crawlers read) carries the real score, not 0.
   const [currentPct, setCurrentPct] = useState(0);
-  const [displayNumber, setDisplayNumber] = useState(0);
 
   useEffect(() => {
     setCurrentPct(0);
-    setDisplayNumber(0);
     if (!score) return;
 
     const duration = 1200;
@@ -33,7 +33,6 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
       const progress = Math.min((ts - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setCurrentPct(Math.round(eased * targetPct));
-      setDisplayNumber(Math.round(eased * score));
       if (progress < 1) raf = requestAnimationFrame(animate);
     };
 
@@ -66,7 +65,7 @@ export function SafetyGauge({ score, size = "md", showDescriptor = true }: { sco
                 className={`${s.numSize} leading-none tabular-nums font-[family-name:var(--font-display)]`}
                 style={{ color: gaugeColor }}
               >
-                {displayNumber}
+                {Math.round(score)}
               </span>
               <span className={`font-mono ${s.labelSize} uppercase tracking-editorial mt-1.5 text-text-label`}>
                 GF Score
