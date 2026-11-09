@@ -1,9 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { captureAiCrawlerVisit } from "@/lib/ai-bots";
 
 const AUTH_TIMEOUT_MS = 1500;
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  // Must run before the auth check below, which can return early.
+  const crawlerCapture = captureAiCrawlerVisit(
+    request.headers.get("user-agent"),
+    request.nextUrl
+  );
+  if (crawlerCapture) event.waitUntil(crawlerCapture);
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
