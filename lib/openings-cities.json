@@ -1,0 +1,15 @@
+[
+  {
+    "city": "New York",
+    "region": "New York City",
+    "enabled": true,
+    "area": "the five NYC boroughs (Manhattan, Brooklyn, Queens, the Bronx, Staten Island)",
+    "publications": [
+      { "name": "Eater NY", "look_for": "the monthly new-restaurant heatmaps (Manhattan and Brooklyn) and openings posts" },
+      { "name": "The Infatuation", "look_for": "the New York Hit List of new restaurants" },
+      { "name": "Grub Street", "look_for": "restaurant openings roundups" },
+      { "name": "Time Out New York", "look_for": "new restaurant openings coverage" },
+      { "name": "Resy Editorial", "look_for": "new NYC restaurants on Resy" }
+    ]
+  }
+]
