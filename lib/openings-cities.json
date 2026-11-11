@@ -5,11 +5,28 @@
     "enabled": true,
     "area": "the five NYC boroughs (Manhattan, Brooklyn, Queens, the Bronx, Staten Island)",
     "publications": [
-      { "name": "Eater NY", "look_for": "the monthly new-restaurant heatmaps (Manhattan and Brooklyn) and openings posts" },
-      { "name": "The Infatuation", "look_for": "the New York Hit List of new restaurants" },
-      { "name": "Grub Street", "look_for": "restaurant openings roundups" },
-      { "name": "Time Out New York", "look_for": "new restaurant openings coverage" },
-      { "name": "Resy Editorial", "look_for": "new NYC restaurants on Resy" }
+      {
+        "name": "The Infatuation",
+        "look_for": "the \"NYC's New Restaurant Openings\" page (grouped by month; usually the best source) and the New York Hit List"
+      },
+      {
+        "name": "Eater NY",
+        "look_for": "the \"new restaurant openings to know\" roundup and the Manhattan/Brooklyn heatmaps. ny.eater.com often blocks fetching; its posts are syndicated on Yahoo",
+        "best_effort": true
+      },
+      {
+        "name": "Grub Street",
+        "look_for": "restaurant openings roundups. grubstreet.com often blocks fetching; skip it if no readable copy exists",
+        "best_effort": true
+      },
+      {
+        "name": "Time Out New York",
+        "look_for": "the monthly \"best new restaurants in NYC\" list (no regular openings feed anymore)"
+      },
+      {
+        "name": "Resy Editorial",
+        "look_for": "the Resy Hit List and \"new on Resy\" for New York"
+      }
     ]
   }
 ]

@@ -12,7 +12,9 @@
  *         "title": "The Hottest New Restaurants in NYC",   // optional
  *         "published_at": "2026-11-03",                    // optional, YYYY-MM-DD
  *         "restaurants": [
- *           { "name": "...", "neighborhood": "...", "cuisine": "...", "notes": "..." }
+ *           { "name": "...", "neighborhood": "...", "cuisine": "...", "notes": "...",
+ *             "opened": "2026-10",          // optional, YYYY-MM
+ *             "search_hint": "..." }        // optional, overrides the Google query
  *         ]
  *       }
  *     ]
@@ -76,6 +78,8 @@ interface Restaurant {
   neighborhood: string | null;
   cuisine: string | null;
   notes: string | null;
+  opened: string | null;      // YYYY-MM, when the article gives it
+  search_hint: string | null; // optional extra detail for the Google query
 }
 
 interface Article {
@@ -115,6 +119,22 @@ function optString(v: unknown, path: string, errors: string[]): string | null {
     return null;
   }
   return v.trim() || null;
+}
+
+function validOpened(v: string | null, path: string, errors: string[]): string | null {
+  if (v == null) return null;
+  const m = /^(\d{4})-(\d{2})$/.exec(v);
+  if (!m || +m[2] < 1 || +m[2] > 12) {
+    errors.push(`${path} must be YYYY-MM (got ${JSON.stringify(v)})`);
+    return null;
+  }
+  const opened = Date.UTC(+m[1], +m[2] - 1, 1);
+  const now = new Date();
+  if (opened > Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)) {
+    errors.push(`${path} is in the future (${v})`);
+    return null;
+  }
+  return v;
 }
 
 function validate(raw: unknown): { payload: Payload | null; errors: string[] } {
@@ -164,6 +184,8 @@ function validate(raw: unknown): { payload: Payload | null; errors: string[] } {
         neighborhood: optString(rr.neighborhood, `${rp}.neighborhood`, errors),
         cuisine: optString(rr.cuisine, `${rp}.cuisine`, errors),
         notes: optString(rr.notes, `${rp}.notes`, errors),
+        opened: validOpened(optString(rr.opened, `${rp}.opened`, errors), `${rp}.opened`, errors),
+        search_hint: optString(rr.search_hint, `${rp}.search_hint`, errors),
       };
     });
 
@@ -246,7 +268,9 @@ async function lookupPlace(c: Candidate, cityName: string): Promise<PlaceResult 
       ].join(","),
     },
     body: JSON.stringify({
-      textQuery: [c.name, c.neighborhood, cityName].filter(Boolean).join(" "),
+      textQuery: c.search_hint
+        ? `${c.search_hint} ${cityName}`
+        : [c.name, c.neighborhood, cityName].filter(Boolean).join(" "),
       maxResultCount: 1,
     }),
   });
@@ -273,6 +297,10 @@ function namesMatch(candidate: string, googleName: string): boolean {
   const b = nameKey(googleName);
   if (!a || !b) return false;
   if (a === b || a.includes(b) || b.includes(a)) return true;
+  // Spacing differences: "Baan Thai" vs "BaanThaiNYC"
+  const as = a.replace(/ /g, "");
+  const bs = b.replace(/ /g, "");
+  if (as.length >= 4 && bs.length >= 4 && (as.includes(bs) || bs.includes(as))) return true;
   const tokens = (s: string) => s.split(" ").filter((t) => t.length >= 3 && !GENERIC_WORDS.has(t));
   const bTokens = new Set(tokens(b));
   return tokens(a).some((t) => bTokens.has(t));
@@ -285,8 +313,12 @@ function isFoodPlace(p: PlaceResult): boolean {
 // ── Writes ────────────────────────────────────────────────────────────────────
 
 async function insertSupabase(place: PlaceResult, c: Candidate, cityName: string, region: string) {
+  // `name` follows Google like every other ingest path; the article's name goes in
+  // `display_name` (what the site shows) when it differs, since Google listings for
+  // new places are often stale or padded ("Bar Boulud" for Brasserie Boulud).
   const name = place.displayName?.text ?? c.name;
-  const slug = [name, cityName, place.id.slice(-6)]
+  const displayName = nameKey(c.name) === nameKey(name) ? null : c.name;
+  const slug = [displayName ?? name, cityName, place.id.slice(-6)]
     .join("-")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -295,6 +327,7 @@ async function insertSupabase(place: PlaceResult, c: Candidate, cityName: string
   const { error } = await supabase.from("restaurants").insert({
     google_place_id: place.id,
     name,
+    display_name: displayName,
     address: place.formattedAddress ?? null,
     lat: place.location?.latitude ?? null,
     lng: place.location?.longitude ?? null,
@@ -308,6 +341,7 @@ async function insertSupabase(place: PlaceResult, c: Candidate, cityName: string
     cuisine_types: place.types ?? null,
     slug,
     source: "new_openings",
+    opened_month: c.opened ? `${c.opened}-01` : null,
     ingested_at: new Date().toISOString(),
   });
   if (error) throw new Error(`Supabase insert failed for "${name}": ${error.message}`);
@@ -321,7 +355,7 @@ async function createAirtableRecord(place: PlaceResult, c: Candidate, cityName: 
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         fields: {
-          name: place.displayName?.text ?? c.name,
+          name: c.name, // article name — Google's can be stale for new places
           google_place_id: place.id,
           city: cityName,
           address: place.formattedAddress ?? undefined,
@@ -425,13 +459,15 @@ async function main() {
   const airtableIds = await fetchAirtablePlaceIds();
   const supabaseIds = await fetchSupabasePlaceIds(resolved.map((r) => r.place.id));
 
-  console.log("");
+  console.log(`\nAlready in DB (check these matches too):`);
   const toAdd: typeof resolved = [];
   const seenPlaceIds = new Set<string>();
   let alreadyExists = 0;
   for (const r of resolved) {
     if (airtableIds.has(r.place.id) || supabaseIds.has(r.place.id) || seenPlaceIds.has(r.place.id)) {
-      console.log(`  = ${r.c.name}  → already in DB as "${r.place.displayName?.text ?? "?"}"`);
+      console.log(
+        `  = ${r.c.name}  [${r.c.neighborhood ?? "?"}]  → already in DB as "${r.place.displayName?.text ?? "?"}"  ${r.place.formattedAddress ?? ""}`
+      );
       alreadyExists++;
       continue;
     }
@@ -441,7 +477,10 @@ async function main() {
 
   console.log(`\nNew restaurants (${toAdd.length}):`);
   for (const { c, place } of toAdd) {
-    console.log(`  + ${place.displayName?.text ?? c.name}  [${c.neighborhood ?? "?"}]  ${place.formattedAddress ?? ""}  (via ${c.source})`);
+    console.log(
+      `  + ${c.name}${place.displayName?.text && nameKey(place.displayName.text) !== nameKey(c.name) ? ` (Google: "${place.displayName.text}")` : ""}  [${c.neighborhood ?? "?"}]  ${place.formattedAddress ?? ""}  ` +
+        `(via ${c.source}${c.opened ? `, opened ${c.opened}` : ""})`
+    );
   }
 
   // 3. Writes
