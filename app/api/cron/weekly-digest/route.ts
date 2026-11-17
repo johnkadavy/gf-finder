@@ -174,6 +174,7 @@ async function fetchRestaurants(topic: Topic): Promise<{ restaurants: DigestRest
     .from("restaurants")
     .select("*", { count: "exact", head: true })
     .eq("city", "New York")
+    .eq("published", true)
     .not("score", "is", null)
     .gte("score", DIGEST_MIN_SCORE);
 
@@ -182,6 +183,7 @@ async function fetchRestaurants(topic: Topic): Promise<{ restaurants: DigestRest
     .from("restaurants")
     .select("id, name, slug, neighborhood, cuisine, score, dossier")
     .eq("city", "New York")
+    .eq("published", true)
     .not("score", "is", null)
     .gte("score", DIGEST_MIN_SCORE)
     .order("score", { ascending: false })

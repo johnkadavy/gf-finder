@@ -4,6 +4,8 @@ import { supabaseServer } from "@/lib/supabase-admin";
 import { scoreRestaurant } from "@/lib/score";
 import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 import { parseOrderLinks } from "@/lib/order-links";
+import { parsePlaceTypes } from "@/lib/place-types";
+import { parseAiJsonOrThrow } from "@/lib/ai-json";
 
 export const maxDuration = 30;
 
@@ -442,7 +444,7 @@ export async function syncAirtableRecordToSupabase(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let dossier: any;
   try {
-    dossier = JSON.parse(dossierText);
+    dossier = parseAiJsonOrThrow(dossierText);
   } catch {
     throw new Error("Dossier JSON is invalid.");
   }
@@ -450,7 +452,7 @@ export async function syncAirtableRecordToSupabase(
   const sickText = getAIFieldValue(fields["Sick reports JSON"]);
   if (sickText) {
     try {
-      const sickData = JSON.parse(sickText);
+      const sickData = parseAiJsonOrThrow(sickText) as { sick_reports_recent?: number; sick_reports_details?: unknown[] };
       dossier.reviews = {
         ...dossier.reviews,
         sick_reports_recent: sickData.sick_reports_recent ?? 0,
@@ -464,19 +466,19 @@ export async function syncAirtableRecordToSupabase(
   const ccRiskText = getAIFieldValue(ccRiskField as string | AirtableAIField | undefined);
   if (ccRiskText) {
     try {
-      const ccSignals = JSON.parse(ccRiskText);
+      const ccSignals = parseAiJsonOrThrow(ccRiskText);
       dossier.operations = { ...(dossier.operations ?? {}), cc_signals: ccSignals };
     } catch { /* skip malformed */ }
   }
 
   const cuisine = dossier?.restaurant?.cuisine ?? null;
-  const placeTypes = parseCsv(fields["place_type"]);
+  const placeTypes = parsePlaceTypes(getAIFieldValue(fields["place_type"])).types;
   const gfFoodCategories = parseCsv(fields["gf_food_categories"]);
 
   const menuItemsText = getAIFieldValue(fields["menu_items"]);
   let menuItems = null;
   if (menuItemsText) {
-    try { menuItems = JSON.parse(menuItemsText); } catch { /* skip malformed */ }
+    try { menuItems = parseAiJsonOrThrow(menuItemsText); } catch { /* skip malformed */ }
   }
 
   const reservationLink = getAIFieldValue(fields["reservation_link"]) || null;

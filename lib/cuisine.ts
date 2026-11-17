@@ -34,7 +34,8 @@ export const CUISINE_CATEGORIES = [
 export type CuisineCategory = (typeof CUISINE_CATEGORIES)[number] | "Other";
 
 export function normalizeCuisine(raw: string): CuisineCategory {
-  const s = raw.toLowerCase();
+  // Strip accents first: "Café" would otherwise miss the /cafe/ pattern
+  const s = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   // Specific cuisines first — order matters when values overlap
   if (/vegan|vegetarian|plant.?based/.test(s))                                        return "Vegan / Vegetarian";
@@ -72,8 +73,7 @@ export function normalizeCuisine(raw: string): CuisineCategory {
  */
 export function cuisineFilterKey(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  // Strip accents first: "Café" would otherwise miss the /cafe/ pattern
-  const c = normalizeCuisine(raw.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  const c = normalizeCuisine(raw);
   if (c === "Other") return null;
   return c.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

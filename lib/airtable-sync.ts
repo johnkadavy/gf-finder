@@ -15,6 +15,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { rescoreRestaurants } from "./rescore";
 import { parseOrderLinks } from "./order-links";
+import { parsePlaceTypes } from "./place-types";
+import { parseAiJson } from "./ai-json";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -104,7 +106,7 @@ async function fetchAirtableRecords(viewId: string, maxRecords?: number): Promis
 }
 
 /** Build the merged dossier + derived fields for one Airtable record. */
-function buildRecord(record: AirtableRecord): {
+function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
   googlePlaceId: string;
   dossier: Dossier;
   fields: Record<string, unknown>;
@@ -113,32 +115,32 @@ function buildRecord(record: AirtableRecord): {
   const dossierText = aiValue(record.fields["JSON dossier"]);
   if (!googlePlaceId || !dossierText) return null;
 
-  let dossier: Dossier;
-  try {
-    dossier = JSON.parse(dossierText);
-  } catch {
+  const dossier: Dossier = parseAiJson(dossierText);
+  if (!dossier || typeof dossier !== "object" || Array.isArray(dossier)) {
+    log(`  Unparseable JSON dossier for ${googlePlaceId} — skipped: ${dossierText.slice(0, 120).replace(/\s+/g, " ")}…`);
     return null;
   }
 
   // Merge sick reports
   const sickText = aiValue(record.fields["Sick reports JSON"]);
   if (sickText) {
-    try {
-      const sick = JSON.parse(sickText);
+    const sick = parseAiJson(sickText) as { sick_reports_recent?: number; sick_reports_details?: unknown[] } | undefined;
+    if (sick && typeof sick === "object") {
       dossier.reviews = {
         ...dossier.reviews,
         sick_reports_recent: sick.sick_reports_recent ?? 0,
         sick_reports_details: sick.sick_reports_details ?? [],
       };
-    } catch { /* skip merge */ }
+    }
   }
 
   // Merge focused CC signals
   const ccRiskText = aiValue(record.fields["cc_risk_json"]);
   if (ccRiskText) {
-    try {
-      dossier.operations = { ...(dossier.operations ?? {}), cc_signals: JSON.parse(ccRiskText) };
-    } catch { /* skip merge */ }
+    const ccSignals = parseAiJson(ccRiskText);
+    if (ccSignals !== undefined) {
+      dossier.operations = { ...(dossier.operations ?? {}), cc_signals: ccSignals };
+    }
   }
 
   const cuisineField = record.fields["cuisine"];
@@ -149,7 +151,14 @@ function buildRecord(record: AirtableRecord): {
   const menuItemsRaw = aiText(record.fields["menu_items"]);
   let menuItems: unknown = null;
   if (menuItemsRaw) {
-    try { menuItems = JSON.parse(menuItemsRaw); } catch { /* leave null */ }
+    menuItems = parseAiJson(menuItemsRaw) ?? null;
+  }
+
+  const placeTypes = parsePlaceTypes(aiText(record.fields["place_type"]));
+  if (placeTypes.none) {
+    log(`  place_type "none" for ${googlePlaceId} — closed or not a food business? Review for removal`);
+  } else if (placeTypes.invalid.length) {
+    log(`  Dropped invalid place_type values for ${googlePlaceId}: ${placeTypes.invalid.join(" | ").slice(0, 120)}`);
   }
 
   const dedicatedRaw = aiText(record.fields["dedicated_gf_kitchen"]);
@@ -157,7 +166,7 @@ function buildRecord(record: AirtableRecord): {
 
   const fields: Record<string, unknown> = {
     ...(cuisine ? { cuisine } : {}),
-    ...(parseCsv(record.fields["place_type"]) ? { place_type: parseCsv(record.fields["place_type"]) } : {}),
+    ...(placeTypes.types ? { place_type: placeTypes.types } : {}),
     ...(parseCsv(record.fields["gf_food_categories"]) ? { gf_food_categories: parseCsv(record.fields["gf_food_categories"]) } : {}),
     ...(aiText(record.fields["restaurant_description"]) ? { restaurant_description: aiText(record.fields["restaurant_description"]) } : {}),
     ...(menuItems ? { menu_items: menuItems } : {}),
@@ -240,7 +249,7 @@ export async function syncAirtableToSupabase(
     const rowIds: number[] = [];
 
     await Promise.all(records.slice(i, i + CHUNK).map(async (record) => {
-      const built = buildRecord(record);
+      const built = buildRecord(record, log);
       if (!built) {
         result.skipped++;
         toStamp.push(record.id);
