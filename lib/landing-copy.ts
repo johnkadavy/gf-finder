@@ -32,7 +32,7 @@ export const SPOTS_PER_PAGE = 3;           // offered to the writer; it links tw
 /**
  * Guides that match how people search ("gluten-free pizza", "brunch", "bars"…),
  * in priority order. Only these get generated copy and only these are linked.
- * Pasta, desserts, fryer and the "dedicated" proxy guide keep their template.
+ * Pasta, desserts, fryer and the "dedicated" guide keep their template.
  */
 export const INTENT_CATEGORIES = ["pizza", "breakfast", "bar", "cafe", "bakery", "fine-dining"]
   .filter((c) => CATEGORIES[c]);
@@ -64,7 +64,7 @@ export type IndexRow = {
   place_type: string[] | null;
   /** only needed for fryer/dedicated guides, which copy never targets */
   fryer?: unknown;
-  ccr?: unknown;
+  dedicated_gf_kitchen?: unknown;
 };
 
 export type CityLandingIndex = {
@@ -140,7 +140,7 @@ function indexRowMatches(r: IndexRow, def: CategoryDef): boolean {
   if (def.type === "gf_food" && def.value)    return r.gf_food_categories?.includes(def.value) ?? false;
   if (def.type === "place_type" && def.value) return r.place_type?.includes(def.value) ?? false;
   if (def.type === "fryer")                   return r.fryer === true || r.fryer === "true";
-  if (def.type === "dedicated")               return r.ccr === "low";
+  if (def.type === "dedicated")               return r.dedicated_gf_kitchen === "yes";
   return false;
 }
 

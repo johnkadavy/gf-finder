@@ -213,7 +213,7 @@ function rowMatchesCategory(r: RestaurantRow, def: CategoryDef): boolean {
   if (def.type === "gf_food" && def.value)    return r.gf_food_categories?.includes(def.value) ?? false;
   if (def.type === "place_type" && def.value) return r.place_type?.includes(def.value) ?? false;
   if (def.type === "fryer")                   return r.dossier?.operations?.dedicated_equipment?.fryer === true;
-  if (def.type === "dedicated")               return r.dossier?.operations?.cross_contamination_risk === "low";
+  if (def.type === "dedicated")               return r.dedicated_gf_kitchen === "yes";
   return false;
 }
 

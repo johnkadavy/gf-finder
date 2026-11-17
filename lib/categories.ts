@@ -55,7 +55,7 @@ export const CATEGORIES: Record<string, CategoryDef> = {
     label: "Dedicated GF",
     labelPlural: "Dedicated GF Restaurants",
     cityLabelPlural: "Best Dedicated Gluten-Free Restaurants",
-    editorialIntro: "A dedicated gluten-free restaurant eliminates an entire category of risk. No shared flour, no gluten-containing items moving through the kitchen, no guesswork for the staff. The restaurants below have been flagged as dedicated GF or near-dedicated through a combination of AI-analyzed menu content and diner reports, and carry CleanPlate's lowest cross-contamination risk ratings.",
+    editorialIntro: "A dedicated gluten-free restaurant eliminates an entire category of risk. No shared flour, no gluten-containing items moving through the kitchen, no guesswork for the staff. Every restaurant below states on its own website, menu, or listing that its entire kitchen is gluten-free — not just a GF menu or a separate prep area.",
   },
   "cafe": {
     type: "place_type", value: "cafe",
@@ -85,7 +85,7 @@ export function applyCategoryFilter(query: any, catDef: CategoryDef): any {
   if (catDef.type === "gf_food" && catDef.value)    return query.contains("gf_food_categories", [catDef.value]);
   if (catDef.type === "place_type" && catDef.value) return query.contains("place_type",         [catDef.value]);
   if (catDef.type === "fryer")     return query.eq("dossier->operations->dedicated_equipment->>fryer", "true");
-  if (catDef.type === "dedicated") return query.eq("dossier->operations->>cross_contamination_risk", "low");
+  if (catDef.type === "dedicated") return query.eq("dedicated_gf_kitchen", "yes");
   return query;
 }
 

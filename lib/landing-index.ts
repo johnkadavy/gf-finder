@@ -37,14 +37,14 @@ type IndexRow = {
   gf_food_categories: string[] | null;
   place_type: string[] | null;
   fryer: string | null;
-  ccr: string | null;
+  dedicated_gf_kitchen: string | null;
 };
 
 function rowMatchesCategory(r: IndexRow, def: CategoryDef): boolean {
   if (def.type === "gf_food" && def.value)    return r.gf_food_categories?.includes(def.value) ?? false;
   if (def.type === "place_type" && def.value) return r.place_type?.includes(def.value) ?? false;
   if (def.type === "fryer")                   return r.fryer === "true";
-  if (def.type === "dedicated")               return r.ccr === "low";
+  if (def.type === "dedicated")               return r.dedicated_gf_kitchen === "yes";
   return false;
 }
 
@@ -56,7 +56,7 @@ const cachedNycLandingIndex = unstable_cache(
     const rows = await fetchAllRows<IndexRow>(() =>
       supabase
         .from("restaurants")
-        .select("id, neighborhood, gf_food_categories, place_type, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
+        .select("id, neighborhood, gf_food_categories, place_type, fryer:dossier->operations->dedicated_equipment->>fryer, dedicated_gf_kitchen")
         .eq("city", "New York")
         .not("score", "is", null)
         .gte("score", 75),

@@ -32,7 +32,7 @@ type Row = {
   place_type: string[] | null;
   score: number | null;
   fryer: string | null;
-  ccr: string | null;
+  dedicated_gf_kitchen: string | null;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const rows = await fetchAllRows<Row>(() =>
     supabase
       .from("restaurants")
-      .select("id, slug, enriched_at, ingested_at, city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, ccr:dossier->operations->>cross_contamination_risk")
+      .select("id, slug, enriched_at, ingested_at, city, neighborhood, gf_food_categories, place_type, score, fryer:dossier->operations->dedicated_equipment->>fryer, dedicated_gf_kitchen")
       .not("score", "is", null),
   );
 
@@ -88,7 +88,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         cityEntry.catCounts.set("fryer", (cityEntry.catCounts.get("fryer") ?? 0) + 1);
       }
       // dedicated
-      if (r.ccr === "low") {
+      if (r.dedicated_gf_kitchen === "yes") {
         cityEntry.catCounts.set("dedicated", (cityEntry.catCounts.get("dedicated") ?? 0) + 1);
       }
     }
@@ -108,7 +108,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (r.fryer === "true") {
         nbhdEntry.catCounts.set("fryer", (nbhdEntry.catCounts.get("fryer") ?? 0) + 1);
       }
-      if (r.ccr === "low") {
+      if (r.dedicated_gf_kitchen === "yes") {
         nbhdEntry.catCounts.set("dedicated", (nbhdEntry.catCounts.get("dedicated") ?? 0) + 1);
       }
     }
