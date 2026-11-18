@@ -7,6 +7,7 @@
  *
  * Relative imports only: also used by scripts/ run via tsx.
  */
+import { aiAnswerLine } from "./ai-json";
 
 // Hosts (or parent domains) that are ordering, delivery, social or listing
 // pages — never a table booking.
@@ -44,11 +45,30 @@ function hostMatches(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
+export type ReservationPolicy = "online" | "walk_in" | "phone";
+
+/** Matches the restaurants.reservation_policy check constraint. */
+export interface ParsedReservation {
+  link: string | null;
+  policy: ReservationPolicy | null;
+}
+
+
+/**
+ * Turn the reservation_link AI field (last line: a URL, WALK_IN, PHONE or NONE)
+ * into the two stored columns. Anything unrecognised is treated as NONE.
+ */
+export function parseReservation(raw: string | null | undefined): ParsedReservation {
+  const answer = aiAnswerLine(raw);
+  const token = answer?.toUpperCase().replace(/[\s-]+/g, "_");
+  if (token === "WALK_IN" || token === "WALK_INS" || token === "WALK_IN_ONLY") return { link: null, policy: "walk_in" };
+  if (token === "PHONE" || token === "PHONE_ONLY") return { link: null, policy: "phone" };
+  const link = parseReservationLink(answer);
+  return link ? { link, policy: "online" } : { link: null, policy: null };
+}
+
 export function parseReservationLink(raw: string | null | undefined): string | null {
-  // Web-search agents often explain before answering ("Based on my search…\n\nNONE"),
-  // so the answer is the last non-empty line, minus any wrapping markdown.
-  const lastLine = raw?.trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean).pop();
-  const text = lastLine?.replace(/^[`<("']+|[`>)"'.,]+$/g, "");
+  const text = aiAnswerLine(raw);
   if (!text || /\s/.test(text)) return null; // empty, or a sentence rather than a URL
 
   let url: URL;

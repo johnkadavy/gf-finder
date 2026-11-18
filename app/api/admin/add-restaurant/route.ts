@@ -6,7 +6,7 @@ import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 import { parseOrderLinks } from "@/lib/order-links";
 import { parsePlaceTypes } from "@/lib/place-types";
 import { parseAiJsonOrThrow } from "@/lib/ai-json";
-import { parseReservationLink } from "@/lib/reservation-link";
+import { parseReservation } from "@/lib/reservation-link";
 
 export const maxDuration = 30;
 
@@ -482,7 +482,7 @@ export async function syncAirtableRecordToSupabase(
     try { menuItems = parseAiJsonOrThrow(menuItemsText); } catch { /* skip malformed */ }
   }
 
-  const reservationLink = parseReservationLink(getAIFieldValue(fields["reservation_link"]));
+  const reservation = parseReservation(getAIFieldValue(fields["reservation_link"]));
   const orderLinks = parseOrderLinks(fields["order_links"]);
   const restaurantDescription = getAIFieldValue(fields["restaurant_description"]) || null;
 
@@ -495,7 +495,8 @@ export async function syncAirtableRecordToSupabase(
       ...(placeTypes ? { place_type: placeTypes } : {}),
       ...(gfFoodCategories ? { gf_food_categories: gfFoodCategories } : {}),
       ...(menuItems ? { menu_items: menuItems } : {}),
-      ...(reservationLink ? { reservation_link: reservationLink } : {}),
+      ...(reservation.link ? { reservation_link: reservation.link } : {}),
+      ...(reservation.policy ? { reservation_policy: reservation.policy } : {}),
       ...(orderLinks.length ? { order_links: orderLinks } : {}),
       ...(restaurantDescription ? { restaurant_description: restaurantDescription } : {}),
     })

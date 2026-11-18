@@ -42,3 +42,19 @@ export function parseAiJsonOrThrow(text: string): unknown {
   if (v === undefined) throw new SyntaxError("No valid JSON found in AI field");
   return v;
 }
+
+/**
+ * The answer line of a single-value AI field. Web-search agents often explain
+ * before answering ("Based on my search…\n\nBakery"), so take the last
+ * non-empty line and strip wrapping markdown/quotes and trailing punctuation.
+ */
+export function aiAnswerLine(raw: string | null | undefined): string | null {
+  const lastLine = raw?.trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean).pop();
+  return lastLine?.replace(/^[`<"'*]+|[`>"'.,*]+$/g, "").trim() || null;
+}
+
+/** A short label (cuisine etc.) from an AI field, or null if the answer is a sentence. */
+export function aiLabel(raw: string | null | undefined, maxLength = 60): string | null {
+  const answer = aiAnswerLine(raw);
+  return answer && answer.length <= maxLength ? answer : null;
+}

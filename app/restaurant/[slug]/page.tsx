@@ -77,6 +77,7 @@ type Restaurant = {
   restaurant_description: string | null;
   menu_items: MenuData | null;
   reservation_link: string | null;
+  reservation_policy: "online" | "walk_in" | "phone" | null;
   order_links: OrderLink[] | null;
   reported_protocol: unknown;
   reported_links: unknown;
@@ -213,7 +214,7 @@ const fetchRestaurantBySlug = unstable_cache(
   async (slug: string) => {
     const { data, error } = await supabase
       .from("restaurants")
-      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, order_links, reported_protocol, reported_links, reported_at")
+      .select("id, name, display_name, city, neighborhood, region, address, phone, website_url, google_maps_url, google_rating, price_level, cuisine, place_type, opening_hours, dossier, google_place_id, source, ingested_at, enriched_at, slug, gf_food_categories, restaurant_description, menu_items, reservation_link, reservation_policy, order_links, reported_protocol, reported_links, reported_at")
       .eq("slug", slug)
       .maybeSingle();
     if (error) throw error;
@@ -340,6 +341,10 @@ export default async function RestaurantPage({
   const phone = reported?.phone ?? r.phone;
   const websiteUrl = reported?.website ?? r.website_url;
   const reservationLink = reported?.reservations ?? r.reservation_link;
+  // No booking link: say how to get a table instead (phone-only → the Call
+  // button becomes "Call to reserve"; walk-in only → a plain note).
+  const callToReserve = !reservationLink && r.reservation_policy === "phone" && !!phone;
+  const walkInOnly = !reservationLink && r.reservation_policy === "walk_in";
   const orderLinks = reported?.ordering.length ? reported.ordering : parseOrderLinks(r.order_links);
 
   // ── Signal levels ──────────────────────────────────────────────────────
@@ -489,7 +494,7 @@ export default async function RestaurantPage({
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-6-5.7-6-10a6 6 0 1112 0c0 4.3-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span className="sr-only md:not-sr-only">Directions</span>
               </TrackedCtaLink>
             )}
-            {phone && (
+            {phone && !callToReserve && (
               <TrackedCtaLink
                 restaurantId={r.id}
                 cta="phone"
@@ -529,6 +534,24 @@ export default async function RestaurantPage({
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Reserve
               </TrackedCtaLink>
+            )}
+            {callToReserve && (
+              <TrackedCtaLink
+                restaurantId={r.id}
+                cta="reserve"
+                neighborhood={r.neighborhood}
+                location="hero"
+                href={`tel:${phone}`}
+                className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border transition-all inline-flex items-center gap-2 hover:bg-accent-tint-md"
+                style={{ borderColor: "var(--accent-tint-xl)", color: "var(--accent)", backgroundColor: "var(--accent-tint-sm)" }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.8 2z"/></svg>Call to reserve
+              </TrackedCtaLink>
+            )}
+            {walkInOnly && (
+              <span className="font-mono text-ui-sm uppercase tracking-label px-4 py-2.5 border border-border text-text-dim inline-flex items-center gap-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="1"/><path d="M15 12h.01"/></svg>Walk-in only
+              </span>
             )}
             <OrderMenu restaurantId={r.id} neighborhood={r.neighborhood} orderLinks={orderLinks} />
           </div>

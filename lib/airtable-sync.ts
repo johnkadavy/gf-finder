@@ -16,8 +16,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { rescoreRestaurants } from "./rescore";
 import { parseOrderLinks } from "./order-links";
 import { parsePlaceTypes } from "./place-types";
-import { parseAiJson } from "./ai-json";
-import { parseReservationLink } from "./reservation-link";
+import { parseAiJson, aiLabel } from "./ai-json";
+import { parseReservation } from "./reservation-link";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -145,9 +145,7 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
   }
 
   const cuisineField = record.fields["cuisine"];
-  const cuisine = typeof cuisineField === "string" && cuisineField.trim()
-    ? cuisineField.trim()
-    : aiText(cuisineField);
+  const cuisine = aiLabel(typeof cuisineField === "string" ? cuisineField : aiText(cuisineField));
 
   const menuItemsRaw = aiText(record.fields["menu_items"]);
   let menuItems: unknown = null;
@@ -157,10 +155,11 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
 
   const placeTypes = parsePlaceTypes(aiText(record.fields["place_type"]));
 
-  // An answered field that isn't a valid booking URL ("NONE", prose, an
-  // ordering link) clears the stored link; an empty field leaves it alone.
+  // An answered field sets both columns: a booking URL → online, WALK_IN /
+  // PHONE → that policy with no link, anything else (NONE, prose, an ordering
+  // link) clears both. An empty field leaves them alone.
   const reservationRaw = aiText(record.fields["reservation_link"]);
-  const reservationLink = reservationRaw ? parseReservationLink(reservationRaw) : undefined;
+  const reservation = reservationRaw ? parseReservation(reservationRaw) : undefined;
   if (placeTypes.none) {
     log(`  place_type "none" for ${googlePlaceId} — closed or not a food business? Review for removal`);
   } else if (placeTypes.invalid.length) {
@@ -176,7 +175,7 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
     ...(parseCsv(record.fields["gf_food_categories"]) ? { gf_food_categories: parseCsv(record.fields["gf_food_categories"]) } : {}),
     ...(aiText(record.fields["restaurant_description"]) ? { restaurant_description: aiText(record.fields["restaurant_description"]) } : {}),
     ...(menuItems ? { menu_items: menuItems } : {}),
-    ...(reservationLink !== undefined ? { reservation_link: reservationLink } : {}),
+    ...(reservation ? { reservation_link: reservation.link, reservation_policy: reservation.policy } : {}),
     ...(orderLinks.length ? { order_links: orderLinks } : {}),
     ...(dedicatedRaw ? { dedicated_gf_kitchen: dedicatedRaw.toLowerCase() } : {}),
     ...(aiText(record.fields["display_name"]) ? { display_name: aiText(record.fields["display_name"]) } : {}),
