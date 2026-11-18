@@ -45,8 +45,11 @@ function hostMatches(host: string, domain: string): boolean {
 }
 
 export function parseReservationLink(raw: string | null | undefined): string | null {
-  const text = raw?.trim();
-  if (!text || /\s/.test(text)) return null; // empty, or prose with spaces
+  // Web-search agents often explain before answering ("Based on my search…\n\nNONE"),
+  // so the answer is the last non-empty line, minus any wrapping markdown.
+  const lastLine = raw?.trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean).pop();
+  const text = lastLine?.replace(/^[`<("']+|[`>)"'.,]+$/g, "");
+  if (!text || /\s/.test(text)) return null; // empty, or a sentence rather than a URL
 
   let url: URL;
   try {
