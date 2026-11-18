@@ -6,6 +6,7 @@ import { lookupNycNeighborhood } from "@/lib/neighborhood-lookup";
 import { parseOrderLinks } from "@/lib/order-links";
 import { parsePlaceTypes } from "@/lib/place-types";
 import { parseAiJsonOrThrow } from "@/lib/ai-json";
+import { parseReservationLink } from "@/lib/reservation-link";
 
 export const maxDuration = 30;
 
@@ -481,7 +482,7 @@ export async function syncAirtableRecordToSupabase(
     try { menuItems = parseAiJsonOrThrow(menuItemsText); } catch { /* skip malformed */ }
   }
 
-  const reservationLink = getAIFieldValue(fields["reservation_link"]) || null;
+  const reservationLink = parseReservationLink(getAIFieldValue(fields["reservation_link"]));
   const orderLinks = parseOrderLinks(fields["order_links"]);
   const restaurantDescription = getAIFieldValue(fields["restaurant_description"]) || null;
 

@@ -17,6 +17,7 @@ import { rescoreRestaurants } from "./rescore";
 import { parseOrderLinks } from "./order-links";
 import { parsePlaceTypes } from "./place-types";
 import { parseAiJson } from "./ai-json";
+import { parseReservationLink } from "./reservation-link";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -155,6 +156,11 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
   }
 
   const placeTypes = parsePlaceTypes(aiText(record.fields["place_type"]));
+
+  // An answered field that isn't a valid booking URL ("NONE", prose, an
+  // ordering link) clears the stored link; an empty field leaves it alone.
+  const reservationRaw = aiText(record.fields["reservation_link"]);
+  const reservationLink = reservationRaw ? parseReservationLink(reservationRaw) : undefined;
   if (placeTypes.none) {
     log(`  place_type "none" for ${googlePlaceId} — closed or not a food business? Review for removal`);
   } else if (placeTypes.invalid.length) {
@@ -170,7 +176,7 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
     ...(parseCsv(record.fields["gf_food_categories"]) ? { gf_food_categories: parseCsv(record.fields["gf_food_categories"]) } : {}),
     ...(aiText(record.fields["restaurant_description"]) ? { restaurant_description: aiText(record.fields["restaurant_description"]) } : {}),
     ...(menuItems ? { menu_items: menuItems } : {}),
-    ...(aiText(record.fields["reservation_link"]) ? { reservation_link: aiText(record.fields["reservation_link"]) } : {}),
+    ...(reservationLink !== undefined ? { reservation_link: reservationLink } : {}),
     ...(orderLinks.length ? { order_links: orderLinks } : {}),
     ...(dedicatedRaw ? { dedicated_gf_kitchen: dedicatedRaw.toLowerCase() } : {}),
     ...(aiText(record.fields["display_name"]) ? { display_name: aiText(record.fields["display_name"]) } : {}),
