@@ -38,6 +38,8 @@ type MenuItem = {
   name: string;
   description?: string;
   gf: boolean | null;
+  /** The GF label the menu printed (marker-aware prompt only). */
+  gf_marker?: string | null;
 };
 
 type MenuSection = {

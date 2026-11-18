@@ -7,6 +7,7 @@ import { parseOrderLinks } from "@/lib/order-links";
 import { parsePlaceTypes } from "@/lib/place-types";
 import { parseAiJsonOrThrow } from "@/lib/ai-json";
 import { parseReservation } from "@/lib/reservation-link";
+import { enforceGfMarkers } from "@/lib/menu-items";
 
 export const maxDuration = 30;
 
@@ -479,7 +480,7 @@ export async function syncAirtableRecordToSupabase(
   const menuItemsText = getAIFieldValue(fields["menu_items"]);
   let menuItems = null;
   if (menuItemsText) {
-    try { menuItems = parseAiJsonOrThrow(menuItemsText); } catch { /* skip malformed */ }
+    try { menuItems = enforceGfMarkers(parseAiJsonOrThrow(menuItemsText)).menu; } catch { /* skip malformed */ }
   }
 
   const reservation = parseReservation(getAIFieldValue(fields["reservation_link"]));

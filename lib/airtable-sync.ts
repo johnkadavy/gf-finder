@@ -18,6 +18,7 @@ import { parseOrderLinks } from "./order-links";
 import { parsePlaceTypes } from "./place-types";
 import { parseAiJson, aiLabel } from "./ai-json";
 import { parseReservation } from "./reservation-link";
+import { enforceGfMarkers } from "./menu-items";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -150,7 +151,11 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
   const menuItemsRaw = aiText(record.fields["menu_items"]);
   let menuItems: unknown = null;
   if (menuItemsRaw) {
-    menuItems = parseAiJson(menuItemsRaw) ?? null;
+    const checked = enforceGfMarkers(parseAiJson(menuItemsRaw) ?? null);
+    menuItems = checked.menu;
+    if (checked.downgraded) {
+      log(`  menu_items for ${googlePlaceId}: ${checked.downgraded} gf:true item(s) had no gf_marker — set to null`);
+    }
   }
 
   const placeTypes = parsePlaceTypes(aiText(record.fields["place_type"]));
