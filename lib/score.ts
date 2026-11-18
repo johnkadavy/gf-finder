@@ -107,7 +107,7 @@ export function reportedSharedItems(rp: ReportedProtocol | null | undefined): st
  * whenever you run `backfill-scores.ts --all --write` after editing this file —
  * the sitemap uses it as a lastModified floor so Google re-crawls stale snippets.
  */
-export const SCORING_MODEL_UPDATED_AT = "2026-10-27";
+export const SCORING_MODEL_UPDATED_AT = "2026-11-18";
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
