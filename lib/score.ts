@@ -54,7 +54,7 @@ export type ScoringDossier = {
     cc_signals?: {
       shared_equipment?: "yes" | "no" | "unknown";
       staff_cc_awareness?: "high" | "low" | "unknown";
-      signal?: "high" | "medium" | "low";
+      signal?: "high" | "medium" | "low" | "unknown";
       evidence?: string;
     };
   };
@@ -233,7 +233,10 @@ export function calculateScore(
 
   // Priority: focused cc_signals → broad AI cross_contamination_risk → cuisine prior
   let contamScore: number;
-  const ccSignal = o?.cc_signals?.signal;
+  // Only a real verdict counts — "unknown" (or anything else) falls through to the
+  // broad AI risk and then the cuisine prior instead of pinning a neutral 70.
+  const rawCcSignal = o?.cc_signals?.signal;
+  const ccSignal = rawCcSignal === "high" || rawCcSignal === "medium" || rawCcSignal === "low" ? rawCcSignal : undefined;
   const aiRisk = o?.cross_contamination_risk;
 
   if (ccSignal) {
@@ -241,7 +244,6 @@ export function calculateScore(
       case "high":   contamScore = 40;  break;
       case "medium": contamScore = 75;  break;
       case "low":    contamScore = 100; break;
-      default:       contamScore = 70;  // "unknown" or unexpected value → neutral
     }
     // Cuisine prior as sanity check: can't be "low" for an inherently high-risk kitchen
     if (ccSignal === "low" && cuisinePrior === "high") contamScore = 75;

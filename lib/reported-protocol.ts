@@ -104,7 +104,8 @@ export function protocolFlags(a: ProtocolAnswers, dossier: ScoringDossier | null
       (o?.dedicated_equipment?.prep_area === "no" || o?.dedicated_equipment?.prep_area === "shared")) {
     flags.push("Claims separate prep; the dossier says shared.");
   }
-  const cc = o?.cc_signals?.signal ?? o?.cross_contamination_risk;
+  const ccSignal = o?.cc_signals?.signal;
+  const cc = ccSignal && ccSignal !== "unknown" ? ccSignal : o?.cross_contamination_risk;
   if (cc === "high" && (k.fully_gf === "yes" || k.shared_with_gluten.includes("none"))) {
     flags.push("Claims little or no shared equipment; the dossier rates cross-contamination risk high.");
   }
