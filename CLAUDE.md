@@ -133,6 +133,8 @@ npx tsx scripts/ingest-neighborhood-geo.ts --neighborhood "Park City" --city "Pa
 
 Polygon source defaults to `lib/nyc-neighborhoods.json` (NYC neighborhood/NTA boundaries). For a new city, add its municipal boundary to `lib/city-boundaries.json` (FeatureCollection of `{name, borough?}` + Polygon/MultiPolygon geometry — `borough` is optional, cosmetic only) and pass `--geojson lib/city-boundaries.json`. Boundaries can be sourced from OpenStreetMap/Nominatim (`polygon_geojson=1` on the search endpoint). `--bbox minLat,maxLat,minLng,maxLng` skips GeoJSON entirely for a quick rectangle when a real polygon isn't worth sourcing.
 
+**Airtable AI fields:** before changing an enrichment prompt, its model, or how the sync parses a field, read `docs/AIRTABLE_FIELDS.md` — it records each field's output contract, the parser that validates it, and the rules learned so far (agents narrate before answering; absence of evidence is "unknown").
+
 **Both paths continue the same way:**
 
 ```bash

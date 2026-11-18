@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { rescoreRestaurants } from "./rescore";
 import { parseOrderLinks } from "./order-links";
 import { parsePlaceTypes } from "./place-types";
-import { parseAiJson, aiLabel } from "./ai-json";
+import { parseAiJson, aiLabel, aiAnswerLine } from "./ai-json";
 import { parseReservation } from "./reservation-link";
 import { enforceGfMarkers } from "./menu-items";
 import { parseGfFoodCategories } from "./gf-food-categories";
@@ -172,7 +172,13 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
     log(`  Dropped invalid gf_food_categories for ${googlePlaceId}: ${gfFood.invalid.join(" | ").slice(0, 120)}`);
   }
 
+  // Last line of the answer (agents explain first); only the DB's allowed values.
   const dedicatedRaw = aiText(record.fields["dedicated_gf_kitchen"]);
+  const dedicatedAnswer = aiAnswerLine(dedicatedRaw)?.toLowerCase() ?? null;
+  const dedicated = dedicatedAnswer && ["yes", "no", "unverified"].includes(dedicatedAnswer) ? dedicatedAnswer : null;
+  if (dedicatedRaw && !dedicated) {
+    log(`  Unrecognized dedicated_gf_kitchen for ${googlePlaceId} — left unchanged: ${dedicatedRaw.slice(-80).replace(/\s+/g, " ")}`);
+  }
   const orderLinks = parseOrderLinks(record.fields["order_links"]);
 
   const fields: Record<string, unknown> = {
@@ -183,7 +189,7 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
     ...(menuItems ? { menu_items: menuItems } : {}),
     ...(reservation ? { reservation_link: reservation.link, reservation_policy: reservation.policy } : {}),
     ...(orderLinks.length ? { order_links: orderLinks } : {}),
-    ...(dedicatedRaw ? { dedicated_gf_kitchen: dedicatedRaw.toLowerCase() } : {}),
+    ...(dedicated ? { dedicated_gf_kitchen: dedicated } : {}),
     ...(aiText(record.fields["display_name"]) ? { display_name: aiText(record.fields["display_name"]) } : {}),
   };
 
