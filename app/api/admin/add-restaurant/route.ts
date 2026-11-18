@@ -8,6 +8,7 @@ import { parsePlaceTypes } from "@/lib/place-types";
 import { parseAiJsonOrThrow } from "@/lib/ai-json";
 import { parseReservation } from "@/lib/reservation-link";
 import { enforceGfMarkers } from "@/lib/menu-items";
+import { parseGfFoodCategories } from "@/lib/gf-food-categories";
 
 export const maxDuration = 30;
 
@@ -422,12 +423,6 @@ export function isEnriched(fields: Record<string, string | AirtableAIField>): bo
   return dossier.state === "generated" && dossier.value != null;
 }
 
-function parseCsv(field: string | AirtableAIField | undefined): string[] | null {
-  const raw = getAIFieldValue(field);
-  if (!raw) return null;
-  const vals = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  return vals.length > 0 ? vals : null;
-}
 
 // ── Shared sync helper ────────────────────────────────────────────────────────
 
@@ -475,7 +470,7 @@ export async function syncAirtableRecordToSupabase(
 
   const cuisine = dossier?.restaurant?.cuisine ?? null;
   const placeTypes = parsePlaceTypes(getAIFieldValue(fields["place_type"])).types;
-  const gfFoodCategories = parseCsv(fields["gf_food_categories"]);
+  const gfFoodCategories = parseGfFoodCategories(getAIFieldValue(fields["gf_food_categories"])).tags;
 
   const menuItemsText = getAIFieldValue(fields["menu_items"]);
   let menuItems = null;

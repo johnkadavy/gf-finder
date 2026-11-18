@@ -19,6 +19,7 @@ import { parsePlaceTypes } from "./place-types";
 import { parseAiJson, aiLabel } from "./ai-json";
 import { parseReservation } from "./reservation-link";
 import { enforceGfMarkers } from "./menu-items";
+import { parseGfFoodCategories } from "./gf-food-categories";
 
 // Read at call time, not at import time — CLI scripts load dotenv after imports.
 function airtableCreds() {
@@ -71,12 +72,6 @@ function aiValue(field: unknown): string | null {
 function aiText(field: unknown): string | null {
   const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
   return raw?.trim() || null;
-}
-function parseCsv(field: unknown): string[] | null {
-  const raw = typeof field === "string" ? field : (field as AirtableAIField)?.value;
-  if (!raw) return null;
-  const vals = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  return vals.length > 0 ? vals : null;
 }
 
 async function fetchAirtableRecords(viewId: string, maxRecords?: number): Promise<AirtableRecord[]> {
@@ -171,13 +166,19 @@ function buildRecord(record: AirtableRecord, log: (msg: string) => void): {
     log(`  Dropped invalid place_type values for ${googlePlaceId}: ${placeTypes.invalid.join(" | ").slice(0, 120)}`);
   }
 
+  // "none" stores [] (clearing stale tags); an answer with no valid tag leaves them alone.
+  const gfFood = parseGfFoodCategories(aiText(record.fields["gf_food_categories"]));
+  if (gfFood.invalid.length) {
+    log(`  Dropped invalid gf_food_categories for ${googlePlaceId}: ${gfFood.invalid.join(" | ").slice(0, 120)}`);
+  }
+
   const dedicatedRaw = aiText(record.fields["dedicated_gf_kitchen"]);
   const orderLinks = parseOrderLinks(record.fields["order_links"]);
 
   const fields: Record<string, unknown> = {
     ...(cuisine ? { cuisine } : {}),
     ...(placeTypes.types ? { place_type: placeTypes.types } : {}),
-    ...(parseCsv(record.fields["gf_food_categories"]) ? { gf_food_categories: parseCsv(record.fields["gf_food_categories"]) } : {}),
+    ...(gfFood.tags ? { gf_food_categories: gfFood.tags } : {}),
     ...(aiText(record.fields["restaurant_description"]) ? { restaurant_description: aiText(record.fields["restaurant_description"]) } : {}),
     ...(menuItems ? { menu_items: menuItems } : {}),
     ...(reservation ? { reservation_link: reservation.link, reservation_policy: reservation.policy } : {}),
